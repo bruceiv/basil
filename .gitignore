@@ -4,4 +4,6 @@
 
 # build artifacts
 basil
-*.a
+*/*.a
+*/*.o
+
