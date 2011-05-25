@@ -1,0 +1,15 @@
+CC = gcc
+CPPFLAGS = -DTIMES -DSIGNALS -DGMP
+LDFLAGS = -lgmpxx -lgmp
+
+
+.PHONY:  clean
+
+liblrs.a: lrs.cpp
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o lrslib.o -c lrslib.c $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o lrsgmp.o -c lrsgmp.c $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o lrs.o -c lrs.cpp $(LDFLAGS)
+	$(AR) rcs liblrs.a lrs.o lrslib.o lrsgmp.o
+
+clean:  
+	rm liblrs.a lrs.o lrsgmp.o lrslib.o

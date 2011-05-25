@@ -1,0 +1,7 @@
+# editor-specific files
+*.kdev4
+*~
+
+# build artifacts
+basil
+*.a
