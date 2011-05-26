@@ -12,36 +12,40 @@
 #include <permlib/permutation.h>
 #include <permlib/transversal/schreier_tree_transversal.h>
 
+/** Namespace for the basil project.
+ *  Imports types from boost and PermLib, and should have no naming conflicts 
+ *  with the std namespace.
+ */
 namespace basil {
-	//import boost shared pointer into this namespace
+	/** import boost shared pointer into this namespace */
 	using boost::shared_ptr;
 	
-	//value type of matrix
+	/** value type of matrix */
 	typedef 
 		mpz_class
 		val_type;
 	
-	//matrix type
+	/** matrix type */
 	typedef 
 		boost::numeric::ublas::matrix<val_type> 
 		matrix;
-	//typesafe index into matrix
+	/** typesafe index into matrix */
 	typedef 
 		matrix::size_type 
 		ind;
 	
-	//permutation type
+	/** permutation type */
 	typedef 
 		permlib::Permutation 
 		permutation;
-	//permutation tree traversal type
+	/** permutation tree traversal type */
 	typedef 
 		permlib::SchreierTreeTransversal<permutation>
 		permutation_transversal;
-	//permutation group type
+	/** permutation group type */
 	typedef 
 		permlib::BSGS<permutation, permutation_transversal> 
 		permutation_group;
-}
+} /* namespace basil */
 
 #endif /* _BASIL_COMMON_HPP_ */

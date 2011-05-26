@@ -10,12 +10,13 @@
 
 namespace basil {
 	
-	//allocates new permutation group on heap and returns it.
-	//creates permutation groups on n elements, where n is m.size1()
-	//expects input on the stream in to be a newline-delimited list of 
-	// permuataions, where a permutation is a comma-delimited lists of cycles, 
-	// and a cycle is a whitespace-delimited list of elements from the range 
-	// [1..n]
+	/** Allocates new permutation group on heap and returns it.
+	 *  creates permutation groups on n elements, where n is m.size1()
+	 *  expects input on the stream in to be a newline-delimited list of 
+	 * permuataions, where a permutation is a comma-delimited lists of cycles, 
+	 * and a cycle is a whitespace-delimited list of elements from the range 
+	 * [1..n]
+	 */
 	shared_ptr<permutation_group> genPermutationGroupFromStream(
 			std::istream& in, const matrix& m) {
 		
@@ -38,6 +39,6 @@ namespace basil {
 		
 	}
 	
-}
+} /* namespace basil */
 
 #endif /* _GROUP_GEN_HPP_ */

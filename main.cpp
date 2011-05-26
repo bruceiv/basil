@@ -8,10 +8,14 @@
 using namespace std;
 using namespace basil;
 
+/** Simple test driver for basil.
+ *  Accepts a matrix and permutation_group on standard input, generating them 
+ *  using genMatrixFromStream() and genPermutationGroupFromStream().
+ */
 int main(int argc, char **argv) {
     
 	//read in & print matrix
-	shared_ptr<matrix> m = genMatrixfromStream(cin);
+	shared_ptr<matrix> m = genMatrixFromStream(cin);
 	cout << *m << endl;
 	
 	//read in & print permutation group

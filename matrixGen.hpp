@@ -7,10 +7,11 @@
 
 namespace basil {
 	
-	//allocates new matrix on heap and returns it.
-	//expects whitespace-delimited values as follows: first n and m, the 
-	// dimensions of the matrix (ind), then the n*m data values of the matrix.
-	shared_ptr<matrix> genMatrixfromStream(std::istream& in) {
+	/** Allocates new matrix on heap and returns it.
+	 *  expects whitespace-delimited values as follows: first n and m, the 
+	 *  dimensions of the matrix, then the n*m data values of the matrix.
+	 */
+	shared_ptr<matrix> genMatrixFromStream(std::istream& in) {
 		ind n, d;
 		in >> n;
 		in >> d;
@@ -26,6 +27,6 @@ namespace basil {
 		return m;
 	}
 	
-}
+} /* namespace basil */
 
 #endif /* _MATRIX_GEN_HPP_ */
