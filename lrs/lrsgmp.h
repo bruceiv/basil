@@ -1,3 +1,7 @@
+#ifndef _LRSGMP_H_
+#define _LRSGMP_H_
+/* guard added by Aaron Moss 26 May 2011 */
+
 /* lrsgmp.h       (lrs long integer arithmetic library based on gmp */
 /* Copyright: David Avis 2000, avis@cs.mcgill.ca                    */
 /* Version 4.0, April 13, 2000                                      */
@@ -212,3 +216,5 @@ void *xcalloc (long n, long s, long l, char *f);
 void lrs_default_digits_overflow ();
 
 /* end of  lrs_mp.h (vertex enumeration using lexicographic reverse search) */
+
+#endif /* _LRSGMP_H_ */

@@ -527,6 +527,22 @@ lrs_init (char *name)       /* returns TRUE if successful, else FALSE */
   return TRUE;
 }
 
+/* Added by Aaron Moss on 26 May 2011 */
+long lrs_init_quiet(FILE* in, FILE* out)
+{
+	if (!lrs_mp_init(ZERO, in, out)) { /* initialize arithmetic */
+		return FALSE;
+	}
+	
+	lrs_global_count = 0;
+	lrs_checkpoint_seconds = 0;
+#ifdef SIGNALS
+	setup_signals();
+#endif
+	return TRUE;
+}
+
+
 void 
 lrs_close (char *name)
 {
@@ -553,6 +569,16 @@ lrs_close (char *name)
   if (lrs_ofp != stdout)
     fclose (lrs_ofp);
 }
+
+/* Added by Aaron Moss on 26 May 2011 */
+void lrs_close_quiet()
+{
+	fclose (lrs_ifp);
+	if (lrs_ofp != stdout) {
+		fclose (lrs_ofp);
+	}
+}
+
 
 /***********************************/
 /* allocate and initialize lrs_dat */

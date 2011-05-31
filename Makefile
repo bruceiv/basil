@@ -1,11 +1,13 @@
+CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
 LDFLAGS = -Llrs -lgmpxx -lgmp -llrs
-
+#LDFLAGS = -lgmpxx -lgmp
 
 .PHONY:  clean clean_all clean_doc doc lrs
 
 # generate main program
 basil:  main.cpp lrs
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(LDFLAGS)
+#	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp lrs/liblrs.a
 
 # generate lrs library
 lrs:  

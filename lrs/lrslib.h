@@ -1,3 +1,7 @@
+#ifndef _LRSLIB_H_
+#define _LRSLIB_H_
+/* guard added by Aaron Moss 26 May 2011 */
+
 /* lrslib.h (vertex enumeration using lexicographic reverse search) */
 
 #define TITLE "lrslib "
@@ -246,6 +250,24 @@ void lrs_close (char *name);	/* close lrs lib program "name"                 */
 long lrs_init (char *name);	/* initialize lrslib and arithmetic package for prog "name" */
 
 
+/** Close lrslib without printing to terminal.
+ *  Modification to distributed LRS by
+ *  @author Aaron Moss
+ *  @date   26 May 2011
+ */
+void lrs_close_quiet();
+
+/** Initialize lrslib and arithmetic package without printing to terminal.
+ *  Modification to distributed LRS by
+ *  @author Aaron Moss
+ *  @date   26 May 2011
+ *  
+ *  @param in		The input stream for multi-precision arithmetic
+ *  @param out		The output stream for multi-precision arithmetics
+ */
+long lrs_init_quiet(FILE* in, FILE* out);
+
+
 void lrs_lpoutput(lrs_dic * P,lrs_dat * Q, lrs_mp_vector output); /* print LP primal and dual solutions */
 void lrs_printcobasis (lrs_dic * P, lrs_dat * Q, long col);	/* print cobasis for column col(verted or ray)  */
 void lrs_printoutput (lrs_dat * Q, lrs_mp_vector output);	/* print output array                           */
@@ -366,3 +388,5 @@ void lrs_set_obj_mp(lrs_dic *P, lrs_dat *Q, lrs_mp_vector num, lrs_mp_vector den
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _LRSLIB_H_ */

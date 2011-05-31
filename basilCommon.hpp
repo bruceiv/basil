@@ -2,15 +2,13 @@
 #define _BASIL_COMMON_HPP_
 
 #include <boost/shared_ptr.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-#include <gmpxx.h>
 
 #include <permlib/common.h> //because the PermLib author didn't ...
 #include <permlib/bsgs.h>
 #include <permlib/permutation.h>
 #include <permlib/transversal/schreier_tree_transversal.h>
+
+#include "lrs/lrs.hpp"
 
 /** Namespace for the basil project.
  *  Imports types from boost and PermLib, and should have no naming conflicts 
@@ -22,16 +20,16 @@ namespace basil {
 	
 	/** value type of matrix */
 	typedef 
-		mpz_class
+		lrs::val_t
 		val_type;
 	
 	/** matrix type */
 	typedef 
-		boost::numeric::ublas::matrix<val_type> 
+		lrs::matrix
 		matrix;
 	/** typesafe index into matrix */
 	typedef 
-		matrix::size_type 
+		lrs::ind
 		ind;
 	
 	/** permutation type */
