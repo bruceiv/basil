@@ -4,8 +4,13 @@
 
 namespace basil {
 	
-	void dfs::doDfs(matrix m, permutation_group g) {
-		l.loadMatrix(m);
+	void dfs::doDfs() {
+		if (opts.showAllDicts) l.printDict();
+		
+		l.getFirstBasis();
+		
+		if (opts.showAllDicts) l.printDict();
+		
 	}
 
 	

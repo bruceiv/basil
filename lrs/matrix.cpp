@@ -9,7 +9,7 @@
 
 #include <gmpxx.h>
 
-#include "lrs.hpp"
+#include "matrix.hpp"
 
 
 namespace lrs {

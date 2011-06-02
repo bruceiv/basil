@@ -9,6 +9,7 @@
 #include <permlib/transversal/schreier_tree_transversal.h>
 
 #include "lrs/lrs.hpp"
+#include "lrs/matrix.hpp"
 
 /** Namespace for the basil project.
  *  Imports types from boost and PermLib, and should have no naming conflicts 

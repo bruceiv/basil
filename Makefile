@@ -1,13 +1,20 @@
 CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
 CXXFLAGS = -ggdb
 LDFLAGS = -Llrs -llrs -lgmpxx -lgmp
-#LDFLAGS = -lgmpxx -lgmp
+
+# object files to include in this executable
+OBJS = dfs.o
+
+# rules for constructions of objects from sources
+.cpp.o:  
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(LDFLAGS)
+
 
 .PHONY:  clean clean_all clean_doc doc lrs
 
 # generate main program
-basil:  main.cpp lrs
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(LDFLAGS)
+basil:  main.cpp $(OBJS) lrs
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) $(LDFLAGS)
 
 # generate lrs library
 lrs:  
@@ -15,7 +22,7 @@ lrs:
 
 # clean generated files
 clean:  
-	rm basil
+	rm basil $(OBJS)
 
 # clean all generated files (including libraries and documentation)
 clean_all:  clean clean_doc

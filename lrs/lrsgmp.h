@@ -30,6 +30,11 @@
 
 #include "gmp.h"
 
+/* guard for C++ added by Aaron Moss 2 June 2011 */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /***********/
 /* defines */
 /***********/
@@ -214,6 +219,12 @@ void *malloc ();
 void *xcalloc (long n, long s, long l, char *f);
 
 void lrs_default_digits_overflow ();
+
+/* guard for C++ added by Aaron Moss 2 June 2011 */
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 
 /* end of  lrs_mp.h (vertex enumeration using lexicographic reverse search) */
 

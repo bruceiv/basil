@@ -7,8 +7,6 @@
 
 #include "basilCommon.hpp"
 
-#include "lrs/lrs.hpp"
-
 namespace basil {
 	
 	/** Allocates new matrix on heap and returns it.

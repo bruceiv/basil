@@ -1,17 +1,22 @@
 CC = gcc
 CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
+CFLAGS = -ggdb
 CXXFLAGS = -ggdb
 LDFLAGS = -lgmpxx -lgmp
 
+# object files to include in this library
+OBJS = lrslib.o lrsgmp.o matrix.o lrs.o
+
+# rules for constructions of objects from sources
+.c.o:  
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(LDFLAGS)
+.cpp.o:  
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(LDFLAGS)
 
 .PHONY:  clean
 
-liblrs.a: lrs.cpp lrsMatrix.cpp lrs.hpp
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o lrslib.o -c lrslib.c $(LDFLAGS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o lrsgmp.o -c lrsgmp.c $(LDFLAGS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o lrsMatrix.o -c lrsMatrix.cpp $(LDFLAGS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o lrs.o -c lrs.cpp $(LDFLAGS)
-	$(AR) rcs liblrs.a lrs.o lrsMatrix.o lrslib.o lrsgmp.o
+liblrs.a: $(OBJS)
+	$(AR) rcs liblrs.a $(OBJS)
 
 clean:  
-	rm liblrs.a lrs.o lrsMatrix.o lrsgmp.o lrslib.o
+	rm liblrs.a $(OBJS)
