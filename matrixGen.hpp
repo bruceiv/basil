@@ -7,6 +7,8 @@
 
 #include "basilCommon.hpp"
 
+#include "lrs/lrs.hpp"
+
 namespace basil {
 	
 	/** Allocates new matrix on heap and returns it.
@@ -19,7 +21,7 @@ namespace basil {
 		in >> d;
 		
 		shared_ptr<matrix> m(new matrix(n, d));
-		
+
 		mpq_class t;
 		for (ind i = 0; i < n; i++) {
 			for (ind j = 0; j < d; j++) {

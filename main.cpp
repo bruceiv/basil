@@ -15,7 +15,8 @@ using namespace basil;
 int main(int argc, char **argv) {
     
 	//read in & print matrix
-	shared_ptr<matrix> m = genMatrixFromStream(cin);
+	shared_ptr<matrix> m(genMatrixFromStream(cin));
+	
 	cout << *m << endl;
 	
 	//read in & print permutation group
@@ -24,6 +25,6 @@ int main(int argc, char **argv) {
 	
 	//initialize DFS algorithm
 	dfs d;
-	
+		
 	return 0;
 }

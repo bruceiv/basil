@@ -1,5 +1,6 @@
 CC = gcc
 CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
+CXXFLAGS = -ggdb
 LDFLAGS = -lgmpxx -lgmp
 
 

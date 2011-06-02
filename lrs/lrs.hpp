@@ -1,16 +1,13 @@
 #ifndef _LRS_HPP_
 #define _LRS_HPP_
 
-#include "lrslib.h"
-#define LRSXX_MP_H "lrsgmp.h"
-#include LRSXX_MP_H
-// because the LRS author saw fit to polute the global namespace with this ....
-#undef copy
-
 #include <istream>
+#include <new>
 #include <ostream>
 
 #include <gmpxx.h>
+
+#include "clrs.hpp"
 
 /** Namespace for C++ LRS wrapper */
 namespace lrs {
@@ -165,15 +162,26 @@ namespace lrs {
 		};
 		
 		/** Constructor.
-		 *  @param n	the number of rows in the matrix
-		 *  @param d	the number of columns in the matrix
+		 *  @param n			the number of rows in the matrix
+		 *  @param d			the number of columns in the matrix
+		 *  @throw bad_alloc	if allocation of memory for the matrix fails
 		 */
-		matrix(ind n, ind d);
+		matrix(ind n, ind d) throw(std::bad_alloc);
+		
+		/** Copy constructor. 
+		 *  @param that			matrix to copy
+		 *  @throw bad_alloc	if allocation of memory for the matrix fails
+		 */
+		matrix(matrix const& that) throw(std::bad_alloc);
 		
 		/** Destructor */
 		~matrix();
 		
-		/* TODO put in copy constructor, assignment operator */
+		/** Assignment operator.
+		 *  @param that			matrix to copy into this one
+		 *  @throw bad_alloc	if allocation of memory for the matrix fails
+		 */
+		matrix& operator= (matrix const& that) throw(std::bad_alloc);
 		
 		/** Indexing operator */
 		matrix_row operator[] (ind i) { 
@@ -186,35 +194,44 @@ namespace lrs {
 		/** output operator */
 		friend std::ostream& operator<< (std::ostream& out, matrix const & m);
 		
-		/** number of rows in matrix */
-		ind const n;
-		/** number of columns in matrix */
-		ind const d;
+		/** Size accessor: rows */
+		ind const & n() const { return n_; }
+		
+		/** Size accessor: columns */
+		ind const & d() const { return d_; }
 		
 	private:
+		/** number of rows in matrix */
+		ind n_;
+		/** number of columns in matrix */
+		ind d_;
 		
 		/** the matrix data: numerators */
-		matrix_t const& num;
+		matrix_t const * num;
 		/** the matrix data: denominators */
-		matrix_t const& den;
+		matrix_t const * den;
 	};
 	
 	/** C++ wrapper class for the LRS library. */
 	class lrs {
 	public:
 		/** Constructor / initializer.
-		 *  Returns null if cannot be properly initialized.
+		 *  @throw bad_alloc	if cannot be properly initialized.
 		 */
-		lrs();
+		lrs() throw(std::bad_alloc);
 		
 		/** destructor */
 		~lrs();
 		
 		/** Loads a matrix into LRS.
-		 *  @param m		The matrix to load (passed by reference)
-		 *  @returns true for success, false for failure
+		 *  @param m			The matrix to load (passed by reference)
+		 *  @throw bad_alloc	if the matrix data structures cannot be 
+		 * 						initialized
 		 */
-		bool loadMatrix(const matrix& m);
+		void loadMatrix(const matrix& m) throw(std::bad_alloc);
+		
+		/** Gets the first basis for DFS-ing from. */
+		void getFirstBasis();
 		
 	private:
 		/** Structure for holding static problem data */

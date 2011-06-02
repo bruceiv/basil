@@ -22,7 +22,7 @@ namespace basil {
 		
 		using namespace std;
 		
-		ind n = m.n;
+		ind n = m.n();
 		
 		//vector< shared_ptr<permutation> > generators;
 		vector< shared_ptr<permutation> > generators;
