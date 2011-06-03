@@ -1,4 +1,4 @@
-/** Implements lrs::matrix class from lrs.hpp C++ wrapper for LRS.
+/** Implements lrs::matrix class from matrix.hpp C++ wrapper for LRS.
  *
  *  @author Aaron Moss
  */
@@ -20,15 +20,15 @@ namespace lrs {
 	
 	matrix::matrix(ind n, ind d) throw(std::bad_alloc)
 			: n_(n), d_(d), 
-			num(new lrs_mp_matrix(lrs_alloc_mp_matrix(n, d))), 
-			den(new lrs_mp_matrix(lrs_alloc_mp_matrix(n, d))) { 
+			num(new matrix_t(lrs_alloc_mp_matrix(n, d))), 
+			den(new matrix_t(lrs_alloc_mp_matrix(n, d))) { 
 		if (*num == 0 || *den == 0) throw std::bad_alloc();
 	}
 	
 	matrix::matrix(matrix const& that) throw(std::bad_alloc)
 			: n_(that.n_), d_(that.d_), 
-			num(new lrs_mp_matrix(lrs_alloc_mp_matrix(that.n_, that.d_))), 
-			den(new lrs_mp_matrix(lrs_alloc_mp_matrix(that.n_, that.d_))) { 
+			num(new matrix_t(lrs_alloc_mp_matrix(that.n_, that.d_))), 
+			den(new matrix_t(lrs_alloc_mp_matrix(that.n_, that.d_))) { 
 		
 		if (*num == 0 || *den == 0) throw std::bad_alloc();
 		
@@ -56,8 +56,8 @@ namespace lrs {
 			delete den;
 			
 			n_ = that.n_; d_ = that.d_;
-			num = new lrs_mp_matrix(lrs_alloc_mp_matrix(n_, d_));
-			den = new lrs_mp_matrix(lrs_alloc_mp_matrix(n_, d_));
+			num = new matrix_t(lrs_alloc_mp_matrix(n_, d_));
+			den = new matrix_t(lrs_alloc_mp_matrix(n_, d_));
 			
 			if (*num == 0 || *den == 0) throw std::bad_alloc();
 		}

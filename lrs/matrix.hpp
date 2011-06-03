@@ -11,29 +11,6 @@
 
 namespace lrs {
 	
-	/* Bring these types into the wrapper namespace to C++-ize them */
-	
-	/** LRS lib scalar type. */
-	typedef
-		lrs_mp_t
-		val_t;
-	/** LRS lib vector type.
-	 *  Application of the indexing operator yeilds a val_t.
-	 */
-	typedef 
-		lrs_mp_vector
-		vector_t;
-	/** LRS lib matrix type.
-	 *  Application of the indexing operator yeilds a vector_t.
-	 */
-	typedef
-		lrs_mp_matrix
-		matrix_t;
-	/** Index type for LRS vector / matrix */
-	typedef
-		long
-		ind;
-	
 	/** Wraps an LRS-compatible matrix.
 	 */
 	class matrix {

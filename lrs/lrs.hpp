@@ -4,6 +4,7 @@
 #include <new>
 
 #include "clrs.hpp"
+#include "cobasis.hpp"
 #include "matrix.hpp"
 
 /** Namespace for C++ LRS wrapper */
@@ -25,6 +26,13 @@ namespace lrs {
 		
 		/** destructor */
 		~lrs();
+		
+		/** Gets the cobasis for a given column.
+		 *  @param col			the column to get the cobasis for
+		 *  @return a heap-allocated cobasis pointer which should be deleted by 
+		 *			the caller.
+		 */
+		cobasis* getCobasis(ind col);
 		
 		/** Gets the first basis for DFS-ing from. */
 		bool getFirstBasis();
