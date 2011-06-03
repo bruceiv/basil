@@ -14,6 +14,12 @@ void lrs_clear_mp_matrix(lrs_mp_matrix,long,long);
 /* Bring these types into the wrapper namespace to C++-ize them */
 namespace lrs {
 	
+	/** Copies src to dst. 
+	 *  Replaces the copy macro in lrsgmp.h that I undef'd from the global 
+	 *  namespace.
+	 */
+	static void copy(mpz_t dst, mpz_t src) { mpz_set(dst, src); }
+	
 	/** LRS lib scalar type. */
 	typedef
 		lrs_mp_t

@@ -11,8 +11,47 @@
 
 namespace lrs {
 	
-	/** Wraps an LRS-compatible matrix.
-	 */
+	/** Wraps an LRS-compatible multi-precision integer vector. */
+	class vector_mpz {
+	//assign these friends so they can get at the v member
+	friend class lrs;
+	public:
+		/** Constructs a vector with the given dimension. 
+		 *  @param d		The dimension of the vector
+		 */
+		vector_mpz(ind d);
+		
+		/** Copy constructor.
+		 *  @param that		The vector to copy
+		 */
+		vector_mpz(vector_mpz& that);
+		
+		/** Destructs a vector with the given dimension. */
+		~vector_mpz();
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one.
+		 */
+		vector_mpz& operator= (vector_mpz& that);
+		
+		/** Indexing operator. Returns a mutable element reference.
+		 *  @param i		The index of the element to return.
+		 */
+		val_t& operator[] (ind i);
+		
+		/** Indexing operator. Returns a constant element reference.
+		 *  @param i		The index of the element to return.
+		 */
+		const val_t& operator[] (ind i) const;
+		
+	private:
+		/** Internal storage of vector data */
+		vector_t v;
+		/** Dimension of the vector. */
+		ind d;
+	};
+	
+	/** Wraps an LRS-compatible matrix. */
 	class matrix {
 	friend class matrix_row;
 	friend class matrix_ind;

@@ -37,6 +37,12 @@ namespace lrs {
 		/** Gets the first basis for DFS-ing from. */
 		bool getFirstBasis();
 		
+		/** Gets solution vector for current LP ( TODO verify ) 
+		 *  @return a heap-allocated vector pointer which should be deleted by 
+		 * 			the caller.
+		 */
+		vector_mpz* getVertex();
+		
 		/** Prints the current dictionary */
 		void printDict();
 		

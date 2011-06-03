@@ -5,7 +5,6 @@
 #include "groupGen.hpp"
 #include "matrixGen.hpp"
 
-using namespace std;
 using namespace basil;
 
 /** Simple test driver for basil.
@@ -13,7 +12,10 @@ using namespace basil;
  *  using genMatrixFromStream() and genPermutationGroupFromStream().
  */
 int main(int argc, char **argv) {
-    
+	std::istream& cin = std::cin;
+	std::ostream& cout = std::cout;
+	std::ostream& (*endl)(std::ostream&) = std::endl;
+	
 	//read in & print matrix
 	shared_ptr<matrix> m(genMatrixFromStream(cin));
 	

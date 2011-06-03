@@ -15,6 +15,49 @@
 namespace lrs {
 	
 	////////////////////////////////////////////////////////////////////////////
+	//
+	// VECTOR_MPZ CLASS
+	//
+	////////////////////////////////////////////////////////////////////////////
+	
+	vector_mpz::vector_mpz ( ind d ) : v(lrs_alloc_mp_vector(d)), d(d) {}
+	
+	vector_mpz::vector_mpz ( vector_mpz& that ) 
+			: v(lrs_alloc_mp_vector(that.d)), d(that.d) {
+		for (ind i = 0; i < d; i++) copy(v[i], that.v[i]);
+	}
+	
+	vector_mpz::~vector_mpz() {
+		lrs_clear_mp_vector(v, d);
+	}
+	
+	vector_mpz& vector_mpz::operator= ( vector_mpz& that ) {
+		if (v != that.v) {
+			lrs_clear_mp_vector(v, d);
+			
+			d = that.d;
+			v = lrs_alloc_mp_vector(d);
+			for (ind i = 0; i < d; i++) copy(v[i], that.v[i]);
+		}
+		return *this;
+	}
+	
+	val_t& vector_mpz::operator[] ( ind i ) {
+		return v[i];
+	}
+	
+	const lrs::val_t& vector_mpz::operator[] ( ind i ) const {
+		return v[i];
+	}
+	
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
+	// MATRIX CLASS
+	//
+	////////////////////////////////////////////////////////////////////////////
+	
+	////////////////////////////////////////////////////////////////////////////
 	// Constructors, destructor, and assignment operator
 	////////////////////////////////////////////////////////////////////////////
 	

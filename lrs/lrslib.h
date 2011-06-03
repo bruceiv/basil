@@ -390,3 +390,4 @@ void lrs_set_obj_mp(lrs_dic *P, lrs_dat *Q, lrs_mp_vector num, lrs_mp_vector den
 #endif
 
 #endif /* _LRSLIB_H_ */
+ 

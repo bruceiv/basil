@@ -19,11 +19,7 @@ namespace basil {
 	/** import boost shared pointer into this namespace */
 	using boost::shared_ptr;
 	
-	/** value type of matrix */
-	typedef 
-		lrs::val_t
-		val_type;
-	
+
 	/** matrix type */
 	typedef 
 		lrs::matrix

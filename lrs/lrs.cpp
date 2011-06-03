@@ -5,7 +5,6 @@
 
 #include <cstdio>
 #include <new>
-#include <valarray>
 
 #include "clrs.hpp"
 #include "cobasis.hpp"
@@ -46,7 +45,7 @@ namespace lrs {
 	}
 	
 	cobasis* lrs::getCobasis(ind col) {
-		using std::valarray;
+		/* Ported from David Bremner's equivalent code in lrsserv.c */
 		
 		ind i;
 		ind rflag = -1;  /* for finding inequality number of ray column */
@@ -85,11 +84,11 @@ namespace lrs {
 			}
 		}
 		
-		cobasis* cob = new cobasis(mpz_class(P->det), rflag, 
-								   std::valarray<ind>(tempArray, d), 
-								   nIncidence, 
-								   std::valarray<ind>(extraIncidences, incCount)
-  								);
+		mpz_class det(P->det);
+		index_list cobInd(tempArray, tempArray + d);
+		index_list extraInc(extraIncidences, extraIncidences + incCount);
+		
+		cobasis* cob = new cobasis(det, rflag, cobInd, nIncidence, extraInc);
 		delete[] extraIncidences;
 		return cob;
 	}
@@ -97,6 +96,36 @@ namespace lrs {
 	bool lrs::getFirstBasis() {
 		/* Lin is an out parameter of this method, so it isn't 'initialized */
 		return lrs_getfirstbasis(&P, Q, &Lin, true);
+	}
+	
+	vector_mpz* lrs::getVertex() {
+		ind i  = 1, iRedund = 0, j;
+		
+		ind nRedundCol = Q->nredundcol;
+		ind* redundCol = Q->redundcol;
+		ind n = Q->n;
+		
+		vector_mpz* output_p = new vector_mpz(n);
+		vector_mpz& output = *output_p;
+		
+		/* copy column 0 to output */
+		copy( output[0], P->det );
+		
+		for (j = 0; j < n; j++) {
+			if (iRedund < nRedundCol && redundCol[iRedund] == j) {
+				/* column was deleted as redundant */
+				itomp(ZERO, output[j]);
+				iRedund++;
+			} else {
+				/* column not deleted as redundant */
+				getnextoutput(P, Q, i, ZERO, output[j]);
+				i++;
+			}
+		}
+		
+		reducearray(output.v, n);
+		
+		return output_p;
 	}
 	
 	void lrs::printDict()
