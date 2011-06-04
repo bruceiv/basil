@@ -24,7 +24,7 @@ namespace lrs {
 		/** Copy constructor.
 		 *  @param that		The vector to copy
 		 */
-		vector_mpz(vector_mpz& that);
+		vector_mpz(vector_mpz const& that);
 		
 		/** Destructs a vector with the given dimension. */
 		~vector_mpz();
@@ -32,7 +32,7 @@ namespace lrs {
 		/** Assignment operator.
 		 *  @param that		The vector to copy into this one.
 		 */
-		vector_mpz& operator= (vector_mpz& that);
+		vector_mpz& operator= (vector_mpz const& that);
 		
 		/** Indexing operator. Returns a mutable element reference.
 		 *  @param i		The index of the element to return.
@@ -42,7 +42,14 @@ namespace lrs {
 		/** Indexing operator. Returns a constant element reference.
 		 *  @param i		The index of the element to return.
 		 */
-		const val_t& operator[] (ind i) const;
+		val_t const& operator[] (ind i) const;
+		
+		/** Returns the vector obtained from dividing every element in v by s.
+		 *  Uses truncating integer arithmetic.
+		 *  @param v		The vector to divide
+		 *  @param s		The value to divide it by
+		 */
+		friend vector_mpz operator/ (vector_mpz const& v, val_t const& s);
 		
 	private:
 		/** Internal storage of vector data */

@@ -2,6 +2,7 @@
 #define _LRS_HPP_
 
 #include <new>
+#include <stdexcept>
 
 #include "clrs.hpp"
 #include "cobasis.hpp"
@@ -9,6 +10,14 @@
 
 /** Namespace for C++ LRS wrapper */
 namespace lrs {
+	
+	/** Exception thrown for unexpected circumstances in the DFS algorithm.
+	 *  The what string will describe the error.
+	 */
+	class lrs_error : public std::runtime_error {
+	public:
+		lrs_error(string const& whatArg) : runtime_error(whatArg) {}
+	};
 	
 	/** Differentiates between expressions of equality, and expressions of 
 	 *  equations */
@@ -36,6 +45,20 @@ namespace lrs {
 		
 		/** Gets the first basis for DFS-ing from. */
 		bool getFirstBasis();
+		
+		/** Gets the true dimension of the polytope represented by the stored 
+		 *  dictionary. */
+		ind getRealDim();
+		
+		/** Checks if the column indexed by col contains output. Returns said 
+		 *  output if found.
+		 *  @param col			the column index to check
+		 *  @return a heap-allocated vector pointer which should be deleted by 
+		 * 			the caller, or null for not a solution vector
+		 *  @throw lrs_error on column negative or greater than dictionary 
+		 * 			dimension.
+		 */
+		vector_mpz* getSolution(ind col);
 		
 		/** Gets solution vector for current LP ( TODO verify ) 
 		 *  @return a heap-allocated vector pointer which should be deleted by 

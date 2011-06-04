@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <set>
+#include <vector>
 
 #include "basilCommon.hpp"
 #include "dfs.hpp"
@@ -31,8 +33,9 @@ namespace basil {
 		cob->index = ++basisCount;
 	}
 	
-	void dfs::addVertex(dfs::vertex_representation_ptr rep) {
-		/* TODO write me */
+	void dfs::addVertex(dfs::vertex_rep_ptr rep) {
+		vertexOrbits.push_back(rep);
+		vertexSet.insert(rep->coords / rep->coords[1]);
 	}
 	
 	dfs::cobasis_invariants_ptr dfs::cobasisInvariants(dfs::cobasis_ptr cob, 
@@ -47,10 +50,12 @@ namespace basil {
 	}
 	
 	void dfs::dfsFirstBasis() {
-		l.getFirstBasis();
 		
+		if (! l.getFirstBasis() ) 
+			throw dfs_error("LRS failed to find first basis.");
 		if (opts.showAllDicts) l.printDict();
 		
+		realDim = l.getRealDim();
 		cobasis_ptr cob(l.getCobasis(0));
 		coordinates_ptr sol(l.getVertex());
 		cobasis_invariants_ptr rep(cobasisInvariants(cob, sol));
@@ -58,16 +63,58 @@ namespace basil {
 		initialCobasis = rep;
 		addCobasis(rep);
 		addVertex(vertexRep(cob, sol));
+		getRays();
+	}
+	
+	void dfs::getRays() {
+		coordinates_ptr s;
+		cobasis_ptr c;
+		vertex_rep_ptr rep;
 		
-		/* TODO finish me */
-		
+		for (ind j = 1; j <= realDim; j++) {
+			s(l.getSolution(j));
+			
+			if (s) {
+				c(l.getCobasis(j));
+				rep(rayRep(c, s));
+				if (! knownRay(rep) ) rayOrbits.push_back(rep);
+			}
+		}
 	}
 	
 	void dfs::initGlobals() {
 		basisCount = 0;
+		rayOrbits = std::vector<vertex_rep_ptr>();
+		vertexOrbits = std::vector<vertex_rep_ptr>();
+		vertexSet = std::set<coordinates>();
 	}
 	
-	dfs::vertex_representation_ptr dfs::vertexRep(dfs::cobasis_ptr cob, 
+	dfs::vertex_rep_ptr dfs::knownRay(dfs::vertex_rep_ptr rep) {
+		//TODO write me
+	}
+	
+	dfs::vertex_rep_ptr dfs::rayRep(dfs::cobassis_ptr cob, 
+			dfs::coordinates_ptr coords) {
+		
+		/* TODO add gramVec option */
+		
+		//concatenate the cobasis and extra incidence of the cobasis invariants
+		index_list inc(cob->cob.size() + cob->extraInc.size());
+		inc.insert(inc.end(), cob->cob.begin(), cob->cob.end());
+		inc.insert(inc.end(), cob->extraInc.begin(), cob->extraInc.end());
+		//remove the ray index
+		inc.erase(std::remove(inc.begin(), inc.end(), cob->ray));
+		//and sort the resulting list
+		std::sort(inc.begin(), inc.end());
+		
+		vertex_rep_ptr rep(
+			new vertex_rep(inc, *coords, cob->det)
+		);
+		
+		return rep;
+	}
+	
+	dfs::vertex_rep_ptr dfs::vertexRep(dfs::cobasis_ptr cob, 
 			dfs::coordinates_ptr coords) {
 		/* TODO lots of stuf in dfs.gap VertexRep() that could be added */
 		
@@ -78,8 +125,8 @@ namespace basil {
 		//and sort the resulting list
 		std::sort(inc.begin(), inc.end());
 		
-		vertex_representation_ptr rep(
-			new vertex_representation(inc, *coords, cob->det)
+		vertex_rep_ptr rep(
+			new vertex_rep(inc, *coords, cob->det)
 		);
 		
 		return rep;

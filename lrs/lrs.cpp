@@ -94,8 +94,27 @@ namespace lrs {
 	}
 	
 	bool lrs::getFirstBasis() {
-		/* Lin is an out parameter of this method, so it isn't 'initialized */
+		/* Lin is an out parameter of this method, so it isn't initialized */
 		return lrs_getfirstbasis(&P, Q, &Lin, true);
+	}
+	
+	ind lrs::getRealDim() {
+		return P->d;
+	}
+	
+	vector_mpz* lrs::getSolution(ind col) {
+		
+		if (col < 0 || col > P->d) 
+			throw lrs_error("getSolution: illegal column " + col);
+		
+		vector_mpz* output_p = new vector_mpz(Q->n);
+		
+		if (! lrs_getsolution(P, Q, output_p->v, col) ) {
+			delete output_p;
+			output_p = 0;
+		}
+		
+		return output_p;
 	}
 	
 	vector_mpz* lrs::getVertex() {

@@ -50,6 +50,17 @@ namespace lrs {
 		return v[i];
 	}
 	
+	vector_mpz vector_mpz::operator/(const lrs::vector_mpz& v, 
+									 const lrs::val_t& s) {
+		vector_mpz u(v.d);
+		
+		/* NOTE this uses truncating integer division. If rational arithmetic 
+		 * is needed, this should be changed to reflect such. */
+		for (ind i = 0; i < v.d; i++) mpz_tdiv_q(u[i], v[i], s);
+		
+		return u;
+	}
+	
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
