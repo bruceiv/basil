@@ -61,6 +61,11 @@ namespace lrs {
 		friend bool operator!= (vector_mpz const& a, vector_mpz const& b);
 		friend bool operator>= (vector_mpz const& a, vector_mpz const& b);
 		
+		/** Returns the normalization of the given vector. The normalization is 
+		 *  defined to be the vector divided by its first non-zero coordinate.
+		 */
+		vector_mpz normalization() const;
+		
 	private:
 		
 		/** Compares this vector to another. Uses a lexicographic comparison.

@@ -1,7 +1,7 @@
 CC = gcc
 CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
 CFLAGS = -ggdb
-CXXFLAGS = -ggdb
+CXXFLAGS = $(CFLAGS) -Wall
 LDFLAGS = -lgmpxx -lgmp
 
 # object files to include in this library

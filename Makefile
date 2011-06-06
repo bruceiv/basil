@@ -1,5 +1,5 @@
 CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
-CXXFLAGS = -ggdb
+CXXFLAGS = -ggdb -Wall
 LDFLAGS = -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable

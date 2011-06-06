@@ -60,6 +60,14 @@ namespace lrs {
 		return u;
 	}
 	
+	vector_mpz vector_mpz::normalization() const {
+		for (ind i = 0; i < d; i++) {
+			if (! zero(v[i]) ) return *this / v[i];
+		}
+		//it's all zeros anyway
+		return *this;
+	}
+	
 	////////////////////////////////////////////////////////////////////////////
 	// Comparison operators
 	////////////////////////////////////////////////////////////////////////////
@@ -222,16 +230,19 @@ namespace lrs {
 	/* inline */ std::istream& operator>> (std::istream& in, 
 									 matrix::matrix_ind& m_i) {
 		mpq_class t; in >> t; m_i = t;
+		return in;
 	}
 	
 	/* inline */ std::ostream& operator<< (std::ostream& out,
 									 matrix::matrix_ind& m_i) {
 		out << mpq_class(m_i);
+		return out;
 	}
 	
 	/* inline */ std::ostream& operator<< (std::ostream& out,
 									 matrix::const_matrix_ind const & m_i) {
 		out << mpq_class(m_i);
+		return out;
 	}
 	
 } /* namespace lrs */

@@ -35,7 +35,10 @@ namespace basil {
 	
 	void dfs::addVertex(dfs::vertex_rep_ptr rep) {
 		vertexOrbits.push_back(rep);
-		vertexSet.insert(rep->coords / rep->coords[1]);
+		
+		//TODO consult with Dr. Bremner about the normalization algo
+		coordinates norm = rep->coords.normalization();
+		vertexSet.insert(norm);
 	}
 	
 	dfs::cobasis_invariants_ptr dfs::cobasisInvariants(dfs::cobasis_ptr cob, 
