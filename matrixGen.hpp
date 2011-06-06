@@ -13,12 +13,12 @@ namespace basil {
 	 *  expects whitespace-delimited values as follows: first m and n, the 
 	 *  dimensions of the matrix, then the m*n data values of the matrix.
 	 */
-	shared_ptr<matrix> genMatrixFromStream(std::istream& in) {
+	matrix_ptr genMatrixFromStream(std::istream& in) {
 		ind n, d;
 		in >> n;
 		in >> d;
 		
-		shared_ptr<matrix> m(new matrix(n, d));
+		matrix_ptr m(new matrix(n, d));
 
 		mpq_class t;
 		for (ind i = 0; i < n; i++) {

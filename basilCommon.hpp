@@ -24,6 +24,10 @@ namespace basil {
 	typedef 
 		lrs::matrix
 		matrix;
+	typedef
+		shared_ptr<matrix>
+		matrix_ptr;
+	
 	/** typesafe index into matrix */
 	typedef 
 		lrs::ind
@@ -33,14 +37,26 @@ namespace basil {
 	typedef 
 		permlib::Permutation 
 		permutation;
+	typedef
+		shared_ptr<permutation>
+		permutation_ptr;
+		
 	/** permutation tree traversal type */
 	typedef 
 		permlib::SchreierTreeTransversal<permutation>
 		permutation_transversal;
+	typedef
+		shared_ptr<permutation_transversal>
+		permutation_transversal_ptr;
+	
 	/** permutation group type */
 	typedef 
 		permlib::BSGS<permutation, permutation_transversal> 
 		permutation_group;
+	typedef
+		shared_ptr<permutation_group>
+		permutation_group_ptr;
+	
 } /* namespace basil */
 
 #endif /* _BASIL_COMMON_HPP_ */

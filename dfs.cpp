@@ -2,6 +2,8 @@
 #include <set>
 #include <vector>
 
+#include <permlib/permlib_api.h>
+
 #include "basilCommon.hpp"
 #include "dfs.hpp"
 
@@ -89,8 +91,29 @@ namespace basil {
 	}
 	
 	dfs::vertex_rep_ptr dfs::knownRay(dfs::vertex_rep_ptr rep) {
-		//TODO write me
-		return rep;
+		
+		/* incidence set to find */
+		index_list& find = rep->inc;
+		
+		/* for every known orbit representative */
+		for (std::vector<vertex_rep_ptr>::iterator it = rayOrbits.begin();
+				it != rayOrbits.end(); ++it) {
+			
+			/* incidence set to check */
+			index_list& old = (*it)->inc; 
+			
+			/* look for a permutation in the global group that maps the 
+			 * incidence set of the ray we are trying to find to the incidence 
+			 * set of the known ray. */
+			permutation_ptr act = permlib::setImage(
+				g, find.begin(), find.end(), old.begin(), old.end());
+			
+			/* if such a permuation is found, return the known ray */
+			if (act) return *it;
+		}
+		
+		/* no known ray that is equivalent up to symmetry */
+		return vertex_rep_ptr();
 	}
 	
 	dfs::vertex_rep_ptr dfs::rayRep(dfs::cobasis_ptr cob, 

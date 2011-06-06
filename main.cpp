@@ -17,12 +17,12 @@ int main(int argc, char **argv) {
 	std::ostream& (*endl)(std::ostream&) = std::endl;
 	
 	//read in & print matrix
-	shared_ptr<matrix> m(genMatrixFromStream(cin));
+	matrix_ptr m(genMatrixFromStream(cin));
 	
 	cout << *m << endl;
 	
 	//read in & print permutation group
-	shared_ptr<permutation_group> g(genPermutationGroupFromStream(cin, *m));
+	permutation_group_ptr g(genPermutationGroupFromStream(cin, *m));
 	cout << *g << endl;
 	
 	//initialize DFS algorithm

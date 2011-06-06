@@ -96,6 +96,7 @@ namespace basil {
 			vertex_rep(index_list& inc, coordinates& coords, 
 					mpz_class& det) : inc(inc), coords(coords), det(det) {}
 			
+			/* NOTE: should be kept sorted */
 			index_list inc;
 			coordinates coords;
 			mpz_class det;

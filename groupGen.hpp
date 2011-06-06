@@ -17,19 +17,19 @@ namespace basil {
 	 * and a cycle is a whitespace-delimited list of elements from the range 
 	 * [1..n]
 	 */
-	shared_ptr<permutation_group> genPermutationGroupFromStream(
-			std::istream& in, const matrix& m) {
+	permutation_group_ptr genPermutationGroupFromStream(std::istream& in, 
+														const matrix& m) {
 		
 		using namespace std;
 		
 		ind n = m.n();
 		
 		//vector< shared_ptr<permutation> > generators;
-		vector< shared_ptr<permutation> > generators;
+		vector<permutation_ptr> generators;
 		
 		//read in generators
 		string s;
-		shared_ptr<permutation> p;
+		permutation_ptr p;
 		while (getline(in, s)) {
 			p.reset(new permutation(n, s));
 			generators.push_back(p);
