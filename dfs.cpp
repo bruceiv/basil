@@ -67,16 +67,12 @@ namespace basil {
 	}
 	
 	void dfs::getRays() {
-		coordinates_ptr s;
-		cobasis_ptr c;
-		vertex_rep_ptr rep;
-		
 		for (ind j = 1; j <= realDim; j++) {
-			s(l.getSolution(j));
+			coordinates_ptr s( l.getSolution(j) );
 			
 			if (s) {
-				c(l.getCobasis(j));
-				rep(rayRep(c, s));
+				cobasis_ptr c( l.getCobasis(j) );
+				vertex_rep_ptr rep( rayRep(c, s) );
 				if (! knownRay(rep) ) rayOrbits.push_back(rep);
 			}
 		}
@@ -91,9 +87,10 @@ namespace basil {
 	
 	dfs::vertex_rep_ptr dfs::knownRay(dfs::vertex_rep_ptr rep) {
 		//TODO write me
+		return rep;
 	}
 	
-	dfs::vertex_rep_ptr dfs::rayRep(dfs::cobassis_ptr cob, 
+	dfs::vertex_rep_ptr dfs::rayRep(dfs::cobasis_ptr cob, 
 			dfs::coordinates_ptr coords) {
 		
 		/* TODO add gramVec option */

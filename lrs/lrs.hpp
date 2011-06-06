@@ -3,6 +3,7 @@
 
 #include <new>
 #include <stdexcept>
+#include <string>
 
 #include "clrs.hpp"
 #include "cobasis.hpp"
@@ -16,7 +17,7 @@ namespace lrs {
 	 */
 	class lrs_error : public std::runtime_error {
 	public:
-		lrs_error(string const& whatArg) : runtime_error(whatArg) {}
+		lrs_error(std::string const& whatArg) : runtime_error(whatArg) {}
 	};
 	
 	/** Differentiates between expressions of equality, and expressions of 

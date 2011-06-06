@@ -22,7 +22,7 @@ namespace lrs {
 	
 	vector_mpz::vector_mpz ( ind d ) : v(lrs_alloc_mp_vector(d)), d(d) {}
 	
-	vector_mpz::vector_mpz ( vector_mpz& that ) 
+	vector_mpz::vector_mpz ( vector_mpz const& that ) 
 			: v(lrs_alloc_mp_vector(that.d)), d(that.d) {
 		for (ind i = 0; i < d; i++) copy(v[i], that.v[i]);
 	}
@@ -31,7 +31,7 @@ namespace lrs {
 		lrs_clear_mp_vector(v, d);
 	}
 	
-	vector_mpz& vector_mpz::operator= ( vector_mpz& that ) {
+	vector_mpz& vector_mpz::operator= ( vector_mpz const& that ) {
 		if (v != that.v) {
 			lrs_clear_mp_vector(v, d);
 			
@@ -46,12 +46,11 @@ namespace lrs {
 		return v[i];
 	}
 	
-	const lrs::val_t& vector_mpz::operator[] ( ind i ) const {
+	const val_t& vector_mpz::operator[] ( ind i ) const {
 		return v[i];
 	}
 	
-	vector_mpz vector_mpz::operator/(const lrs::vector_mpz& v, 
-									 const lrs::val_t& s) {
+	vector_mpz operator/(vector_mpz const& v, val_t const& s) {
 		vector_mpz u(v.d);
 		
 		/* NOTE this uses truncating integer division. If rational arithmetic 
@@ -61,6 +60,41 @@ namespace lrs {
 		return u;
 	}
 	
+	////////////////////////////////////////////////////////////////////////////
+	// Comparison operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	bool operator<  (vector_mpz const& a, vector_mpz const& b) 
+		{ return a.compare(b) < 0; }
+	bool operator== (vector_mpz const& a, vector_mpz const& b) 
+		{ return a.compare(b) == 0; }
+	bool operator>  (vector_mpz const& a, vector_mpz const& b) 
+		{ return a.compare(b) > 0; }
+	bool operator<= (vector_mpz const& a, vector_mpz const& b) 
+		{ return a.compare(b) <= 0; }
+	bool operator!= (vector_mpz const& a, vector_mpz const& b) 
+		{ return a.compare(b) != 0; }
+	bool operator>= (vector_mpz const& a, vector_mpz const& b) 
+		{ return a.compare(b) >= 0; }
+	
+	int vector_mpz::compare(vector_mpz const& that) const {
+		ind i = 0;
+		val_t t; int s = 0;
+		
+		while (i < d && i < that.d) {
+			mpz_sub(t, v[i], that.v[i]);	// t = v[i] - that.v[i];
+			s = mpz_sgn(t);
+			if (s != 0) return s;
+			i++;
+		}
+		// if it reaches here, the two are lexicographically equal up to the 
+		// end of the shorter string (and s == 0)
+		
+		if (d < that.d) s = -1; else if (d > that.d) s = 1; /* else s = 0; */
+		
+		return s;
+	}
+
 	
 	////////////////////////////////////////////////////////////////////////////
 	//

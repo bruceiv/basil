@@ -16,7 +16,7 @@ namespace basil {
 	 */
 	class dfs_error : public std::runtime_error {
 	public:
-		dfs_error(string const& whatArg) : runtime_error(whatArg) {}
+		dfs_error(std::string const& whatArg) : runtime_error(whatArg) {}
 	};
 	
 	/** Options for DFS algorithm.

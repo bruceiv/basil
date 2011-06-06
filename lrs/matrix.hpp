@@ -51,7 +51,25 @@ namespace lrs {
 		 */
 		friend vector_mpz operator/ (vector_mpz const& v, val_t const& s);
 		
+		/** Standard comparison operators. Uses lexicographic comparison to 
+		 *  compare the first vector to the second.
+		 */
+		friend bool operator<  (vector_mpz const& a, vector_mpz const& b);
+		friend bool operator== (vector_mpz const& a, vector_mpz const& b);
+		friend bool operator>  (vector_mpz const& a, vector_mpz const& b);
+		friend bool operator<= (vector_mpz const& a, vector_mpz const& b);
+		friend bool operator!= (vector_mpz const& a, vector_mpz const& b);
+		friend bool operator>= (vector_mpz const& a, vector_mpz const& b);
+		
 	private:
+		
+		/** Compares this vector to another. Uses a lexicographic comparison.
+		 *  @param that		The vector to compare to
+		 *  @return -1 for this vector less than that, eq 0 for this vector 
+		 * 		equal to that, or gt 1 for this vector greater than that.
+		 */
+		int compare(vector_mpz const& that) const;
+		
 		/** Internal storage of vector data */
 		vector_t v;
 		/** Dimension of the vector. */
