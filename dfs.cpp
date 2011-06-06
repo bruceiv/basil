@@ -26,6 +26,8 @@ namespace basil {
 		index_list cob = dfsFirstBasis()->cob;
 		
 		l.setCobasis(cob);
+		
+		dfsFromRoot(cob);
 	}
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -76,6 +78,13 @@ namespace basil {
 		return cob;
 	}
 	
+	void dfs::dfsFromRoot(dfs::index_list& root) {
+		
+		pushNewEdges(root);
+		
+		//TODO finish me
+	}
+	
 	void dfs::getRays() {
 		for (ind j = 1; j <= realDim; j++) {
 			coordinates_ptr s( l.getSolution(j) );
@@ -120,6 +129,36 @@ namespace basil {
 		
 		/* no known ray that is equivalent up to symmetry */
 		return vertex_rep_ptr();
+	}
+	
+	void dfs::pushNewEdges(dfs::index_list& oldCob) {
+		/* TODO add capability for turning off lexOnly option */
+		
+		for (index_list::iterator it = oldCob.begin(); 
+				it != oldCob.end(); ++it) {
+			
+			ind leave = *it;
+			index_list entering;
+		
+			ind enter = l.lexRatio(leave);
+			if (enter >= 0) entering.push_back(enter);
+			
+			for (index_list::iterator it2 = entering.begin(); 
+					it2 != entering.end(); ++it) {
+				
+				enter = *it2;
+				
+				/* Do the given pivot, then get the cobasis for the new edge */
+				l.pivot(leave, enter);
+				if (opts.showAllDicts) l.printDict();
+				cobasis_ptr cob(l.getCobasis(0));
+				l.pivot(enter, leave);
+				
+				
+				
+				//TODO finish me
+			}
+		}
 	}
 	
 	dfs::vertex_rep_ptr dfs::rayRep(dfs::cobasis_ptr cob, 

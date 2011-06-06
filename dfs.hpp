@@ -28,18 +28,18 @@ namespace basil {
 	struct dfs_opts {
 		
 		/** Default constructor - sets all options to their default value */
-		dfs_opts() : /*gramVec(true),*/ showAllDicts(false) {}
+		dfs_opts() : cacheSize(1000), showAllDicts(false) {}
 		
-//		/** Activates (or deactivates) the gramVec option */
-//		dfs_opts& usesGramVec(bool opt = true) 
-//			{ gramVec = opt; return *this; }
+		/** Sets the size of the cobasis cache */
+		dfs_opts& withCacheSize(long size)
+			{ cacheSize = size; return *this; }
 		
 		/** Activates (or deactivates) the showsAllDicts option */
 		dfs_opts& showsAllDicts(bool opt = true) 
 			{ showAllDicts = opt; return *this; }
 		
-//		/** gramVec option copied from symbal (TODO significance?) */
-//		bool gramVec;
+		/** size of the seen cobasis lookup cache */
+		long cacheSize;
 		/** show all dictionaries as they are generated */
 		bool showAllDicts;
 	}; /* struct dfs_opts */
@@ -127,6 +127,12 @@ namespace basil {
 		/** Find the first basis for the DFS */
 		cobasis_ptr dfsFirstBasis();
 		
+		/** DFS from a starting cobasis. Caller is responsible for pivoting to 
+		 *  the correct dictionary before calling.
+		 *  @param root		The root cobasis to DFS from
+		 */
+		void dfsFromRoot(index_list& root);
+		
 		/** Finds the rays in the current dictionary. */
 		void getRays();
 		
@@ -139,6 +145,11 @@ namespace basil {
 		 * 		a null pointer if there is none such as of yet.
 		 */
 		vertex_rep_ptr knownRay(vertex_rep_ptr rep);
+		
+		/** Add new edges to the search stack.
+		 *  @param oldCob	The cobasis to search for adjacent edges
+		 */
+		void pushNewEdges(index_list& oldCob);
 		
 		/** Gets the ray representation for the given cobasis and 
 		 *  coordinates.

@@ -45,6 +45,30 @@ namespace lrs {
 		lrs_close_quiet();
 	}
 	
+	ind lrs::findBas(ind enter) {
+		ind j;
+		ind lastdv = Q->lastdv;
+		ind *inequality = Q->inequality;
+		ind *B = P->B;
+		ind m = P->m;
+		
+		for (j = 0; j < m && inequality[ B[j]-lastdv ] != enter; j++);
+		
+		return (inequality[ B[j]-lastdv ] != enter) ? -1 : j;
+	}
+	
+	ind lrs::findCob(ind leave) {
+		ind j;
+		ind lastdv = Q->lastdv;
+		ind *inequality = Q->inequality;
+		ind *C = P->C;
+		ind d = P->d;
+		
+		for (j = 0; j < d && inequality[ C[j]-lastdv ] != leave; j++);
+		
+		return (inequality[ C[j]-lastdv ] != leave) ? -1 : j;
+	}
+	
 	cobasis* lrs::getCobasis(ind col) {
 		/* Ported from David Bremner's equivalent code in lrsserv.c */
 		
@@ -149,6 +173,36 @@ namespace lrs {
 		reducearray(output.v, n);
 		
 		return output_p;
+	}
+	
+	ind lrs::lexRatio(ind leave) {
+		ind cob;
+		
+		ind* Col = P->Col;
+		ind* B = P->B;
+		ind* inequality = Q->inequality;
+		ind lastdv = Q->lastdv;
+		
+		if ( ( cob = findCob(leave) ) < 0 ) {
+			return -1;
+		}
+		
+		ind col = Col[cob];
+		ind enter = ratio(P, Q, col);
+		
+		return ( enter > 0 ) ? inequality[ B[enter]-lastdv ] : -1;
+	}
+	
+	void lrs::pivot(ind leave, ind enter) {
+		
+		ind cob = findCob(leave);
+		if (cob < 0) throw lrs_error("Failed to find cobasis for pivot.");
+		
+		ind bas = findBas(enter);
+		if (bas < 0) throw lrs_error("Failed to find basis for pivot.");
+		
+		::pivot(P, Q, bas, cob);
+		update(P, Q, &bas, &cob);
 	}
 	
 	void lrs::printDict() {

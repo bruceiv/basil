@@ -38,6 +38,18 @@ namespace lrs {
 		/** destructor */
 		~lrs();
 		
+		/** finds the basis for a given entering index.
+		 *  @param enter		The index to enter the active dictionary
+		 *  @return the basis for that index, -1 for none such found
+		 */
+		ind findBas(ind enter);
+		
+		/** finds the cobasis for a given leaving index.
+		 *  @param leave		The index to leave the active dictionary
+		 *  @return the cobasis for that index, -1 for none such found
+		 */
+		ind findCob(ind leave);
+		
 		/** Gets the cobasis for a given column.
 		 *  @param col			the column to get the cobasis for
 		 *  @return a heap-allocated cobasis pointer which should be deleted by 
@@ -68,6 +80,18 @@ namespace lrs {
 		 */
 		vector_mpz* getVertex();
 		
+		/** Finds the lex min ratio. Finds the min index ratio -aig/ais, ais<0.
+		 *  @param leave		The leaving column index
+		 *  @return the entering column index (-1 for none such)
+		 */
+		ind lexRatio(ind leave);
+		
+		/** Pivots the internal dictionary from leave to enter
+		 *  @param leave		The leaving column index
+		 *  @param enter		The entering column index
+		 */
+		void pivot(ind leave, ind enter);
+		
 		/** Prints the current dictionary */
 		void printDict();
 		
@@ -78,7 +102,6 @@ namespace lrs {
 		void setCobasis(index_list& cob);
 		
 	private:
-		
 		/** Structure for holding static problem data */
 		lrs_dat* Q;
 		/** Structure for holding current dictionary and indices */
