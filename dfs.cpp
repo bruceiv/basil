@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <deque>
 #include <set>
 #include <vector>
 
@@ -22,7 +23,9 @@ namespace basil {
 		
 		if (opts.showAllDicts) l.printDict();
 		
-		dfsFirstBasis();
+		index_list cob = dfsFirstBasis()->cob;
+		
+		l.setCobasis(cob);
 	}
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -54,7 +57,7 @@ namespace basil {
 		return cobI;
 	}
 	
-	void dfs::dfsFirstBasis() {
+	dfs::cobasis_ptr dfs::dfsFirstBasis() {
 		
 		if (! l.getFirstBasis() ) 
 			throw dfs_error("LRS failed to find first basis.");
@@ -69,6 +72,8 @@ namespace basil {
 		addCobasis(rep);
 		addVertex(vertexRep(cob, sol));
 		getRays();
+		
+		return cob;
 	}
 	
 	void dfs::getRays() {
@@ -85,6 +90,7 @@ namespace basil {
 	
 	void dfs::initGlobals() {
 		basisCount = 0;
+		cobasisQueue = std::deque<index_list>();
 		rayOrbits = std::vector<vertex_rep_ptr>();
 		vertexOrbits = std::vector<vertex_rep_ptr>();
 		vertexSet = std::set<coordinates>();

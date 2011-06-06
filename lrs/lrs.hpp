@@ -24,6 +24,7 @@ namespace lrs {
 	 *  equations */
 	enum exp_type { eq = 0L, ge = 1L };
 	
+	
 	/** C++ wrapper class for the LRS library. */
 	class lrs {
 	public:
@@ -69,6 +70,12 @@ namespace lrs {
 		
 		/** Prints the current dictionary */
 		void printDict();
+		
+		/** Sets the cobasis ( TODO elaborate )
+		 *  @param cob			The cobasis to set
+		 *  @throw lrs_error on various error conditions
+		 */
+		void setCobasis(index_list& cob);
 		
 	private:
 		

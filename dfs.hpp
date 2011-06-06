@@ -1,6 +1,7 @@
 #ifndef _DFS_HPP_
 #define _DFS_HPP_
 
+#include <deque>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -8,6 +9,7 @@
 
 #include "basilCommon.hpp"
 #include "lrs/lrs.hpp"
+
 
 namespace basil {
 	
@@ -123,7 +125,7 @@ namespace basil {
 				coordinates_ptr coords);
 		
 		/** Find the first basis for the DFS */
-		void dfsFirstBasis();
+		cobasis_ptr dfsFirstBasis();
 		
 		/** Finds the rays in the current dictionary. */
 		void getRays();
@@ -171,6 +173,8 @@ namespace basil {
 		
 		/** How many bases have been found */
 		ind basisCount;
+		/** Search queue for cobases */
+		std::deque<index_list> cobasisQueue;
 		/** The first cobasis found */
 		cobasis_invariants_ptr initialCobasis;
 		/** representatives of each orbit (of rays) */

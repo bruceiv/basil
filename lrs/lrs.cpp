@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <new>
+#include <sstream>
 
 #include "clrs.hpp"
 #include "cobasis.hpp"
@@ -76,7 +77,7 @@ namespace lrs {
 		
 		for (i = lastdv+1; i <= m; i++) {
 			if ( zero( A[Row[i]][0] ) ) {
-				if ( (col == ZERO) || zero( A[Row[i]][col] ) ) {
+				if ( (col == 0L) || zero( A[Row[i]][col] ) ) {
 					extraIncidences[incCount] = inequality[B[i] - lastdv];
 					nIncidence++;
 					incCount++;
@@ -104,8 +105,11 @@ namespace lrs {
 	
 	vector_mpz* lrs::getSolution(ind col) {
 		
-		if (col < 0 || col > P->d) 
-			throw lrs_error("getSolution: illegal column " + col);
+		if (col < 0 || col > P->d) {
+			std::ostringstream err;
+			err << "getSolution: illegal column " << col;
+			throw lrs_error( err.str() );
+		}
 		
 		vector_mpz* output_p = new vector_mpz(Q->n);
 		
@@ -118,7 +122,7 @@ namespace lrs {
 	}
 	
 	vector_mpz* lrs::getVertex() {
-		ind i  = 1, iRedund = 0, j;
+		ind i  = 1, iRedund = 0;
 		
 		ind nRedundCol = Q->nredundcol;
 		ind* redundCol = Q->redundcol;
@@ -130,14 +134,14 @@ namespace lrs {
 		/* copy column 0 to output */
 		copy( output[0], P->det );
 		
-		for (j = 0; j < n; j++) {
+		for (ind j = 0; j < n; j++) {
 			if (iRedund < nRedundCol && redundCol[iRedund] == j) {
 				/* column was deleted as redundant */
-				itomp(ZERO, output[j]);
+				itomp(0L, output[j]);
 				iRedund++;
 			} else {
 				/* column not deleted as redundant */
-				getnextoutput(P, Q, i, ZERO, output[j]);
+				getnextoutput(P, Q, i, 0L, output[j]);
 				i++;
 			}
 		}
@@ -147,9 +151,47 @@ namespace lrs {
 		return output_p;
 	}
 	
-	void lrs::printDict()
-	{
+	void lrs::printDict() {
 		printA(P, Q);
+	}
+	
+	void lrs::setCobasis(index_list& cob) {
+		ind nlinearity = Q->nlinearity;
+		ind* linearity = Q->linearity;
+		ind* facet = Q->facet;
+		ind m = Q->m;
+		ind d = P->d;
+		
+		for (ind j = nlinearity, k = 0; j < d; j++, k++) {
+			facet[j] = cob[k];
+			
+			/* check errors */
+			if ( facet[j] < 1 || facet[j] > m ) {
+				std::ostringstream err;
+				err << "Start/restart cobasic indices must be in range [1," 
+					<< m << "]";
+				throw lrs_error(err.str());
+			}
+			for (ind i = 0; i < nlinearity; i++) {
+				if ( facet[j] == linearity[i] ) {
+					throw lrs_error(
+						"Start/restart cobasic indices should not include "
+						"linearities");
+				}
+			}
+			for (ind i = 0; i < j; i++) {
+				if ( facet[i] == facet[j] ) {
+					
+					throw lrs_error(
+						"Start/restart cobasic indices must be distinct");
+				}
+			}
+		}
+			
+		Q->restart=true;
+		if ( !restartpivots(P, Q) )
+			throw lrs_error("Could not restart pivots from given cobasis");
+		
 	}
 	
 } /* namespace lrs */

@@ -1,6 +1,8 @@
 #ifndef _CLRS_HPP_
 #define _CLRS_HPP_
 
+#include <vector>
+
 #include "lrslib.h"
 #include "lrsgmp.h"
 
@@ -53,7 +55,12 @@ namespace lrs {
 	typedef
 		long
 		ind;
-	
+	/** Represents a list of indexes */
+	typedef 
+		std::vector<long> 
+		index_list;
+		
+		
 	/* 
 	 * Move LRS macros into lrs namespace 
 	 */

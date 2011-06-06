@@ -5,11 +5,9 @@
 
 #include <gmpxx.h>
 
+#include "clrs.hpp"
 
 namespace lrs {
-	
-	/** Represents a list of indexes */
-	typedef std::vector<long> index_list;
 	
 	struct cobasis {
 		
