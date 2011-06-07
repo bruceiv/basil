@@ -15,9 +15,11 @@ namespace basil {
 	class lru_cache {
 	public:
 		/** Constructs a cache of the given size.
-		 *  @param size		The maximum size of the cache
+		 *  @param size		The maximum size of the cache (if 0, will be set to 
+		 * 					1)
 		 */
-		lru_cache(unsigned long maxSize) : size_(0), maxSize_(maxSize) {}
+		lru_cache(unsigned long maxSize) : size_(0), 
+				maxSize_(maxSize == 0 ? 1 : maxSize) {}
 		
 		/** Inserts an object into the cache. This object will be the 
 		 *  most-recently used object, regardless of whether it was already in 

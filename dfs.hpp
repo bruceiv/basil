@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "basilCommon.hpp"
+#include "lruCache.hpp"
+
 #include "lrs/lrs.hpp"
 
 
@@ -142,9 +144,16 @@ namespace basil {
 		/** Gets the canonical ray for each ray in a known orbit.
 		 *  @param rep		The ray to get the orbit representative of
 		 *  @return a pointer to the ray representative of this ray's orbit, or 
-		 * 		a null pointer if there is none such as of yet.
+		 * 		a null pointer if there is none such.
 		 */
 		vertex_rep_ptr knownRay(vertex_rep_ptr rep);
+		
+		/** Gets the canonical vertex for each vertex in a known orbit.
+		 *  @param rep		The vertex to get the orbit representative of
+		 *  @return a pointer to the vertex representative of this vertex's 
+		 * 		orbit, or a null pointer if there is none such.
+		 */
+		vertex_rep_ptr knownVertex(vertex_rep_ptr rep);
 		
 		/** Add new edges to the search stack.
 		 *  @param oldCob	The cobasis to search for adjacent edges
@@ -184,6 +193,8 @@ namespace basil {
 		
 		/** How many bases have been found */
 		ind basisCount;
+		/** Cache of recently seen cobases */
+		lru_cache<index_list> cobasisCache;
 		/** Search queue for cobases */
 		std::deque<index_list> cobasisQueue;
 		/** The first cobasis found */

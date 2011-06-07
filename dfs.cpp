@@ -7,6 +7,7 @@
 
 #include "basilCommon.hpp"
 #include "dfs.hpp"
+#include "lruCache.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
@@ -99,6 +100,7 @@ namespace basil {
 	
 	void dfs::initGlobals() {
 		basisCount = 0;
+		cobasisCache = lru_cache<index_list>(opts.cacheSize);
 		cobasisQueue = std::deque<index_list>();
 		rayOrbits = std::vector<vertex_rep_ptr>();
 		vertexOrbits = std::vector<vertex_rep_ptr>();
@@ -131,6 +133,40 @@ namespace basil {
 		return vertex_rep_ptr();
 	}
 	
+	dfs::vertex_rep_ptr dfs::knownVertex(dfs::vertex_rep_ptr rep) {
+		
+		/* TODO add gramVec / invariants handling */
+		
+		coordinates norm = rep->coords.normalization();
+		if ( vertexSet.find(norm) != vertexSet.end() ) {
+			/* duplicate vertex */
+			return rep;
+		}
+		
+		/* incedence set to find */
+		index_list& find = rep->inc;
+		
+		/* for every known orbit representative */
+		for (std::vector<vertex_rep_ptr>::iterator it = vertexOrbits.begin(); 
+				it != vertexOrbits.end(); ++it) {
+			
+			/* incidence set to check */
+			index_list& old = (*it)->inc;
+			
+			/* look for a permutation in the global group that maps the 
+			 * incidence set of the vertex we are trying to find to the 
+			 * incidence set of the known vertex. */
+			permutation_ptr act = permlib::setImage(
+				g, find.begin(), find.end(), old.begin(), old.end());
+			
+			/* if such a permuation is found, return the known ray */
+			if (act) return *it;
+		}
+		
+		/* no known vertex that is equivalent up to symmetry */
+		return vertex_rep_ptr();
+	}
+	
 	void dfs::pushNewEdges(dfs::index_list& oldCob) {
 		/* TODO add capability for turning off lexOnly option */
 		
@@ -152,11 +188,23 @@ namespace basil {
 				l.pivot(leave, enter);
 				if (opts.showAllDicts) l.printDict();
 				cobasis_ptr cob(l.getCobasis(0));
+				coordinates_ptr sol(l.getVertex());
 				l.pivot(enter, leave);
 				
-				
-				
-				//TODO finish me
+				/*TODO verify with Dr. Bremner that just using the cobasis list 
+				 * of this is acceptable, rather than the whole record */
+				if ( ! cobasisCache.lookup(cob->cob) ) {
+					
+					/* if this cobasis is not in the cache, add it and 
+					 * recalculate */
+					cobasisCache.insert(cob->cob);
+					
+					cobasis_invariants_ptr newRep(cobasisInvariants(cob, sol));
+					vertex_rep_ptr newVertex(vertexRep(cob, sol));
+					knownVertex(newVertex);
+					
+					//TODO finish me
+				}
 			}
 		}
 	}
