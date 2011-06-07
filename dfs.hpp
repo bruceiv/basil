@@ -30,20 +30,28 @@ namespace basil {
 	struct dfs_opts {
 		
 		/** Default constructor - sets all options to their default value */
-		dfs_opts() : cacheSize(1000), showAllDicts(false) {}
+		dfs_opts() 
+				: cacheSize(1000), dualFacetTrick(true), 
+				showsAllDicts(false) {}
 		
 		/** Sets the size of the cobasis cache */
 		dfs_opts& withCacheSize(long size)
 			{ cacheSize = size; return *this; }
 		
-		/** Activates (or deactivates) the showsAllDicts option */
-		dfs_opts& showsAllDicts(bool opt = true) 
-			{ showAllDicts = opt; return *this; }
+		/** Deactivates (or activates) the dualFacetTrick option */
+		dfs_opts& noDualFacetTrick(bool opt = true) 
+			{ dualFacetTrick = !opt; return *this; }
 		
-		/** size of the seen cobasis lookup cache */
+		/** Activates (or deactivates) the showsAllDicts option */
+		dfs_opts& showAllDicts(bool opt = true) 
+			{ showsAllDicts = opt; return *this; }
+		
+		/** size of the seen cobasis lookup cache [1000] */
 		long cacheSize;
-		/** show all dictionaries as they are generated */
-		bool showAllDicts;
+		/** use the dual facet trick [true] */
+		bool dualFacetTrick;
+		/** show all dictionaries as they are generated [false] */
+		bool showsAllDicts;
 	}; /* struct dfs_opts */
 	
 	/** Stateful wrapper class for DFS algorithm. */
@@ -56,7 +64,7 @@ namespace basil {
 		 * 					provided)
 		 */
 		dfs(matrix& m, permutation_group& g, dfs_opts opts = dfs_opts()) 
-				: l(m), g(g), opts(opts) {}
+				: l(m), g(g), opts(opts), dim(m.d), rows(m.n) {}
 		
 		/** Perform the DFS. */
 		void doDfs();
@@ -93,6 +101,7 @@ namespace basil {
 			ind index;
 		};
 		typedef shared_ptr<cobasis_invariants> cobasis_invariants_ptr;
+		typedef std::vector<cobasis_invariants_ptr> cobasis_invariants_list;
 		
 		/** Vertex representation. */
 		struct vertex_rep {
@@ -106,6 +115,21 @@ namespace basil {
 			mpz_class det;
 		};
 		typedef shared_ptr<vertex_rep> vertex_rep_ptr;
+		
+		/** Representation of a pivot */
+		struct pivot {
+			
+			pivot(index_list& cob, ind leave, ind enter) 
+					: cob(cob), leave(leave), enter(enter) {}
+			
+			/** cobasis before pivot */
+			index_list cob;
+			/** leaving index */
+			ind leave;
+			/** entering index */
+			ind enter;
+		};
+		typedef shared_ptr<pivot> pivot_ptr;
 		
 		
 		/** Adds a cobasis to the global list.
@@ -138,8 +162,21 @@ namespace basil {
 		/** Finds the rays in the current dictionary. */
 		void getRays();
 		
+		/** Looks for symmetries between a given cobasis and a list of 
+		 *  candidate cobases.
+		 *  @return true if a symmetry is found, false otherwise
+		 */
+		bool findSymmetry(cobasis_invariants_ptr rep, 
+						  cobasis_invariants_list list);
+		
 		/** Initializes algorithm globals */
 		void initGlobals();
+		
+		/** Checks if a given cobasis has been seen before. 
+		 *  @param rep		The cobasis to check
+		 *  @return true for likely seen, false for likely not
+		 */
+		bool isNewCobasis(cobasis_invariants_ptr rep);
 		
 		/** Gets the canonical ray for each ray in a known orbit.
 		 *  @param rep		The ray to get the orbit representative of
@@ -154,6 +191,11 @@ namespace basil {
 		 * 		orbit, or a null pointer if there is none such.
 		 */
 		vertex_rep_ptr knownVertex(vertex_rep_ptr rep);
+		
+		/** Gets the cobases whose invariants match the given one.
+		 *  @return a list of cobases with matching invariants.
+		 */
+		cobasis_invariants_list matchingInvariants(cobasis_invariants_ptr rep);
 		
 		/** Add new edges to the search stack.
 		 *  @param oldCob	The cobasis to search for adjacent edges
@@ -180,21 +222,29 @@ namespace basil {
 		// Initialization-time globals
 		////////////////////////////////////////////////////////////////////////
 		
+		/** Dimension of the problem */
+		ind dim;
 		/** LRS wrapper for this DFS */
 		lrs::lrs l;
 		/** Permutation group used for this DFS */
 		permutation_group& g;
 		/** Options for controlling the DFS algorithm */
 		dfs_opts opts;
+		/** number of rows in the problem */
+		ind rows;
 		
 		////////////////////////////////////////////////////////////////////////
 		// Algorithm data
 		////////////////////////////////////////////////////////////////////////
 		
+		/** A constant list of all the indices */
+		index_list allIndices;
 		/** How many bases have been found */
 		ind basisCount;
 		/** Cache of recently seen cobases */
 		lru_cache<index_list> cobasisCache;
+		/** Global list of seen cobases */
+		cobasis_invariants_list cobasisList;
 		/** Search queue for cobases */
 		std::deque<index_list> cobasisQueue;
 		/** The first cobasis found */
@@ -207,6 +257,8 @@ namespace basil {
 		std::vector<vertex_rep_ptr> vertexOrbits;
 		/** coordinates found */
 		std::set<coordinates> vertexSet;
+		/** Pivots in the working stack */
+		std::deque<pivot> workStack;
 		
 	}; /* class dfs */
 

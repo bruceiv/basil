@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 	cout << *g << endl;
 	
 	//initialize DFS algorithm
-	dfs d(*m, *g, dfs_opts().showsAllDicts() );
+	dfs d(*m, *g, dfs_opts().showAllDicts() );
 	
 	//run DFS algorithm
 	d.doDfs();

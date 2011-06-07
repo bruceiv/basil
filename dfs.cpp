@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <cstdlib>
 #include <deque>
+#include <iterator>
 #include <set>
 #include <vector>
 
@@ -22,7 +24,7 @@ namespace basil {
 	void dfs::doDfs() {
 		initGlobals();
 		
-		if (opts.showAllDicts) l.printDict();
+		if (opts.showsAllDicts) l.printDict();
 		
 		index_list cob = dfsFirstBasis()->cob;
 		
@@ -39,6 +41,7 @@ namespace basil {
 		/* TODO lots of stuff in dfs.gap AddCobasis() that could be added */
 		
 		cob->index = ++basisCount;
+		cobasisList.push_back(cob);
 	}
 	
 	void dfs::addVertex(dfs::vertex_rep_ptr rep) {
@@ -64,7 +67,7 @@ namespace basil {
 		
 		if (! l.getFirstBasis() ) 
 			throw dfs_error("LRS failed to find first basis.");
-		if (opts.showAllDicts) l.printDict();
+		if (opts.showsAllDicts) l.printDict();
 		
 		realDim = l.getRealDim();
 		cobasis_ptr cob(l.getCobasis(0));
@@ -98,15 +101,92 @@ namespace basil {
 		}
 	}
 	
+	bool dfs::findSymmetry(dfs::cobasis_invariants_ptr rep, 
+						   dfs::cobasis_invariants_list list) {
+		
+		/* TODO investigate a more efficient method than dynamically 
+		 * constructing the sets in this method - perhaps changing index_list 
+		 * to boost::dynamic_bitset (?) */
+		
+		typedef std::set<long> index_set;
+		
+		index_set cob1(rep->cob.begin(), rep->cob.end());
+		
+		for (ind groundSize = cob1.size()+1; groundSize <= rows; groundSize++) {
+			
+			for (cobasis_invariants_list::iterator it = list.begin(); 
+					it != list.end(); ++it) {
+				
+				cobasis_invariants_ptr old = (*it);
+				
+				if ( rep->cob == old->cob ) {
+					//duplicate cobasis
+					return true;
+				}
+				
+				index_set cob2(old->cob.begin(), old->cob.end());
+				
+				/* Take the set union into ground */
+				index_set ground;
+				std::set_union(
+					cob1.begin(), cob1.end(), cob2.begin(), cob2.end(), 
+					std::inserter(ground, ground.begin()));
+				
+				/* Take the complement of ground into leftOut */
+				index_set leftOut;
+				std::set_difference(
+					allIndices.begin(), allIndices.end(), 
+					ground.begin(), ground.end(),
+					std::inserter(leftOut, leftOut.begin()));
+				
+				while ( ground.size() < groundSize ) {
+					//take a random left out element and add it to ground
+					
+					//NOTE this is a linear time algo in std::vector or 
+					// std::set - suggests using boost::dynamic_bitset
+					
+					ind randInd = rand() * ( leftOut.size() - 1 ) / RAND_MAX;
+					index_set::iterator it = leftOut.begin();
+					while (randInd--) ++it;
+					ground.insert(*it);
+					leftOut.erase(it);
+				}
+				
+				
+				
+				//TODO finish me
+			}
+		}
+		
+		return false;
+	}
+
 	void dfs::initGlobals() {
+		allIndices = index_list(rows);
+		for (int i = 1; i <= rows; i++) allIndices.push_back(i);
 		basisCount = 0;
 		cobasisCache = lru_cache<index_list>(opts.cacheSize);
 		cobasisQueue = std::deque<index_list>();
+		cobasisList = cobasis_invariants_list();
 		rayOrbits = std::vector<vertex_rep_ptr>();
 		vertexOrbits = std::vector<vertex_rep_ptr>();
 		vertexSet = std::set<coordinates>();
 	}
 	
+	bool dfs::isNewCobasis(dfs::cobasis_invariants_ptr rep) {
+		
+		/* TODO lots of options in original symbal that could be added */
+		
+		cobasis_invariants_list possibleMatches = matchingInvariants(rep);
+		
+		/* new by invariants */
+		if ( possibleMatches.size() == 0 ) return true;
+		
+		if ( findSymmetry(rep, possibleMatches) ) return false;
+		
+		return true;
+	}
+
 	dfs::vertex_rep_ptr dfs::knownRay(dfs::vertex_rep_ptr rep) {
 		
 		/* incidence set to find */
@@ -167,6 +247,27 @@ namespace basil {
 		return vertex_rep_ptr();
 	}
 	
+	dfs::cobasis_invariants_list dfs::matchingInvariants(
+			dfs::cobasis_invariants_ptr rep) {
+		
+		/* TODO lots of stuff in equivalent Symbal code to add */
+		
+		cobasis_invariants_list matches;
+		
+		for (cobasis_invariants_list::iterator it = cobasisList.begin(); 
+				it != cobasisList.end(); ++it) {
+			
+			cobasis_invariants_ptr old = *it;
+			
+			if ( ! old->det == rep->det ) continue;
+			
+			/* if we reach here, all invariant checks have passed. */
+			matches.push_back(old);
+		}
+		
+		return matches;
+	}
+
 	void dfs::pushNewEdges(dfs::index_list& oldCob) {
 		/* TODO add capability for turning off lexOnly option */
 		
@@ -186,7 +287,7 @@ namespace basil {
 				
 				/* Do the given pivot, then get the cobasis for the new edge */
 				l.pivot(leave, enter);
-				if (opts.showAllDicts) l.printDict();
+				if (opts.showsAllDicts) l.printDict();
 				cobasis_ptr cob(l.getCobasis(0));
 				coordinates_ptr sol(l.getVertex());
 				l.pivot(enter, leave);
@@ -201,9 +302,29 @@ namespace basil {
 					
 					cobasis_invariants_ptr newRep(cobasisInvariants(cob, sol));
 					vertex_rep_ptr newVertex(vertexRep(cob, sol));
-					knownVertex(newVertex);
+					vertex_rep_ptr oldVertex(knownVertex(newVertex));
 					
-					//TODO finish me
+					if ( ! oldVertex ) {
+						
+						/* this vertex has yet to be seen */
+						addVertex(newVertex);
+						addCobasis(newRep);
+						workStack.push_back(pivot(oldCob, leave, enter));
+						
+					} else if ( oldVertex->coords == newRep->coords  
+								|| ! opts.dualFacetTrick ) {
+						
+						if ( isNewCobasis(newRep) ) {
+							addCobasis(newRep);
+							workStack.push_back(pivot(oldCob, leave, enter));
+						}
+						
+					} /* else {
+						// we assume that if the new cobasis is defining a 
+						// different vertex, but that vertex is symmetric, then 
+						// its neighbours will be symmetric to those of the 
+						// known vertex. Prune via the dual facet trick.
+					} */
 				}
 			}
 		}
