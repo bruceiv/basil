@@ -2,6 +2,7 @@
 #define _COBASIS_H_
 
 #include <cstdlib>
+#include <functional>
 #include <vector>
 
 #include <boost/dynamic_bitset.hpp>
@@ -15,7 +16,7 @@ namespace lrs {
 	/** Represents a basis or cobasis of the dictionary. For an index set s, 
 	 *  s[i] == true iff index i is included in the basis or cobasis.
 	 */
-	typedef boost::dynamic_bitset index_set;
+	typedef boost::dynamic_bitset<> index_set;
 	
 	/** Iterator to represent an index set as a sequence of indices, rather 
 	 *  than a set of boolean values.
@@ -27,12 +28,8 @@ namespace lrs {
 		
 		/* Uses default copy, etc. constructors */
 		
-		index_set_iter& operator++ () { i = s->find_next(i); }
-		index_set_iter& operator++ (int dummy) {
-			index_set_iter tmp(*this);
-			++(*this);
-			return tmp;
-		}
+		index_set_iter& operator++ () { i = s->find_next(i); return *this; }
+		void operator++ (int dummy) { ++(*this); }
 		
 		ind operator* () { return i; }
 		
@@ -64,13 +61,55 @@ namespace lrs {
 		/** set this iterator is defined on */
 		index_set* s;
 		/** index of last seen value */
-		ind i;
+		std::size_t i;
 	};
 	
 	/** Gets the first iterator for the index set. */
 	index_set_iter begin(index_set& s) { return index_set_iter(&s); }
 	/** Gets the end iterator for the index set. */
 	index_set_iter end(index_set& s) { return index_set_iter(&s, s.npos); }
+	
+	/** Functional to hash an index_set */
+	class index_set_hash : std::unary_function<index_set, std::size_t> {
+	public:
+		/** Hash function for an index set. XOR's the blocks of the set 
+		 *  together, and returns the result.
+		 *  @param s		The set to hash
+		 *  @return the hash value
+		 */
+		std::size_t operator()(index_set const& s) const {
+			/* read the block range into the XOR iterator */
+			boost::to_block_range(s, it);
+			/* return the final value */
+			return it.v.val;
+		}
+		
+	private:
+		/** Output iterator for index set blocks, which stores the XOR'd value 
+		 *  of the blocks as it sees them. */
+		class xor_iter {
+		friend class index_set_hash;
+		private:
+			/** Proxy class that overloads assignment with XOR'ing internal 
+			 *  state. */
+			class xor_val {
+			public:
+				void operator= (index_set::block_type& x) { val ^= x; }
+				
+				std::size_t val;
+			};
+			
+		public:
+			xor_val& operator* () { return v; }
+			xor_iter& operator++ () { return *this; }
+			void operator++(int dummy) {}
+			
+		private:
+			xor_val v;
+		};
+		
+		xor_iter it;
+	};
 	
 	/** Gets a pseudo-random index from an index set. For an index set s, 
 	 *  s.test(pseudoRandomInd(s)) is guaranteed to return true, but no 
@@ -80,7 +119,7 @@ namespace lrs {
 	 */
 	ind pseudoRandomInd(index_set& s) {
 		/* generate a random index in the range [ 0 , s.size() ) */
-		ind randInd = rand() * ( s.size() - 1 ) / RAND_MAX;
+		std::size_t randInd = std::rand() * ( s.size() - 1 ) / RAND_MAX;
 		if ( ! s.test(randInd) ) {
 			/* if this is not an element of the set, find the next element */
 			randInd = s.find_next(randInd);
@@ -98,15 +137,14 @@ namespace lrs {
 	 */
 	struct cobasis {
 		
-		cobasis(mpz_class& det, long ray, index_list& cob, 
-				long totalInc, index_list& extraInc)
-				: det(det), ray(ray), cob(cob), totalInc(totalInc), 
-				extraInc(extraInc) {}
+		cobasis(mpz_class& det, ind ray, index_set& cob, ind totalInc, 
+				index_set& extraInc) : det(det), ray(ray), cob(cob), 
+				totalInc(totalInc), extraInc(extraInc) {}
 		
 		mpz_class det;
-		long ray;
+		ind ray;
 		index_set cob;
-		long totalInc;
+		ind totalInc;
 		index_set extraInc;
 	};
 	

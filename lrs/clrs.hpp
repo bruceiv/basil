@@ -53,7 +53,7 @@ namespace lrs {
 		matrix_t;
 	/** Index type for LRS vector / matrix. */
 	typedef
-		long
+		unsigned long
 		ind;
 		
 		

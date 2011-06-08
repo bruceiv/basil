@@ -81,7 +81,7 @@ namespace basil {
 		return cob;
 	}
 	
-	void dfs::dfsFromRoot(dfs::index_list& root) {
+	void dfs::dfsFromRoot(dfs::index_set& root) {
 		
 		pushNewEdges(root);
 		
@@ -116,21 +116,32 @@ namespace basil {
 					return true;
 				}
 				
-				/* Take the set union into ground */
+				/* Take the set union of the two cobases into ground */
 				index_set ground = rep->cob | old->cob;
 				/* Take the complement of ground into leftOut */
 				index_set leftOut = allIndices - ground;
-								
+				
 				while ( ground.count() < groundSize ) {
-					//take a random left out element and add it to ground
-					ind randInd = pseudoRandomInd(leftOut);
+					/* take a random left out element and add it to ground */
+					ind randInd = lrs::pseudoRandomInd(leftOut);
 					ground.set(randInd, true);
 					leftOut.set(randInd, false);
 				}
 				
+				/* get the set stabilizer of ground */
+				permutation_group_ptr stab = permlib::setStabilizer(
+						g, lrs::begin(ground), lrs::end(ground));
 				
 				
-				//TODO finish me
+				/* look for a permutation in the stabilizer group that maps the 
+				 * incidence set of the cobasis we are trying to find to the 
+				 * incidence set of the known cobasis. */
+				permutation_ptr act = permlib::setImage(
+						*stab, lrs::begin(rep->cob), lrs::end(rep->cob), 
+						lrs::begin(old->cob), lrs::end(old->cob));
+				
+				/* This cobasis is symmetric to one we already know of */
+				if (act) return true;
 			}
 		}
 		
@@ -138,14 +149,9 @@ namespace basil {
 	}
 
 	void dfs::initGlobals() {
-		allIndices = index_set(rows).set(); //an index set with all bits set
-		basisCount = 0;
-		cobasisCache = lru_cache<index_set>(opts.cacheSize);
-		cobasisQueue = std::deque<index_set>();
-		cobasisList = cobasis_invariants_list();
-		rayOrbits = std::vector<vertex_rep_ptr>();
-		vertexOrbits = std::vector<vertex_rep_ptr>();
-		vertexSet = std::set<coordinates>();
+		allIndices.set(); /* set all bits of this index set */
+		cobasisCache.resize(opts.cacheSize); /* resize the cobasis cache to its 
+											  * proper value */
 	}
 	
 	bool dfs::isNewCobasis(dfs::cobasis_invariants_ptr rep) {
@@ -172,13 +178,14 @@ namespace basil {
 				it != rayOrbits.end(); ++it) {
 			
 			/* incidence set to check */
-			index_list& old = (*it)->inc; 
+			index_set& old = (*it)->inc; 
 			
 			/* look for a permutation in the global group that maps the 
 			 * incidence set of the ray we are trying to find to the incidence 
 			 * set of the known ray. */
 			permutation_ptr act = permlib::setImage(
-				g, begin(find), end(find), begin(old), end(old));
+					g, lrs::begin(find), lrs::end(find), 
+					lrs::begin(old), lrs::end(old));
 			
 			/* if such a permuation is found, return the known ray */
 			if (act) return *it;
@@ -212,7 +219,8 @@ namespace basil {
 			 * incidence set of the vertex we are trying to find to the 
 			 * incidence set of the known vertex. */
 			permutation_ptr act = permlib::setImage(
-				g, begin(find), end(find), begin(old), end(old));
+					g, lrs::begin(find), lrs::end(find), 
+					lrs::begin(old), lrs::end(old));
 			
 			/* if such a permuation is found, return the known ray */
 			if (act) return *it;
@@ -234,7 +242,7 @@ namespace basil {
 			
 			cobasis_invariants_ptr old = *it;
 			
-			if ( ! old->det == rep->det ) continue;
+			if ( old->det != rep->det ) continue;
 			
 			/* if we reach here, all invariant checks have passed. */
 			matches.push_back(old);
@@ -243,20 +251,20 @@ namespace basil {
 		return matches;
 	}
 
-	void dfs::pushNewEdges(dfs::index_list& oldCob) {
+	void dfs::pushNewEdges(dfs::index_set& oldCob) {
 		/* TODO add capability for turning off lexOnly option */
 		
-		for (index_list::iterator it = oldCob.begin(); 
-				it != oldCob.end(); ++it) {
+		for (index_set_iter it = lrs::begin(oldCob); 
+				it != lrs::end(oldCob); ++it) {
 			
 			ind leave = *it;
-			index_list entering;
+			index_set entering;
 		
 			ind enter = l.lexRatio(leave);
-			if (enter >= 0) entering.push_back(enter);
+			if (enter >= 0) entering.set(enter);
 			
-			for (index_list::iterator it2 = entering.begin(); 
-					it2 != entering.end(); ++it) {
+			for (index_set_iter it2 = lrs::begin(entering); 
+					it2 != lrs::end(entering); ++it) {
 				
 				enter = *it2;
 				

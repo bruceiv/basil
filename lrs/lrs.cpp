@@ -213,10 +213,11 @@ namespace lrs {
 		ind* facet = Q->facet;
 		ind m = Q->m;
 		ind d = P->d;
+		ind j = nlinearity;
+		index_set_iter k = begin(cob);
 		
-		for (ind j = nlinearity, k = 0; j < d && k < m; j++, k++) {
-			while (! cob.test(k) ) k++;
-			facet[j] = k;
+		for ( ; j < d && k != end(cob); ++j, ++k) {
+			facet[j] = *k;
 			
 			/* check errors */
 			if ( facet[j] < 1 || facet[j] > m ) {

@@ -65,7 +65,10 @@ namespace basil {
 		 * 					provided)
 		 */
 		dfs(matrix& m, permutation_group& g, dfs_opts opts = dfs_opts()) 
-				: l(m), g(g), opts(opts), dim(m.d), rows(m.n) {}
+				: l(m), g(g), opts(opts) { 
+			dim = m.d();
+			rows = m.n();
+		}
 		
 		/** Perform the DFS. */
 		void doDfs();
@@ -79,10 +82,9 @@ namespace basil {
 		typedef lrs::ind ind;
 		
 		typedef lrs::index_set index_set;
-		typedef shared_ptr<index_list> index_list_ptr;
-		using lrs::begin;
-		using lrs::end;
-		using lrs::pseudoRandomInd;
+		typedef shared_ptr<index_set> index_set_ptr;
+		typedef lrs::index_set_iter index_set_iter;
+		typedef lrs::index_set_hash index_set_hash;
 		
 		typedef lrs::cobasis cobasis;
 		typedef shared_ptr<cobasis> cobasis_ptr;
@@ -245,7 +247,7 @@ namespace basil {
 		/** How many bases have been found */
 		ind basisCount;
 		/** Cache of recently seen cobases */
-		lru_cache<index_set> cobasisCache;
+		lru_cache<index_set, index_set_hash> cobasisCache;
 		/** Global list of seen cobases */
 		cobasis_invariants_list cobasisList;
 		/** Search queue for cobases */

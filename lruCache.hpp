@@ -4,21 +4,33 @@
 #include <list>
 
 #include <boost/unordered_map.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace basil {
 	
 	/** Implements a cache with a maximum size and LRU removal semantics.
 	 *  Insertion and lookup should run in O(1) time for the average case.
+	 *  @param T		the type to store in the cache
+	 *  @param Hash		the hash functional to use for the cache (defaults to 
+	 *  				boost::hash\<T\> - note that this default may not be 
+	 *  				defined for all types.)
+	 *  @param Pred		the equality predicate to use for the cache (defaults 
+	 *  				to std::equal_to\<T\> )
+	 *  
 	 *  @author Aaron Moss
 	 */
-	template<typename T>
+	template<
+			typename T, 
+			typename Hash = boost::hash<T>,
+			typename Pred = std::equal_to<T>
+		>
 	class lru_cache {
 	public:
 		/** Constructs a cache of the given size.
 		 *  @param size		The maximum size of the cache (if 0, will be set to 
-		 * 					1)
+		 * 					1 - defaults to 1, but that's a bad choice)
 		 */
-		lru_cache(unsigned long maxSize) : size_(0), 
+		lru_cache(unsigned long maxSize = 1) : size_(0), 
 				maxSize_(maxSize == 0 ? 1 : maxSize) {}
 		
 		/** Inserts an object into the cache. This object will be the 
@@ -28,7 +40,7 @@ namespace basil {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool insert(T const& obj) {
-			map_ptr ptr = cache_.find(obj);
+			map_iter ptr = cache_.find(obj);
 			bool isPresent = ( ptr != cache_.end() );
 			
 			if ( isPresent ) {
@@ -37,12 +49,8 @@ namespace basil {
 				size_--;
 			}
 			
-			if (size_ == maxSize_) {
-				//cache full, remove LRU element
-				cache_.erase(index.front());
-				index_.pop_front();
-				size_--;
-			}
+			//make sure cache doesn't get overfull
+			if (size_ == maxSize_) remove_lru();
 			
 			//put object at tail of use queue
 			index_.push_back(obj);
@@ -58,7 +66,7 @@ namespace basil {
 		 *  @return true if the object is found, false otherwise
 		 */
 		bool lookup(T const& obj) const {
-			map_ptr ptr = cache_.find(obj);
+			map_iter ptr = cache_.find(obj);
 			
 			if ( ptr == cache_.end() ) {
 				//cache miss
@@ -77,7 +85,7 @@ namespace basil {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool remove(T const& obj) {
-			map_ptr ptr = cache_.find(obj);
+			map_iter ptr = cache_.find(obj);
 			
 			if ( ptr == cache_.end() ) {
 				//cache miss
@@ -97,17 +105,36 @@ namespace basil {
 		/** @return the maximum size of the cache */
 		unsigned long maxSize() { return maxSize_; }
 		
+		/** Change the cache's maximum size. If the new maximum is less than 
+		 *  the current number of elements, will remove the least recently used 
+		 *  element until the size is at the new maximum.
+		 *  @param newSize		The new maximum size of the cache. Will be set 
+		 * 						to 1 if 0.
+		 */
+		void resize(unsigned long newSize) {
+			if (newSize == 0) newSize = 1;
+			maxSize_ = newSize;
+			while (size_ > maxSize_) remove_lru();
+		}
+		
 	private:
-		typedef std::list<T> index_list;
-		typedef index_list::iterator val_ptr;
-		typedef boost::unordered_map<T, val_ptr> cache_map;
-		typedef cache_map::iterator map_ptr;
+		typedef typename std::list<T> index_list;
+		typedef typename index_list::iterator val_ptr;
+		typedef typename boost::unordered_map<T, val_ptr, Hash, Pred> cache_map;
+		typedef typename cache_map::iterator map_iter;
+		
+		/** Remove the least recently used element from the cache. */
+		inline void remove_lru() {
+			cache_.erase( index_.front() );
+			index_.pop_front();
+			size_--;
+		}
 		
 		/** Gets the index pointer from a given map pointer.
 		 *  @param mp		The map pointer to return the index from
 		 *  @return the index pointer from that map's value
 		 */
-		inline val_ptr& index(map_ptr& mp) { return mp->second; }
+		inline val_ptr& index(map_iter& mp) { return mp->second; }
 		
 		/** Hashtable based cache implementation */
 		cache_map cache_;
