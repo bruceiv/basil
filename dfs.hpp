@@ -10,6 +10,7 @@
 #include "basilCommon.hpp"
 #include "lruCache.hpp"
 
+#include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
 
 
@@ -77,8 +78,11 @@ namespace basil {
 		
 		typedef lrs::ind ind;
 		
-		typedef lrs::index_list index_list;
+		typedef lrs::index_set index_set;
 		typedef shared_ptr<index_list> index_list_ptr;
+		using lrs::begin;
+		using lrs::end;
+		using lrs::pseudoRandomInd;
 		
 		typedef lrs::cobasis cobasis;
 		typedef shared_ptr<cobasis> cobasis_ptr;
@@ -89,13 +93,13 @@ namespace basil {
 		/** Invariants of a cobasis */
 		struct cobasis_invariants {
 			
-			cobasis_invariants(index_list& cob, index_list& extraInc, 
+			cobasis_invariants(index_set& cob, index_set& extraInc, 
 					coordinates& coords, mpz_class& det)
 					: cob(cob), extraInc(extraInc), coords(coords), det(det)
 					{}
 			
-			index_list cob;
-			index_list extraInc;
+			index_set cob;
+			index_set extraInc;
 			coordinates coords;
 			mpz_class det;
 			ind index;
@@ -106,11 +110,10 @@ namespace basil {
 		/** Vertex representation. */
 		struct vertex_rep {
 			
-			vertex_rep(index_list& inc, coordinates& coords, 
+			vertex_rep(index_set& inc, coordinates& coords, 
 					mpz_class& det) : inc(inc), coords(coords), det(det) {}
 			
-			/* NOTE: should be kept sorted */
-			index_list inc;
+			index_set inc;
 			coordinates coords;
 			mpz_class det;
 		};
@@ -119,11 +122,11 @@ namespace basil {
 		/** Representation of a pivot */
 		struct pivot {
 			
-			pivot(index_list& cob, ind leave, ind enter) 
+			pivot(index_set& cob, ind leave, ind enter) 
 					: cob(cob), leave(leave), enter(enter) {}
 			
 			/** cobasis before pivot */
-			index_list cob;
+			index_set cob;
 			/** leaving index */
 			ind leave;
 			/** entering index */
@@ -157,7 +160,7 @@ namespace basil {
 		 *  the correct dictionary before calling.
 		 *  @param root		The root cobasis to DFS from
 		 */
-		void dfsFromRoot(index_list& root);
+		void dfsFromRoot(index_set& root);
 		
 		/** Finds the rays in the current dictionary. */
 		void getRays();
@@ -200,7 +203,7 @@ namespace basil {
 		/** Add new edges to the search stack.
 		 *  @param oldCob	The cobasis to search for adjacent edges
 		 */
-		void pushNewEdges(index_list& oldCob);
+		void pushNewEdges(index_set& oldCob);
 		
 		/** Gets the ray representation for the given cobasis and 
 		 *  coordinates.
@@ -238,15 +241,15 @@ namespace basil {
 		////////////////////////////////////////////////////////////////////////
 		
 		/** A constant list of all the indices */
-		index_list allIndices;
+		index_set allIndices;
 		/** How many bases have been found */
 		ind basisCount;
 		/** Cache of recently seen cobases */
-		lru_cache<index_list> cobasisCache;
+		lru_cache<index_set> cobasisCache;
 		/** Global list of seen cobases */
 		cobasis_invariants_list cobasisList;
 		/** Search queue for cobases */
-		std::deque<index_list> cobasisQueue;
+		std::deque<index_set> cobasisQueue;
 		/** The first cobasis found */
 		cobasis_invariants_ptr initialCobasis;
 		/** representatives of each orbit (of rays) */

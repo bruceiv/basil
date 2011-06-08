@@ -55,10 +55,6 @@ namespace lrs {
 	typedef
 		long
 		ind;
-	/** Represents a list of indexes */
-	typedef 
-		std::vector<long> 
-		index_list;
 		
 		
 	/* 

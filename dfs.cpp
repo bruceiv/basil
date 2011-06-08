@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cstdlib>
 #include <deque>
 #include <iterator>
 #include <set>
@@ -26,7 +25,7 @@ namespace basil {
 		
 		if (opts.showsAllDicts) l.printDict();
 		
-		index_list cob = dfsFirstBasis()->cob;
+		index_set cob = dfsFirstBasis()->cob;
 		
 		l.setCobasis(cob);
 		
@@ -104,15 +103,8 @@ namespace basil {
 	bool dfs::findSymmetry(dfs::cobasis_invariants_ptr rep, 
 						   dfs::cobasis_invariants_list list) {
 		
-		/* TODO investigate a more efficient method than dynamically 
-		 * constructing the sets in this method - perhaps changing index_list 
-		 * to boost::dynamic_bitset (?) */
-		
-		typedef std::set<long> index_set;
-		
-		index_set cob1(rep->cob.begin(), rep->cob.end());
-		
-		for (ind groundSize = cob1.size()+1; groundSize <= rows; groundSize++) {
+		for (ind groundSize = rep->cob.count()+1; groundSize <= rows; 
+				groundSize++) {
 			
 			for (cobasis_invariants_list::iterator it = list.begin(); 
 					it != list.end(); ++it) {
@@ -124,32 +116,16 @@ namespace basil {
 					return true;
 				}
 				
-				index_set cob2(old->cob.begin(), old->cob.end());
-				
 				/* Take the set union into ground */
-				index_set ground;
-				std::set_union(
-					cob1.begin(), cob1.end(), cob2.begin(), cob2.end(), 
-					std::inserter(ground, ground.begin()));
-				
+				index_set ground = rep->cob | old->cob;
 				/* Take the complement of ground into leftOut */
-				index_set leftOut;
-				std::set_difference(
-					allIndices.begin(), allIndices.end(), 
-					ground.begin(), ground.end(),
-					std::inserter(leftOut, leftOut.begin()));
-				
-				while ( ground.size() < groundSize ) {
+				index_set leftOut = allIndices - ground;
+								
+				while ( ground.count() < groundSize ) {
 					//take a random left out element and add it to ground
-					
-					//NOTE this is a linear time algo in std::vector or 
-					// std::set - suggests using boost::dynamic_bitset
-					
-					ind randInd = rand() * ( leftOut.size() - 1 ) / RAND_MAX;
-					index_set::iterator it = leftOut.begin();
-					while (randInd--) ++it;
-					ground.insert(*it);
-					leftOut.erase(it);
+					ind randInd = pseudoRandomInd(leftOut);
+					ground.set(randInd, true);
+					leftOut.set(randInd, false);
 				}
 				
 				
@@ -162,11 +138,10 @@ namespace basil {
 	}
 
 	void dfs::initGlobals() {
-		allIndices = index_list(rows);
-		for (int i = 1; i <= rows; i++) allIndices.push_back(i);
+		allIndices = index_set(rows).set(); //an index set with all bits set
 		basisCount = 0;
-		cobasisCache = lru_cache<index_list>(opts.cacheSize);
-		cobasisQueue = std::deque<index_list>();
+		cobasisCache = lru_cache<index_set>(opts.cacheSize);
+		cobasisQueue = std::deque<index_set>();
 		cobasisList = cobasis_invariants_list();
 		rayOrbits = std::vector<vertex_rep_ptr>();
 		vertexOrbits = std::vector<vertex_rep_ptr>();
@@ -190,7 +165,7 @@ namespace basil {
 	dfs::vertex_rep_ptr dfs::knownRay(dfs::vertex_rep_ptr rep) {
 		
 		/* incidence set to find */
-		index_list& find = rep->inc;
+		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
 		for (std::vector<vertex_rep_ptr>::iterator it = rayOrbits.begin();
@@ -203,7 +178,7 @@ namespace basil {
 			 * incidence set of the ray we are trying to find to the incidence 
 			 * set of the known ray. */
 			permutation_ptr act = permlib::setImage(
-				g, find.begin(), find.end(), old.begin(), old.end());
+				g, begin(find), end(find), begin(old), end(old));
 			
 			/* if such a permuation is found, return the known ray */
 			if (act) return *it;
@@ -224,20 +199,20 @@ namespace basil {
 		}
 		
 		/* incedence set to find */
-		index_list& find = rep->inc;
+		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
 		for (std::vector<vertex_rep_ptr>::iterator it = vertexOrbits.begin(); 
 				it != vertexOrbits.end(); ++it) {
 			
 			/* incidence set to check */
-			index_list& old = (*it)->inc;
+			index_set& old = (*it)->inc;
 			
 			/* look for a permutation in the global group that maps the 
 			 * incidence set of the vertex we are trying to find to the 
 			 * incidence set of the known vertex. */
 			permutation_ptr act = permlib::setImage(
-				g, find.begin(), find.end(), old.begin(), old.end());
+				g, begin(find), end(find), begin(old), end(old));
 			
 			/* if such a permuation is found, return the known ray */
 			if (act) return *it;
@@ -292,7 +267,7 @@ namespace basil {
 				coordinates_ptr sol(l.getVertex());
 				l.pivot(enter, leave);
 				
-				/*TODO verify with Dr. Bremner that just using the cobasis list 
+				/*TODO verify with Dr. Bremner that just using the cobasis set
 				 * of this is acceptable, rather than the whole record */
 				if ( ! cobasisCache.lookup(cob->cob) ) {
 					
@@ -336,13 +311,9 @@ namespace basil {
 		/* TODO add gramVec option */
 		
 		//concatenate the cobasis and extra incidence of the cobasis invariants
-		index_list inc(cob->cob.size() + cob->extraInc.size());
-		inc.insert(inc.end(), cob->cob.begin(), cob->cob.end());
-		inc.insert(inc.end(), cob->extraInc.begin(), cob->extraInc.end());
+		index_set inc = cob->cob | cob->extraInc;
 		//remove the ray index
-		inc.erase(std::remove(inc.begin(), inc.end(), cob->ray));
-		//and sort the resulting list
-		std::sort(inc.begin(), inc.end());
+		inc.set(cob->ray, false);
 		
 		vertex_rep_ptr rep(
 			new vertex_rep(inc, *coords, cob->det)
@@ -356,11 +327,7 @@ namespace basil {
 		/* TODO lots of stuf in dfs.gap VertexRep() that could be added */
 		
 		//concatenate the cobasis and extra incidence of the cobasis invariants
-		index_list inc(cob->cob.size() + cob->extraInc.size());
-		inc.insert(inc.end(), cob->cob.begin(), cob->cob.end());
-		inc.insert(inc.end(), cob->extraInc.begin(), cob->extraInc.end());
-		//and sort the resulting list
-		std::sort(inc.begin(), inc.end());
+		index_set inc = cob->cob | cob->extraInc;
 		
 		vertex_rep_ptr rep(
 			new vertex_rep(inc, *coords, cob->det)

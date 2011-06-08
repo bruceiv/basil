@@ -88,33 +88,31 @@ namespace lrs {
 		ind m = P->m;
 		
 		ind nIncidence;  /* count number of tight inequalities */
-		ind incCount = 0;
-		ind* extraIncidences = new ind[m];
+		
+		index_set cobInd(m);
+		index_set extraInc(m);
 		
 		for (i = 0; i < d; i++) {
 			if (Col[i] == col) rflag = tempArray[i]; /* look for ray index */
 			
 			tempArray[i] = inequality[C[i] - lastdv];
+			cobInd.set(tempArray[i]);
 		}
 		
 		nIncidence = (col == 0) ? d : d-1;
 		
-		for (i = lastdv+1; i <= m; i++) {
+		for (i = lastdv + 1; i <= m; i++) {
 			if ( zero( A[Row[i]][0] ) ) {
 				if ( (col == 0L) || zero( A[Row[i]][col] ) ) {
-					extraIncidences[incCount] = inequality[B[i] - lastdv];
+					extraInc.set(inequality[B[i] - lastdv]);
 					nIncidence++;
-					incCount++;
 				}
 			}
 		}
 		
 		mpz_class det(P->det);
-		index_list cobInd(tempArray, tempArray + d);
-		index_list extraInc(extraIncidences, extraIncidences + incCount);
 		
 		cobasis* cob = new cobasis(det, rflag, cobInd, nIncidence, extraInc);
-		delete[] extraIncidences;
 		return cob;
 	}
 	
@@ -202,22 +200,23 @@ namespace lrs {
 		if (bas < 0) throw lrs_error("Failed to find basis for pivot.");
 		
 		::pivot(P, Q, bas, cob);
-		update(P, Q, &bas, &cob);
+		::update(P, Q, &bas, &cob);
 	}
 	
 	void lrs::printDict() {
 		printA(P, Q);
 	}
 	
-	void lrs::setCobasis(index_list& cob) {
+	void lrs::setCobasis(index_set& cob) {
 		ind nlinearity = Q->nlinearity;
 		ind* linearity = Q->linearity;
 		ind* facet = Q->facet;
 		ind m = Q->m;
 		ind d = P->d;
 		
-		for (ind j = nlinearity, k = 0; j < d; j++, k++) {
-			facet[j] = cob[k];
+		for (ind j = nlinearity, k = 0; j < d && k < m; j++, k++) {
+			while (! cob.test(k) ) k++;
+			facet[j] = k;
 			
 			/* check errors */
 			if ( facet[j] < 1 || facet[j] > m ) {

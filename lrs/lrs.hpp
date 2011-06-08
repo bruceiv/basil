@@ -99,7 +99,7 @@ namespace lrs {
 		 *  @param cob			The cobasis to set
 		 *  @throw lrs_error on various error conditions
 		 */
-		void setCobasis(index_list& cob);
+		void setCobasis(index_set& cob);
 		
 	private:
 		/** Structure for holding static problem data */
