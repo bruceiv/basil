@@ -3,9 +3,12 @@
 
 #include <cstdlib>
 #include <functional>
+#include <iterator>
 #include <vector>
 
 #include <boost/dynamic_bitset.hpp>
+#include <boost/function_output_iterator.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 
 #include <gmpxx.h>
 
@@ -18,27 +21,15 @@ namespace lrs {
 	 */
 	typedef boost::dynamic_bitset<> index_set;
 	
+	
 	/** Iterator to represent an index set as a sequence of indices, rather 
 	 *  than a set of boolean values.
 	 */
-	class index_set_iter {
+	class index_set_iter 
+			: public boost::iterator_facade<
+					index_set_iter, ind, std::input_iterator_tag, ind> {
 	public:
-		friend index_set_iter begin(index_set& s);
-		friend index_set_iter end(index_set& s);
-		
 		/* Uses default copy, etc. constructors */
-		
-		index_set_iter& operator++ () { i = s->find_next(i); return *this; }
-		void operator++ (int dummy) { ++(*this); }
-		
-		ind operator* () { return i; }
-		
-		bool operator== (index_set_iter const& o)
-			{ return s == o.s && i == o.i; }
-		bool operator!= (index_set_iter const& o)
-			{ return s != o.s || i != o.i; }
-		
-	private:
 		
 		/** Initialize this iterator on the given set with a starting index of 
 		 *  the first one bit in the set. Note that this does not preclude the 
@@ -55,61 +46,72 @@ namespace lrs {
 		 * 					chosen.
 		 */
 		index_set_iter(index_set* s, ind i) : s(s), i(i) { 
-			if ( i < s->size() && ! s->test(i) ) i = s->find_next(i);
+			uind u_i = i;
+			if ( u_i < s->size() && ! s->test(u_i) ) i = s->find_next(u_i);
 		}
+		
+	private:
+		/* required for boost::iterator_facade */
+		friend class boost::iterator_core_access;
+		
+		/** Sets the index to the next set bit. In compliance with 
+		 *  boost::iterator_facade
+		 */
+		void increment()
+			{ i = s->find_next(i); }
+		
+		/** Tests the equality of two iterators. In compliance with 
+		 *  boost::iterator_facade
+		 */
+		bool equal(index_set_iter const& o) const 
+			{ return s == o.s && i == o.i; }
+		
+		/** Returns the index of the current set bit, to allow the bitset to 
+		 *  simulate a list of indices. In compliance with 
+		 *  boost::iterator_facade.
+		 */
+		ind dereference() const 
+			{ return ind(i); }
 		
 		/** set this iterator is defined on */
 		index_set* s;
 		/** index of last seen value */
-		std::size_t i;
+		uind i;
 	};
 	
-	/** Gets the first iterator for the index set. */
-	index_set_iter begin(index_set& s) { return index_set_iter(&s); }
-	/** Gets the end iterator for the index set. */
-	index_set_iter end(index_set& s) { return index_set_iter(&s, s.npos); }
-	
 	/** Functional to hash an index_set */
-	class index_set_hash : std::unary_function<index_set, std::size_t> {
+	class index_set_hash : public std::unary_function<index_set, std::size_t> {
 	public:
 		/** Hash function for an index set. XOR's the blocks of the set 
 		 *  together, and returns the result.
 		 *  @param s		The set to hash
 		 *  @return the hash value
 		 */
-		std::size_t operator()(index_set const& s) const {
+		std::size_t operator() (index_set const& s) const {
+			/* set up the XOR functional */
+			xor_fun x;
 			/* read the block range into the XOR iterator */
-			boost::to_block_range(s, it);
+			boost::to_block_range(s, boost::make_function_output_iterator(x));
 			/* return the final value */
-			return it.v.val;
+			return x.val;
 		}
-		
 	private:
-		/** Output iterator for index set blocks, which stores the XOR'd value 
-		 *  of the blocks as it sees them. */
-		class xor_iter {
-		friend class index_set_hash;
-		private:
-			/** Proxy class that overloads assignment with XOR'ing internal 
-			 *  state. */
-			class xor_val {
-			public:
-				void operator= (index_set::block_type& x) { val ^= x; }
-				
-				std::size_t val;
-			};
-			
+		/** Functor that XOR's its argument with its internal state. */
+		class xor_fun {
 		public:
-			xor_val& operator* () { return v; }
-			xor_iter& operator++ () { return *this; }
-			void operator++(int dummy) {}
+			void operator() (index_set::block_type const& x) { val ^= x; }
 			
-		private:
-			xor_val v;
+			std::size_t val;
 		};
-		
-		xor_iter it;
 	};
+	
+	/** Gets the first iterator for the index set. */
+	static index_set_iter begin(index_set& s) 
+		{ return index_set_iter(&s); }
+	
+	/** Gets the end iterator for the index set. */
+	static index_set_iter end(index_set& s) 
+		{ return index_set_iter(&s, s.npos); }
 	
 	/** Gets a pseudo-random index from an index set. For an index set s, 
 	 *  s.test(pseudoRandomInd(s)) is guaranteed to return true, but no 
@@ -117,9 +119,9 @@ namespace lrs {
 	 *  of the algorithm will be O(size(s)), but more performant algorithms 
 	 *  will be preferred to more mathematically random algorithms.
 	 */
-	ind pseudoRandomInd(index_set& s) {
+	static ind pseudoRandomInd(index_set& s) {
 		/* generate a random index in the range [ 0 , s.size() ) */
-		std::size_t randInd = std::rand() * ( s.size() - 1 ) / RAND_MAX;
+		uind randInd = rand() * ( s.size() - 1 ) / RAND_MAX;
 		if ( ! s.test(randInd) ) {
 			/* if this is not an element of the set, find the next element */
 			randInd = s.find_next(randInd);
@@ -129,7 +131,7 @@ namespace lrs {
 		/* note that this will be biased toward indices with large empty ranges 
 		 * preceding them, and is likely still worst-case linear, but should be 
 		 * acceptably distributed. */
-		return randInd;
+		return ind(randInd);
 	}
 
 	

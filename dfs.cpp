@@ -121,7 +121,7 @@ namespace basil {
 				/* Take the complement of ground into leftOut */
 				index_set leftOut = allIndices - ground;
 				
-				while ( ground.count() < groundSize ) {
+				while ( ground.count() < uind(groundSize) ) {
 					/* take a random left out element and add it to ground */
 					ind randInd = lrs::pseudoRandomInd(leftOut);
 					ground.set(randInd, true);

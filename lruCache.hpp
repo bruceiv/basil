@@ -54,7 +54,7 @@ namespace basil {
 			
 			//put object at tail of use queue
 			index_.push_back(obj);
-			cache_[obj] = index_.back();
+			cache_[obj] = --(index_.end());
 			size_++;
 			
 			return isPresent;
@@ -65,7 +65,7 @@ namespace basil {
 		 *  @param obj		The object to look up
 		 *  @return true if the object is found, false otherwise
 		 */
-		bool lookup(T const& obj) const {
+		bool lookup(T const& obj) {
 			map_iter ptr = cache_.find(obj);
 			
 			if ( ptr == cache_.end() ) {
@@ -75,7 +75,7 @@ namespace basil {
 				//cache hit - touch object
 				index_.erase( index(ptr) );
 				index_.push_back(obj);
-				cache_[obj] = index_.back();
+				cache_.at(obj) = --(index_.end());
 				return true;
 			}
 		}
@@ -92,7 +92,7 @@ namespace basil {
 				return false;
 			} else {
 				//cache hit - remove value
-				cache_.erase(ptr);
+				cache_.quick_erase(ptr);
 				index_.erase( index(ptr) );
 				size_--;
 				return true;

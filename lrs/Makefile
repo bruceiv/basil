@@ -19,4 +19,4 @@ liblrs.a: $(OBJS)
 	$(AR) rcs liblrs.a $(OBJS)
 
 clean:  
-	rm liblrs.a $(OBJS)
+	-rm $(OBJS) liblrs.a

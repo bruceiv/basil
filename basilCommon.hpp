@@ -32,6 +32,10 @@ namespace basil {
 	typedef 
 		lrs::ind
 		ind;
+	/** unsigned version of ind */
+	typedef
+		lrs::uind
+		uind;
 	
 	/** permutation type */
 	typedef 

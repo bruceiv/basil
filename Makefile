@@ -22,11 +22,11 @@ lrs:
 
 # clean generated files
 clean:  
-	rm basil $(OBJS)
+	-rm $(OBJS) basil
 
 # clean all generated files (including libraries and documentation)
 clean_all:  clean clean_doc
-	cd lrs && make clean
+	-cd lrs && make clean
 
 #clean documentation
 clean_doc:  

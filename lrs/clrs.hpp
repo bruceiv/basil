@@ -53,8 +53,14 @@ namespace lrs {
 		matrix_t;
 	/** Index type for LRS vector / matrix. */
 	typedef
-		unsigned long
+		long
 		ind;
+	/** Unsigned index type. Used to better interoperate with the unsigned 
+	 *  indices of boost::dynamic_bitset
+	 */
+	typedef 
+		unsigned long 
+		uind;
 		
 		
 	/* 
