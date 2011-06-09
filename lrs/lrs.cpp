@@ -89,8 +89,8 @@ namespace lrs {
 		
 		ind nIncidence;  /* count number of tight inequalities */
 		
-		index_set cobInd(m);
-		index_set extraInc(m);
+		index_set cobInd(m+1);
+		index_set extraInc(m+1);
 		
 		for (i = 0; i < d; i++) {
 			if (Col[i] == col) rflag = tempArray[i]; /* look for ray index */

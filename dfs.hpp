@@ -95,8 +95,8 @@ namespace basil {
 		/** Invariants of a cobasis */
 		struct cobasis_invariants {
 			
-			cobasis_invariants(index_set& cob, index_set& extraInc, 
-					coordinates& coords, mpz_class& det)
+			cobasis_invariants(index_set cob, index_set extraInc, 
+					coordinates coords, mpz_class det)
 					: cob(cob), extraInc(extraInc), coords(coords), det(det)
 					{}
 			
@@ -112,8 +112,8 @@ namespace basil {
 		/** Vertex representation. */
 		struct vertex_rep {
 			
-			vertex_rep(index_set& inc, coordinates& coords, 
-					mpz_class& det) : inc(inc), coords(coords), det(det) {}
+			vertex_rep(index_set inc, coordinates coords, 
+					mpz_class det) : inc(inc), coords(coords), det(det) {}
 			
 			index_set inc;
 			coordinates coords;
@@ -124,7 +124,7 @@ namespace basil {
 		/** Representation of a pivot */
 		struct pivot {
 			
-			pivot(index_set& cob, ind leave, ind enter) 
+			pivot(index_set cob, ind leave, ind enter) 
 					: cob(cob), leave(leave), enter(enter) {}
 			
 			/** cobasis before pivot */

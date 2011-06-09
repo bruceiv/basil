@@ -149,7 +149,7 @@ namespace basil {
 	}
 
 	void dfs::initGlobals() {
-		allIndices.set(); /* set all bits of this index set */
+		allIndices = index_set(rows+1).set(); /* set all bits of this index set */
 		cobasisCache.resize(opts.cacheSize); /* resize the cobasis cache to its 
 											  * proper value */
 	}
@@ -258,8 +258,8 @@ namespace basil {
 				it != lrs::end(oldCob); ++it) {
 			
 			ind leave = *it;
-			index_set entering;
-		
+			index_set entering(oldCob.size());
+			
 			ind enter = l.lexRatio(leave);
 			if (enter >= 0) entering.set(enter);
 			
