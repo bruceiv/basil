@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	cout << *g << endl;
 	
 	//initialize DFS algorithm NOTE debug mode, no PermLib
-	dfs d(*m, *g, dfs_opts().showAllDicts().assumeNoSymmetry() );
+	dfs d(*m, *g, dfs_opts().showAllDicts() );
 	
 	//run DFS algorithm
 	dfs::results r = d.doDfs();

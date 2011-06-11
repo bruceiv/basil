@@ -61,6 +61,11 @@ namespace basil {
 		shared_ptr<permutation_group>
 		permutation_group_ptr;
 	
+	/** list of permutation type */
+	typedef
+		typename permutation_group::PERMlist
+		permutation_list;
+	
 } /* namespace basil */
 
 #endif /* _BASIL_COMMON_HPP_ */

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <permlib/permlib_api.h>
+#include <permlib/permutation.h>
 
 #include "basilCommon.hpp"
 #include "dfs.hpp"
@@ -49,15 +50,27 @@ namespace basil {
 		o << "}";
 	}
 	
+	void print(std::ostream& o, permutation_list& l) {
+		bool isFirst = true;
+		o << "{";
+		for (permutation_list::const_iterator it = l.begin();
+				it != l.end(); ++it) {
+			if (isFirst) isFirst = false; else o << ", ";
+			o << **it;
+		}
+		o << "}";
+	}
+	
 	std::ostream& operator<< (std::ostream& o, dfs::results& r) {
 		o << "{\n\tdimension: " << r.dimension
 				<< "\n\tinitial cobasis: ";
 		print(o, r.initialCobasis);
-		o << "\n\tsymmetry group: {" << r.symmetryGroup
-				<< "}\n\t# basis orbits: " << r.basisOrbits.size()
-				<< "\n\t# vertex orbits: " << r.vertexOrbits.size()
-				<< "\n\t# ray orbits: " << r.rayOrbits.size()
-				<< "\n}";
+		o << "\n\tsymmetry generators: ";
+		print(o, r.symmetryGroup.S);
+		o << "\n\tbasis orbits #: " << r.basisOrbits.size()
+				<< "\n\tvertex orbits #: " << r.vertexOrbits.size()
+				<< "\n\tray orbits #: " << r.rayOrbits.size()
+				<< "\n}" << std::endl;
 		
 		return o;
 	}
@@ -326,7 +339,7 @@ namespace basil {
 			if (enter >= 0) entering.set(enter);
 			
 			for (index_set_iter it2 = lrs::begin(entering); 
-					it2 != lrs::end(entering); ++it) {
+					it2 != lrs::end(entering); ++it2) {
 				
 				enter = *it2;
 				
