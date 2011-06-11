@@ -10,11 +10,12 @@
 
 #include "basilCommon.hpp"
 #include "dfs.hpp"
-#include "lruCache.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
 #include "lrs/matrix.hpp"
+
+#include "lru/cache.hpp"
 
 namespace basil {
 	

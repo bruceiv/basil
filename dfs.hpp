@@ -14,11 +14,11 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "basilCommon.hpp"
-#include "lruCache.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
 
+#include "lru/cache.hpp"
 
 namespace basil {
 	
@@ -339,7 +339,7 @@ namespace basil {
 		/** How many bases have been found */
 		ind basisCount;
 		/** Cache of recently seen cobases */
-		lru_cache<index_set, index_set_hash> cobasisCache;
+		lru::cache<index_set, index_set_hash> cobasisCache;
 		/** Global list of seen cobases */
 		cobasis_invariants_list cobasisList;
 		/** Search queue for cobases */

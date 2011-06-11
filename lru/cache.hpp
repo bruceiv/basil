@@ -6,7 +6,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
 
-namespace basil {
+namespace lru {
 	
 	/** Implements a cache with a maximum size and LRU removal semantics.
 	 *  Insertion and lookup should run in O(1) time for the average case.
@@ -24,13 +24,13 @@ namespace basil {
 			typename Hash = boost::hash<T>,
 			typename Pred = std::equal_to<T>
 		>
-	class lru_cache {
+	class cache {
 	public:
 		/** Constructs a cache of the given size.
 		 *  @param size		The maximum size of the cache (if 0, will be set to 
 		 * 					1 - defaults to 1, but that's a bad choice)
 		 */
-		lru_cache(unsigned long maxSize = 1) : size_(0), 
+		cache(unsigned long maxSize = 1) : size_(0), 
 				maxSize_(maxSize == 0 ? 1 : maxSize) {}
 		
 		/** Inserts an object into the cache. This object will be the 
@@ -148,6 +148,6 @@ namespace basil {
 			
 	}; /* class lru_cache */
 	
-} /* namespace basil */
+} /* namespace lru */
 
 #endif /* _LRU_CACHE_HPP_ */
