@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <deque>
 #include <iterator>
+#include <ostream>
 #include <set>
 #include <vector>
 
@@ -20,7 +21,7 @@ namespace basil {
 	// Public Members
 	////////////////////////////////////////////////////////////////////////////
 	
-	void dfs::doDfs() {
+	dfs::results dfs::doDfs() {
 		initGlobals();
 		
 		if (opts.showsAllDicts) l.printDict();
@@ -29,7 +30,36 @@ namespace basil {
 		
 		l.setCobasis(cob);
 		
-		dfsFromRoot(cob);
+		bool finished = dfsFromRoot(cob);
+		
+		return results(cobasisList, dim-1, initialCobasis->cob, finished, 
+					   rayOrbits, g, vertexOrbits);
+	}
+	
+	/** Prints a representation of its cobasis (as a set of indices). */
+	void print(std::ostream& o, lrs::index_set const& s) {
+		bool isFirst = true;
+		o << "{";
+		for (lrs::index_set_iter it = lrs::begin(s); 
+			 it != lrs::end(s); 
+			 ++it) {
+			if (isFirst) isFirst = false; else o << ", ";
+			o << *it;
+		}
+		o << "}";
+	}
+	
+	std::ostream& operator<< (std::ostream& o, dfs::results& r) {
+		o << "{\n\tdimension: " << r.dimension
+				<< "\n\tinitial cobasis: ";
+		print(o, r.initialCobasis);
+		o << "\n\tsymmetry group: {" << r.symmetryGroup
+				<< "}\n\t# basis orbits: " << r.basisOrbits.size()
+				<< "\n\t# vertex orbits: " << r.vertexOrbits.size()
+				<< "\n\t# ray orbits: " << r.rayOrbits.size()
+				<< "\n}";
+		
+		return o;
 	}
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -81,11 +111,37 @@ namespace basil {
 		return cob;
 	}
 	
-	void dfs::dfsFromRoot(dfs::index_set& root) {
+	bool dfs::dfsFromRoot(dfs::index_set& root) {
 		
 		pushNewEdges(root);
 		
-		//TODO finish me
+		while ( ! workStack.empty() && opts.basisLimit > basisCount ) {
+			
+			cobasis_ptr dict(l.getCobasis(0));
+			
+			pivot p = workStack.back();
+			workStack.pop_back();
+			
+			while ( dict->cob != p.cob && ! pathStack.empty() ) {
+				
+				pivot btPivot = pathStack.back();
+				pathStack.pop_back();
+				l.pivot(btPivot.leave, btPivot.enter);
+				dict.reset(l.getCobasis(0));
+			}
+			
+			l.pivot(p.leave, p.enter);
+			
+			cobasis_ptr cob(l.getCobasis(0));
+			getRays();
+			pushNewEdges(cob->cob);
+			
+			pathStack.push_back(
+					pivot(index_set(root.size()), p.enter, p.leave) );
+		}
+		
+		/* Did this finish, or terminate at too many bases? */
+		return opts.basisLimit > basisCount;
 	}
 	
 	void dfs::getRays() {
@@ -116,6 +172,8 @@ namespace basil {
 					return true;
 				}
 				
+				if ( opts.assumesNoSymmetry ) continue;
+				
 				/* Take the set union of the two cobases into ground */
 				index_set ground = rep->cob | old->cob;
 				/* Take the complement of ground into leftOut */
@@ -130,15 +188,15 @@ namespace basil {
 				
 				/* get the set stabilizer of ground */
 				permutation_group_ptr stab = permlib::setStabilizer(
-						g, lrs::begin(ground), lrs::end(ground));
+						g, plBegin(ground), plEnd(ground));
 				
 				
 				/* look for a permutation in the stabilizer group that maps the 
 				 * incidence set of the cobasis we are trying to find to the 
 				 * incidence set of the known cobasis. */
 				permutation_ptr act = permlib::setImage(
-						*stab, lrs::begin(rep->cob), lrs::end(rep->cob), 
-						lrs::begin(old->cob), lrs::end(old->cob));
+						*stab, plBegin(rep->cob), plEnd(rep->cob), 
+						plBegin(old->cob), plEnd(old->cob));
 				
 				/* This cobasis is symmetric to one we already know of */
 				if (act) return true;
@@ -174,18 +232,21 @@ namespace basil {
 		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
-		for (std::vector<vertex_rep_ptr>::iterator it = rayOrbits.begin();
+		for (vertex_rep_list::iterator it = rayOrbits.begin();
 				it != rayOrbits.end(); ++it) {
 			
 			/* incidence set to check */
-			index_set& old = (*it)->inc; 
+			index_set& old = (*it)->inc;
+			
+			if ( opts.assumesNoSymmetry ) {
+				if ( find == old ) return *it; else continue;
+			}
 			
 			/* look for a permutation in the global group that maps the 
 			 * incidence set of the ray we are trying to find to the incidence 
 			 * set of the known ray. */
 			permutation_ptr act = permlib::setImage(
-					g, lrs::begin(find), lrs::end(find), 
-					lrs::begin(old), lrs::end(old));
+					g, plBegin(find), plEnd(find), plBegin(old), plEnd(old));
 			
 			/* if such a permuation is found, return the known ray */
 			if (act) return *it;
@@ -205,11 +266,13 @@ namespace basil {
 			return rep;
 		}
 		
+		if ( opts.assumesNoSymmetry ) return vertex_rep_ptr();
+		
 		/* incedence set to find */
 		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
-		for (std::vector<vertex_rep_ptr>::iterator it = vertexOrbits.begin(); 
+		for (vertex_rep_list::iterator it = vertexOrbits.begin(); 
 				it != vertexOrbits.end(); ++it) {
 			
 			/* incidence set to check */
@@ -219,8 +282,7 @@ namespace basil {
 			 * incidence set of the vertex we are trying to find to the 
 			 * incidence set of the known vertex. */
 			permutation_ptr act = permlib::setImage(
-					g, lrs::begin(find), lrs::end(find), 
-					lrs::begin(old), lrs::end(old));
+					g, plBegin(find), plEnd(find), plBegin(old), plEnd(old));
 			
 			/* if such a permuation is found, return the known ray */
 			if (act) return *it;

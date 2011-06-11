@@ -18,18 +18,18 @@ int main(int argc, char **argv) {
 	
 	//read in & print matrix
 	matrix_ptr m(genMatrixFromStream(cin));
-	
 	cout << *m << endl;
 	
 	//read in & print permutation group
 	permutation_group_ptr g(genPermutationGroupFromStream(cin, *m));
 	cout << *g << endl;
 	
-	//initialize DFS algorithm
-	dfs d(*m, *g, dfs_opts().showAllDicts() );
+	//initialize DFS algorithm NOTE debug mode, no PermLib
+	dfs d(*m, *g, dfs_opts().showAllDicts().assumeNoSymmetry() );
 	
 	//run DFS algorithm
-	d.doDfs();
+	dfs::results r = d.doDfs();
+	cout << "BEGIN RESULTS\n" << r << "END RESULTS" << endl;
 		
 	return 0;
 }

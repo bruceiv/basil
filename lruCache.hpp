@@ -75,7 +75,7 @@ namespace basil {
 				//cache hit - touch object
 				index_.erase( index(ptr) );
 				index_.push_back(obj);
-				cache_.at(obj) = --(index_.end());
+				cache_[obj] = --(index_.end());
 				return true;
 			}
 		}

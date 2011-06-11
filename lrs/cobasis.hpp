@@ -36,7 +36,7 @@ namespace lrs {
 		 *  possibility that there may be no one bits, in which case the 
 		 *  iterator will point to the end of the series.
 		 */
-		index_set_iter(index_set* s) : s(s), i(s->find_first()) { }
+		index_set_iter(index_set const* s) : s(s), i(s->find_first()) { }
 		
 		/** Initialize this iterator on the given set with a starting index
 		 *  no less than the given index. 
@@ -45,7 +45,7 @@ namespace lrs {
 		 * 					does not mark a value, the next such value will be 
 		 * 					chosen.
 		 */
-		index_set_iter(index_set* s, ind i) : s(s), i(i) { 
+		index_set_iter(index_set const* s, uind i) : s(s), i(i) { 
 			uind u_i = i;
 			if ( u_i < s->size() && ! s->test(u_i) ) i = s->find_next(u_i);
 		}
@@ -74,7 +74,7 @@ namespace lrs {
 			{ return ind(i); }
 		
 		/** set this iterator is defined on */
-		index_set* s;
+		index_set const* s;
 		/** index of last seen value */
 		uind i;
 	};
@@ -106,11 +106,11 @@ namespace lrs {
 	};
 	
 	/** Gets the first iterator for the index set. */
-	static index_set_iter begin(index_set& s) 
+	static index_set_iter begin(index_set const& s) 
 		{ return index_set_iter(&s); }
 	
 	/** Gets the end iterator for the index set. */
-	static index_set_iter end(index_set& s) 
+	static index_set_iter end(index_set const& s) 
 		{ return index_set_iter(&s, s.npos); }
 	
 	/** Gets a pseudo-random index from an index set. For an index set s, 
@@ -133,7 +133,20 @@ namespace lrs {
 		 * acceptably distributed. */
 		return ind(randInd);
 	}
-
+	
+	/** Prints a representation of its cobasis (as a set of indices). */
+// 	static void print(std::ostream& o, index_set const& s) {
+// 		bool isFirst = true;
+// 		o << "{";
+// 		for (index_set_iter it = begin(s); 
+// 			 it != end(s); 
+// 			 ++it) {
+// 			if (isFirst) isFirst = false; else o << ", ";
+// 			o << *it;
+// 		}
+// 		o << "}";
+// 	}
+	
 	
 	/** Stores a cobasis and related information.
 	 */
@@ -150,6 +163,6 @@ namespace lrs {
 		index_set extraInc;
 	};
 	
-}
+} /* namespace lrs */
 
 #endif /* _COBASIS_H_ */

@@ -2,10 +2,16 @@
 #define _DFS_HPP_
 
 #include <deque>
+#include <functional>
+#include <limits>
+#include <ostream>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <boost/functional.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
 #include "basilCommon.hpp"
 #include "lruCache.hpp"
@@ -32,8 +38,18 @@ namespace basil {
 		
 		/** Default constructor - sets all options to their default value */
 		dfs_opts() 
-				: cacheSize(1000), dualFacetTrick(true), 
-				showsAllDicts(false) {}
+				: assumesNoSymmetry(false), 
+				basisLimit(std::numeric_limits<long>::max()), cacheSize(1000), 
+				dualFacetTrick(true), showsAllDicts(false) {}
+		
+		
+		/** Activates (or deactivates) the assumesNoSymmetry option */
+		dfs_opts& assumeNoSymmetry(bool opt = true)
+			{ assumesNoSymmetry = opt; return *this; }
+		
+		/** Sets the maximum number of bases to be considered */
+		dfs_opts& withBasisLimit(long lim)
+			{ basisLimit = lim; return *this; }
 		
 		/** Sets the size of the cobasis cache */
 		dfs_opts& withCacheSize(long size)
@@ -47,6 +63,13 @@ namespace basil {
 		dfs_opts& showAllDicts(bool opt = true) 
 			{ showsAllDicts = opt; return *this; }
 		
+		
+		/** assumes the given polytope is asymmetric [false]. This is primarily 
+		 *  a debugging option */
+		bool assumesNoSymmetry;
+		/** maximum number of bases to consider [numeric_limits\<long\>::max()] 
+		 */
+		long basisLimit;
 		/** size of the seen cobasis lookup cache [1000] */
 		long cacheSize;
 		/** use the dual facet trick [true] */
@@ -58,39 +81,18 @@ namespace basil {
 	/** Stateful wrapper class for DFS algorithm. */
 	class dfs {
 	public:
-		/** Set up a DFS on the given matrix, with the given permuation group.
-		 *  @param m		The matrix to DFS on
-		 *  @param g		The permutation group of the matrix
-		 *  @param opts		The options for this DFS (default values if not 
-		 * 					provided)
-		 */
-		dfs(matrix& m, permutation_group& g, dfs_opts opts = dfs_opts()) 
-				: l(m), g(g), opts(opts) { 
-			dim = m.d();
-			rows = m.n();
-		}
-		
-		/** Perform the DFS. */
-		void doDfs();
-	
-	private:
 		
 		////////////////////////////////////////////////////////////////////////
-		// Typedefs for internal data types
+		// Typedefs for external data types
 		////////////////////////////////////////////////////////////////////////
+		
+		typedef lrs::vector_mpz coordinates;
+		typedef shared_ptr<coordinates> coordinates_ptr;
 		
 		typedef lrs::ind ind;
 		
 		typedef lrs::index_set index_set;
 		typedef shared_ptr<index_set> index_set_ptr;
-		typedef lrs::index_set_iter index_set_iter;
-		typedef lrs::index_set_hash index_set_hash;
-		
-		typedef lrs::cobasis cobasis;
-		typedef shared_ptr<cobasis> cobasis_ptr;
-		
-		typedef lrs::vector_mpz coordinates;
-		typedef shared_ptr<coordinates> coordinates_ptr;
 		
 		/** Invariants of a cobasis */
 		struct cobasis_invariants {
@@ -120,6 +122,60 @@ namespace basil {
 			mpz_class det;
 		};
 		typedef shared_ptr<vertex_rep> vertex_rep_ptr;
+		typedef std::vector<vertex_rep_ptr> vertex_rep_list;
+		
+		/** Results of the DFS algorithm. */
+		struct results {
+			friend std::ostream& operator<< (std::ostream& o, results& r);
+			
+			
+			results(cobasis_invariants_list basisOrbits, ind dimension, 
+					index_set initialCobasis, bool finished, 
+					vertex_rep_list rayOrbits, permutation_group symmetryGroup, 
+					vertex_rep_list vertexOrbits) 
+					: basisOrbits(basisOrbits), dimension(dimension), 
+					initialCobasis(initialCobasis), finished(finished), 
+					rayOrbits(rayOrbits), symmetryGroup(symmetryGroup), 
+					vertexOrbits(vertexOrbits) {}
+			
+			/* TODO add pseudo-canons */
+			
+			cobasis_invariants_list basisOrbits;
+			ind dimension;
+			index_set initialCobasis;
+			bool finished;
+			vertex_rep_list rayOrbits;
+			permutation_group symmetryGroup;
+			vertex_rep_list vertexOrbits;
+		};
+		
+		/** Set up a DFS on the given matrix, with the given permuation group.
+		 *  @param m		The matrix to DFS on
+		 *  @param g		The permutation group of the matrix
+		 *  @param opts		The options for this DFS (default values if not 
+		 * 					provided)
+		 */
+		dfs(matrix& m, permutation_group& g, dfs_opts opts = dfs_opts()) 
+				: l(m), g(g), opts(opts) { 
+			dim = m.d();
+			rows = m.n();
+		}
+		
+		/** Perform the DFS. */
+		results doDfs();
+	
+	private:
+		
+		////////////////////////////////////////////////////////////////////////
+		// Typedefs for internal data types
+		////////////////////////////////////////////////////////////////////////
+		
+		typedef lrs::index_set_iter index_set_iter;
+		typedef lrs::index_set_hash index_set_hash;
+		
+		typedef lrs::cobasis cobasis;
+		typedef shared_ptr<cobasis> cobasis_ptr;
+		
 		
 		/** Representation of a pivot */
 		struct pivot {
@@ -136,6 +192,41 @@ namespace basil {
 		};
 		typedef shared_ptr<pivot> pivot_ptr;
 		
+		
+		/** Transformation of index_set_iter to provide input to PermLib 
+		 *  properly. The public interfaces to PermLib are zero-indexed, 
+		 *  whereas the I/O operators, rather inconsistently, are one-indexed; 
+		 *  this type provides a suitable wrapper for conversion of a 
+		 *  one-indexed index_set_iter into a zero-indexed iterator to provide 
+		 *  input to PermLib.
+		 */
+		typedef 
+			boost::transform_iterator< 
+// 				decr<index_set_iter::value_type>, 
+				boost::binder2nd<
+					std::minus<index_set_iter::value_type>
+				>,
+				index_set_iter
+			> 
+			pl_index_set_iter;
+		
+		/** Transform of lrs::begin(s) iterator to PermLib zero-index. */
+		pl_index_set_iter plBegin(index_set& s) {
+			return boost::make_transform_iterator(
+					lrs::begin(s), 
+// 					decr<index_set_iter::value_type>() 
+					boost::bind2nd(std::minus<index_set_iter::value_type>(), 1)
+			);
+		}
+		
+		/** Transform of lrs::end(s) iterator to PermLib zero-index. */
+		pl_index_set_iter plEnd(index_set& s) {
+			return boost::make_transform_iterator(
+					lrs::end(s), 
+// 					decr<index_set_iter::value_type>() 
+					boost::bind2nd(std::minus<index_set_iter::value_type>(), 1)
+			);
+		}
 		
 		/** Adds a cobasis to the global list.
 		 *  @param cob		The cobasis to add
@@ -161,8 +252,9 @@ namespace basil {
 		/** DFS from a starting cobasis. Caller is responsible for pivoting to 
 		 *  the correct dictionary before calling.
 		 *  @param root		The root cobasis to DFS from
+		 *  @return did the DFS finish, or terminate because of too many bases?
 		 */
-		void dfsFromRoot(index_set& root);
+		bool dfsFromRoot(index_set& root);
 		
 		/** Finds the rays in the current dictionary. */
 		void getRays();
@@ -254,12 +346,14 @@ namespace basil {
 		std::deque<index_set> cobasisQueue;
 		/** The first cobasis found */
 		cobasis_invariants_ptr initialCobasis;
+		/** Backtracking stack. */
+		std::deque<pivot> pathStack;
 		/** representatives of each orbit (of rays) */
-		std::vector<vertex_rep_ptr> rayOrbits;
+		vertex_rep_list rayOrbits;
 		/** The true dimension of the polytope */
 		ind realDim;
 		/** representatives of each orbit (of vertices) */
-		std::vector<vertex_rep_ptr> vertexOrbits;
+		vertex_rep_list vertexOrbits;
 		/** coordinates found */
 		std::set<coordinates> vertexSet;
 		/** Pivots in the working stack */

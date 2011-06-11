@@ -86,12 +86,12 @@ namespace lrs {
 		{ return a.compare(b) >= 0; }
 	
 	int vector_mpz::compare(vector_mpz const& that) const {
-		val_t t; int s = 0;
-		lrs_alloc_mp(t);
+		mpz_class t; int s = 0;
+		
 		
 		for (ind i = 0; i <= d && i <= that.d; ++i) {
-			mpz_sub(t, v[i], that.v[i]);	// t = v[i] - that.v[i];
-			s = mpz_sgn(t);
+			mpz_sub(t.get_mpz_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
+			/* s = mpz_sgn(t.get_mpz_t()); */ s = sgn(t);
 			if (s != 0) return s;
 		}
 		// if it reaches here, the two are lexicographically equal up to the 
