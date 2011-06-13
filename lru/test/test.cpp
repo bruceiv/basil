@@ -15,7 +15,9 @@ struct F {
 	lru::cache<int> c;
 };
 
-BOOST_FIXTURE_TEST_CASE( testLookup, F ) {
+BOOST_FIXTURE_TEST_SUITE( lru_cache_suite, F )
+
+BOOST_AUTO_TEST_CASE( testLookup ) {
 									/* [2 4 6] */
 	BOOST_CHECK( c.lookup(2) );		/* [4 6 2] */
 	BOOST_CHECK( c.lookup(4) );		/* [6 2 4] */
@@ -23,21 +25,21 @@ BOOST_FIXTURE_TEST_CASE( testLookup, F ) {
 	BOOST_CHECK( ! c.lookup(5) );	/* [2 4 6] */
 }
 
-BOOST_FIXTURE_TEST_CASE( testInsert, F ) {
+BOOST_AUTO_TEST_CASE( testInsert ) {
 									/* [2 4 6] */
 	BOOST_CHECK( ! c.lookup(7) );	/* [2 4 6] */
 	BOOST_CHECK( ! c.insert(7) );	/* [2 4 6 7] */
 	BOOST_CHECK( c.lookup(7) );		/* [2 4 6 7] */
 }
 
-BOOST_FIXTURE_TEST_CASE( testRemove, F ) {
+BOOST_AUTO_TEST_CASE( testRemove ) {
 									/* [2 4 6] */
 	BOOST_CHECK( c.lookup(2) );		/* [4 6 2] */
 	BOOST_CHECK( c.remove(2) );		/* [4 6] */
 	BOOST_CHECK( ! c.lookup(2) );	/* [4 6] */
 }
 
-BOOST_FIXTURE_TEST_CASE( testOverflow, F ) {
+BOOST_AUTO_TEST_CASE( testOverflow ) {
 									/* [2 4 6] */
 	BOOST_CHECK( c.lookup(6) );		/* [2 4 6] */
 	BOOST_CHECK( ! c.insert(3) );	/* [2 4 6 3] */
@@ -53,3 +55,5 @@ BOOST_FIXTURE_TEST_CASE( testOverflow, F ) {
 	BOOST_CHECK( c.lookup(4) );		/* [4 1 2 3 4] */
 	BOOST_CHECK( c.lookup(5) );		/* [1 2 3 4 5] */
 }
+
+BOOST_AUTO_TEST_SUITE_END() /* lru_cache_suite */

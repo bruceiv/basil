@@ -134,19 +134,6 @@ namespace lrs {
 		return ind(randInd);
 	}
 	
-	/** Prints a representation of its cobasis (as a set of indices). */
-// 	static void print(std::ostream& o, index_set const& s) {
-// 		bool isFirst = true;
-// 		o << "{";
-// 		for (index_set_iter it = begin(s); 
-// 			 it != end(s); 
-// 			 ++it) {
-// 			if (isFirst) isFirst = false; else o << ", ";
-// 			o << *it;
-// 		}
-// 		o << "}";
-// 	}
-	
 	
 	/** Stores a cobasis and related information.
 	 */

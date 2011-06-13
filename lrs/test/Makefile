@@ -10,6 +10,6 @@ LDFLAGS = -lboost_unit_test_framework
 
 
 test:  test.out ../cache.hpp
-	@echo "*** LRU cache test ***"
+	@echo "*** LRS wrapper test ***"
 	@./test.out
 	@rm test.out

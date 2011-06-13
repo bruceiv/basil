@@ -30,6 +30,8 @@ namespace basil {
 		
 		index_set cob = dfsFirstBasis()->cob;
 		
+		/* for syncing LRS to the cobasis that was passed in (TODO implement 
+		 * pass in) */
 		l.setCobasis(cob);
 		
 		bool finished = dfsFromRoot(cob);
@@ -148,7 +150,7 @@ namespace basil {
 			
 			cobasis_ptr cob(l.getCobasis(0));
 			getRays();
-			pushNewEdges(cob->cob);
+			pushNewEdges(cob->cob); /* add new edges to workStack */
 			
 			pathStack.push_back(
 					pivot(index_set(root.size()), p.enter, p.leave) );
@@ -337,7 +339,7 @@ namespace basil {
 			index_set entering(oldCob.size());
 			
 			ind enter = l.lexRatio(leave);
-			if (enter >= 0) entering.set(enter);
+			if (enter >= 0) entering.set(enter); else continue;
 			
 			for (index_set_iter it2 = lrs::begin(entering); 
 					it2 != lrs::end(entering); ++it2) {
