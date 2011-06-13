@@ -8,7 +8,7 @@ LDFLAGS = -lboost_unit_test_framework
 
 .PHONY:  clean test
 
-test:  test.out
+test:  test.out ../cache.hpp
 	@echo "*** LRU cache test ***"
 	@./test.out
 

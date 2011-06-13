@@ -2,6 +2,7 @@
 #define _LRU_CACHE_HPP_
 
 #include <list>
+#include <memory>
 
 #include <boost/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
@@ -16,13 +17,16 @@ namespace lru {
 	 *  				defined for all types.)
 	 *  @param Pred		the equality predicate to use for the cache (defaults 
 	 *  				to std::equal_to\<T\> )
+	 *  @param Alloc	the allocator to use in the hash (defaults to 
+	 *  				std::allocator\<T\> )
 	 *  
 	 *  @author Aaron Moss
 	 */
 	template<
 			typename T, 
 			typename Hash = boost::hash<T>,
-			typename Pred = std::equal_to<T>
+			typename Pred = std::equal_to<T>,
+			typename Alloc = std::allocator<T>
 		>
 	class cache {
 	public:
@@ -118,10 +122,18 @@ namespace lru {
 		}
 		
 	private:
-		typedef typename std::list<T> index_list;
-		typedef typename index_list::iterator val_ptr;
-		typedef typename boost::unordered_map<T, val_ptr, Hash, Pred> cache_map;
-		typedef typename cache_map::iterator map_iter;
+		typedef 
+			typename std::list<T, Alloc> 
+			index_list;
+		typedef 
+			typename index_list::iterator 
+			val_ptr;
+		typedef 
+			typename boost::unordered_map<T, val_ptr, Hash, Pred, Alloc> 
+			cache_map;
+		typedef 
+			typename cache_map::iterator 
+			map_iter;
 		
 		/** Remove the least recently used element from the cache. */
 		inline void remove_lru() {
