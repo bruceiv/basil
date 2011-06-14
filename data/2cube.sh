@@ -1,2 +1,2 @@
 #!/bin/bash
-cat 2cube.txt 2cube-reflections.txt | ../basil
+cat 2cube.txt 2cube-allSym.txt | ../basil

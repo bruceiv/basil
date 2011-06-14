@@ -141,30 +141,6 @@ namespace basil {
 		typedef shared_ptr<vertex_rep> vertex_rep_ptr;
 		typedef std::vector<vertex_rep_ptr> vertex_rep_list;
 		
-		/** Results of the DFS algorithm. */
-		struct results {
-			friend std::ostream& operator<< (std::ostream& o, results& r);
-			
-			
-			results(cobasis_invariants_list basisOrbits, ind dimension, 
-					index_set initialCobasis, bool finished, 
-					vertex_rep_list rayOrbits, permutation_group symmetryGroup, 
-					vertex_rep_list vertexOrbits) 
-					: basisOrbits(basisOrbits), dimension(dimension), 
-					initialCobasis(initialCobasis), finished(finished), 
-					rayOrbits(rayOrbits), symmetryGroup(symmetryGroup), 
-					vertexOrbits(vertexOrbits) {}
-			
-			/* TODO add pseudo-canons */
-			
-			cobasis_invariants_list basisOrbits;
-			ind dimension;
-			index_set initialCobasis;
-			bool finished;
-			vertex_rep_list rayOrbits;
-			permutation_group symmetryGroup;
-			vertex_rep_list vertexOrbits;
-		};
 		
 		/** Set up a DFS on the given matrix, with the given permuation group.
 		 *  @param m		The matrix to DFS on

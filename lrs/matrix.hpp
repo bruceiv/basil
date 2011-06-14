@@ -51,6 +51,14 @@ namespace lrs {
 		 */
 		friend vector_mpz operator/ (vector_mpz const& v, val_t const& s);
 		
+		/** Prints the vector with space-separated elements inside square 
+		 *  brackets.
+		 *  @param o		The output stream to print on
+		 *  @param v		The vector to print
+		 *  @return the same output stream
+		 */
+		friend std::ostream& operator<< (std::ostream& o, vector_mpz const& v);
+		
 		/** Standard comparison operators. Uses lexicographic comparison to 
 		 *  compare the first vector to the second.
 		 */

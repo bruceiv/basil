@@ -60,6 +60,15 @@ namespace lrs {
 		return u;
 	}
 	
+	std::ostream& operator<< (std::ostream& o, vector_mpz const& v) {
+		o << "[";
+		for (ind i = 0; i <= v.d; i++) {
+			o << " " << mpz_class(v[i]);
+		}
+		o << " ]";
+		return o;
+	}
+	
 	vector_mpz vector_mpz::normalization() const {
 		for (ind i = 0; i <= d; i++) {
 			if (! zero(v[i]) ) return *this / v[i];
