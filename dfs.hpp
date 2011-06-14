@@ -8,6 +8,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/functional.hpp>
@@ -30,6 +31,7 @@ namespace basil {
 		dfs_error(std::string const& whatArg) : runtime_error(whatArg) {}
 	};
 	
+
 	/** Options for DFS algorithm.
 	 *  The default constructor initializes the data members to their default 
 	 *  values, while the methods can be used to modify the options.
@@ -40,7 +42,8 @@ namespace basil {
 		dfs_opts() 
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<long>::max()), cacheSize(1000), 
-				dualFacetTrick(true), lexOnly(false), showsAllDicts(false) {}
+				dualFacetTrick(true), firstCobasis(), lexOnly(false), 
+				showsAllDicts(false) {}
 		
 		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
@@ -58,6 +61,10 @@ namespace basil {
 		/** Deactivates (or activates) the dualFacetTrick option */
 		dfs_opts& noDualFacetTrick(bool opt = true) 
 			{ dualFacetTrick = !opt; return *this; }
+		
+		/** Sets the initial cobasis to DFS from */
+		dfs_opts& withFirstCobasis(shared_ptr<lrs::index_set>& ptr) 
+			{ firstCobasis = ptr; return *this; }
 		
 		/** Activates (or deactivates) the lexOnly option */
 		dfs_opts& withLexOnly(bool opt = true)
@@ -78,6 +85,9 @@ namespace basil {
 		long cacheSize;
 		/** use the dual facet trick [true] */
 		bool dualFacetTrick;
+		/** cobasis to start the search from [null]. If this is not set, the 
+		 *  DFS algorithm will find the first cobasis itself */
+		shared_ptr<lrs::index_set> firstCobasis;
 		/** lexically based pivots only [false]. This is bad and breaks the 
 		 *  algorithm, don't use it */
 		bool lexOnly;
@@ -183,6 +193,8 @@ namespace basil {
 		typedef lrs::cobasis cobasis;
 		typedef shared_ptr<cobasis> cobasis_ptr;
 		
+		typedef std::pair<ind, ind> index_pair;
+		
 		
 		/** Representation of a pivot */
 		struct pivot {
@@ -209,7 +221,6 @@ namespace basil {
 		 */
 		typedef 
 			boost::transform_iterator< 
-// 				decr<index_set_iter::value_type>, 
 				boost::binder2nd<
 					std::minus<index_set_iter::value_type>
 				>,
@@ -221,7 +232,6 @@ namespace basil {
 		pl_index_set_iter plBegin(index_set& s) {
 			return boost::make_transform_iterator(
 					lrs::begin(s), 
-// 					decr<index_set_iter::value_type>() 
 					boost::bind2nd(std::minus<index_set_iter::value_type>(), 1)
 			);
 		}
@@ -230,7 +240,6 @@ namespace basil {
 		pl_index_set_iter plEnd(index_set& s) {
 			return boost::make_transform_iterator(
 					lrs::end(s), 
-// 					decr<index_set_iter::value_type>() 
 					boost::bind2nd(std::minus<index_set_iter::value_type>(), 1)
 			);
 		}
@@ -253,8 +262,8 @@ namespace basil {
 		cobasis_invariants_ptr cobasisInvariants(cobasis_ptr cob, 
 				coordinates_ptr coords);
 		
-		/** Find the first basis for the DFS */
-		cobasis_ptr dfsFirstBasis();
+		/** Find the first vertex for the DFS */
+		index_set dfsFirstBasis();
 		
 		/** DFS from a starting cobasis. Caller is responsible for pivoting to 
 		 *  the correct dictionary before calling.
@@ -354,7 +363,7 @@ namespace basil {
 		/** The first cobasis found */
 		cobasis_invariants_ptr initialCobasis;
 		/** Backtracking stack. */
-		std::deque<pivot> pathStack;
+		std::deque<index_pair> pathStack;
 		/** representatives of each orbit (of rays) */
 		vertex_rep_list rayOrbits;
 		/** The true dimension of the polytope */

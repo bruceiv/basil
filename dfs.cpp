@@ -24,15 +24,21 @@ namespace basil {
 	////////////////////////////////////////////////////////////////////////////
 	
 	dfs::results dfs::doDfs() {
+		/* set up algorithm globals */
 		initGlobals();
 		
+		/* print initial dictionary */
 		if (opts.showsAllDicts) l.printDict();
 		
-		index_set cob = dfsFirstBasis()->cob;
-		
-		/* for syncing LRS to the cobasis that was passed in (TODO implement 
-		 * pass in) */
-		l.setCobasis(cob);
+		/* get initial cobasis / vertex either from options or from LRS */
+		index_set cob;
+		if ( opts.firstCobasis ) {
+			cob = *opts.firstCobasis;
+			/* synchronize LRS with the initial cobasis */
+			l.setCobasis(cob);
+		} else {
+			cob = dfsFirstBasis();
+		}
 		
 		bool finished = dfsFromRoot(cob);
 		
@@ -108,7 +114,7 @@ namespace basil {
 		return cobI;
 	}
 	
-	dfs::cobasis_ptr dfs::dfsFirstBasis() {
+	dfs::index_set dfs::dfsFirstBasis() {
 		
 		if (! l.getFirstBasis() ) 
 			throw dfs_error("LRS failed to find first basis.");
@@ -124,36 +130,50 @@ namespace basil {
 		addVertex(vertexRep(cob, sol));
 		getRays();
 		
-		return cob;
+		return cob->cob;
 	}
 	
 	bool dfs::dfsFromRoot(dfs::index_set& root) {
 		
+		/* Add new vertex representations / cobases adjacent to the root 
+		 * vertex to the work stack */
 		pushNewEdges(root);
 		
+		/* While there are new (up to symmetry) vertices to explore, and the 
+		 * maximum problem size has not been exceeded... */
 		while ( ! workStack.empty() && opts.basisLimit > basisCount ) {
 			
+			/* get the current cobasis */
 			cobasis_ptr dict(l.getCobasis(0));
 			
-			pivot p = workStack.back();
-			workStack.pop_back();
+			/* pop the pivot to the edge to explore off the work stack */
+			pivot p = workStack.back(); workStack.pop_back();
 			
+			/* backtrack LRS to a state consistent with the pivot to make */
 			while ( dict->cob != p.cob && ! pathStack.empty() ) {
 				
-				pivot btPivot = pathStack.back();
-				pathStack.pop_back();
-				l.pivot(btPivot.leave, btPivot.enter);
+				/* get the backtracking pivot off the path stack */
+				index_pair btPivot = pathStack.back(); pathStack.pop_back();
+				/* reverse the pivot */
+				l.pivot(btPivot.second, btPivot.first);
+				/* reset the current cobasis */
 				dict.reset(l.getCobasis(0));
 			}
 			
+			/* pivot to the vertex to explore */
 			l.pivot(p.leave, p.enter);
 			
+			/* get the new cobasis */
 			cobasis_ptr cob(l.getCobasis(0));
+			/* get the new rays */
 			getRays();
-			pushNewEdges(cob->cob); /* add new edges to workStack */
 			
-			pathStack.push_back(
-					pivot(index_set(root.size()), p.enter, p.leave) );
+			/* Add new vertex representations / cobases adjacent to the new 
+			 * vertex to the work stack */
+			pushNewEdges(cob->cob);
+			
+			/* push the pivot just made onto the backtracking stack */
+			pathStack.push_back( index_pair(p.leave, p.enter) );
 		}
 		
 		/* Did this finish, or terminate at too many bases? */
