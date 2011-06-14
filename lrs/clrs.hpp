@@ -102,7 +102,7 @@ namespace lrs {
 	/** nop */
 	static void normalize(val_t& a) { }
 	/** a > 0 */
-	static bool postive(val_t& a) { return mpz_sgn(a) > 0; }
+	static bool positive(val_t& a) { return mpz_sgn(a) > 0; }
 	/** a >= 0 ? 1 : -1 */
 	static int sign(val_t& a) { return mpz_sgn(a) >= 0 ? 1 : -1; }
 	/** c = a - b */

@@ -7,6 +7,8 @@
 #include <new>
 #include <sstream>
 
+#include <gmpxx.h>
+
 #include "clrs.hpp"
 #include "cobasis.hpp"
 #include "lrs.hpp"
@@ -43,6 +45,107 @@ namespace lrs {
 		lrs_free_dic(P, Q);
 		lrs_free_dat(Q);
 		lrs_close_quiet();
+	}
+	
+	index_set lrs::allRatio(ind leave) {
+		
+		/* assign local variable to structures */
+		matrix_t& A = P->A;
+		ind* B = P->B;
+		ind* Row = P->Row;
+		ind* Col = P->Col;
+		ind* minratio = Q->minratio;
+		ind* inequality = Q->inequality;
+		ind m = P->m;
+		ind d = P->d;
+		ind lastdv = Q->lastdv;
+		
+		ind cob, col;
+		
+		
+		if ( (cob = findCob(leave)) < 0 ) 
+			throw lrs_error("Failed to find cobasis for leaving index" + leave);
+		
+		col = Col[cob];
+		
+		ind degencount = 0;
+		
+		for (ind j = lastdv + 1; j <= m; j++) {
+			/* search rows with negative coefficient in dictionary;
+			 * minratio contains indices of min ratio cols */
+			if ( negative(A[Row[j]][col]) ) minratio[degencount++] = j;
+		}
+		
+		mpz_class Nmin, Dmin;
+		
+		ind ratiocol = 0;		/* column being checked, initially rhs */
+		ind start = 0;			/* starting location in minratio array */
+		ind bindex = d + 1;		/* index of next basic variable to consider */
+		ind cindex = 0;			/* index of next cobasic variable to consider */
+		ind basicindex = d;		/* index of basis inverse for current ratio 
+								 * test, except d=rhs test */
+		bool firstTime = true;	/* For ratio test, true on first pass, else 
+								 * false */
+		
+		ind nstart = 0, ndegencount = 0;
+		
+		
+		if ( B[bindex] == basicindex ) { 
+			/* identity col in basis inverse */
+			
+			if ( minratio[start] == bindex ) {
+				/* remove this index, all others stay */
+				start++;
+				degencount--;
+			}
+			bindex++;
+			
+		} else {
+			/* perform ratio test on rhs or column of basis inverse */
+			
+			/* get next ratio column and increment cindex */
+			for (ind j = start; j < start + degencount; j++) {
+				ind i = Row[minratio[j]];	/* i is the row location of the 
+											 * next basic variable */
+				int comp = 1;	/* 1: lhs>rhs; 0: lhs=rhs; -1: lhs<rhs */
+				
+				if (firstTime) {
+					firstTime = false; /* force new min ratio on first time */
+				} else {
+					if ( sgn(Nmin) > 0 || negative( A[i][ratiocol] ) ) {
+						comp = ( sgn(Nmin) < 0 || positive( A[i][ratiocol] ) ) ?
+							comprod( Nmin.get_mpz_t(), A[i][col], 
+									 A[i][ratiocol], Dmin.get_mpz_t() )
+							: -1;
+					} else if ( sgn(Nmin) == 0 && zero( A[i][ratiocol] ) ) {
+						comp = 0;
+					}
+					
+					/* all signs reversed for rhs */
+					if ( ratiocol == 0L ) comp = -comp;
+				}
+				
+				if ( comp == 1 ) { /* new minimum ratio */
+					nstart = j;
+					Nmin = mpz_class( A[i][ratiocol] );
+					Dmin = mpz_class( A[i][col] );
+					ndegencount = 1;
+				} else if ( comp == 0 ) { /* repeated minimum */
+					minratio[nstart + ndegencount++] = minratio[j];
+				}
+			}
+		}
+		
+		degencount = ndegencount;
+		start = nstart;
+		
+		/* prepare return set */
+		index_set rval(m+1);
+		for (ind i = start; i < start + degencount; i++) {
+			rval.set( inequality[ B[minratio[i]] - lastdv ] );
+		}
+		
+		return rval;
 	}
 	
 	ind lrs::findBas(ind enter) {

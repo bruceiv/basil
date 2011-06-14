@@ -38,6 +38,12 @@ namespace lrs {
 		/** destructor */
 		~lrs();
 		
+		/** finds all candidate entering indices for a given leaving index
+		 *  @param leave		The index to leave the dictionary
+		 *  @return the set of indices that may enter the dictionary
+		 */
+		index_set allRatio(ind leave);
+		
 		/** finds the basis for a given entering index.
 		 *  @param enter		The index to enter the active dictionary
 		 *  @return the basis for that index, -1 for none such found

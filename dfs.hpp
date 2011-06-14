@@ -40,7 +40,7 @@ namespace basil {
 		dfs_opts() 
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<long>::max()), cacheSize(1000), 
-				dualFacetTrick(true), showsAllDicts(false) {}
+				dualFacetTrick(true), lexOnly(false), showsAllDicts(false) {}
 		
 		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
@@ -59,6 +59,10 @@ namespace basil {
 		dfs_opts& noDualFacetTrick(bool opt = true) 
 			{ dualFacetTrick = !opt; return *this; }
 		
+		/** Activates (or deactivates) the lexOnly option */
+		dfs_opts& withLexOnly(bool opt = true)
+			{ lexOnly = opt; return *this; }
+		
 		/** Activates (or deactivates) the showsAllDicts option */
 		dfs_opts& showAllDicts(bool opt = true) 
 			{ showsAllDicts = opt; return *this; }
@@ -74,6 +78,9 @@ namespace basil {
 		long cacheSize;
 		/** use the dual facet trick [true] */
 		bool dualFacetTrick;
+		/** lexically based pivots only [false]. This is bad and breaks the 
+		 *  algorithm, don't use it */
+		bool lexOnly;
 		/** show all dictionaries as they are generated [false] */
 		bool showsAllDicts;
 	}; /* struct dfs_opts */

@@ -337,9 +337,14 @@ namespace basil {
 			
 			ind leave = *it;
 			index_set entering(oldCob.size());
+			ind enter;
 			
-			ind enter = l.lexRatio(leave);
-			if (enter >= 0) entering.set(enter); else continue;
+			if (opts.lexOnly) {
+				enter = l.lexRatio(leave);
+				if (enter >= 0) entering.set(enter); else continue;
+			} else {
+				entering = l.allRatio(leave);
+			}
 			
 			for (index_set_iter it2 = lrs::begin(entering); 
 					it2 != lrs::end(entering); ++it2) {
