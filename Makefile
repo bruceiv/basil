@@ -13,7 +13,7 @@ OBJS = dfs.o
 .PHONY:  clean clean_all clean_doc doc lrs
 
 # generate main program
-basil:  main.cpp $(OBJS) lrs
+basil:  lrs $(OBJS) main.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) $(LDFLAGS)
 
 # generate lrs library

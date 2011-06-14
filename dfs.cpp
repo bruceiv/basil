@@ -23,7 +23,7 @@ namespace basil {
 	// Public Members
 	////////////////////////////////////////////////////////////////////////////
 	
-	dfs::results dfs::doDfs() {
+	bool dfs::doDfs() {
 		/* set up algorithm globals */
 		initGlobals();
 		
@@ -31,58 +31,40 @@ namespace basil {
 		if (opts.showsAllDicts) l.printDict();
 		
 		/* get initial cobasis / vertex either from options or from LRS */
-		index_set cob;
-		if ( opts.firstCobasis ) {
-			cob = *opts.firstCobasis;
-			/* synchronize LRS with the initial cobasis */
-			l.setCobasis(cob);
-		} else {
-			cob = dfsFirstBasis();
-		}
+		index_set cob = dfsFirstBasis();
 		
-		bool finished = dfsFromRoot(cob);
+		/* DFS the edge graph, returning whether it successfully completes */
+		return dfsFromRoot(cob);
 		
-		return results(cobasisList, dim-1, initialCobasis->cob, finished, 
-					   rayOrbits, g, vertexOrbits);
+// 		return results(cobasisList, dim-1, initialCobasis->cob, !hitMaxBasis, 
+// 					   rayOrbits, g, vertexOrbits);
 	}
+
+	////////////////////////////////////////////////////////////////////////
+	// Query methods for after completion of doDfs()
+	////////////////////////////////////////////////////////////////////////
 	
-	/** Prints a representation of its cobasis (as a set of indices). */
-	void print(std::ostream& o, lrs::index_set const& s) {
-		bool isFirst = true;
-		o << "{";
-		for (lrs::index_set_iter it = lrs::begin(s); 
-			 it != lrs::end(s); 
-			 ++it) {
-			if (isFirst) isFirst = false; else o << ", ";
-			o << *it;
-		}
-		o << "}";
-	}
+	dfs::cobasis_invariants_list const& dfs::getBasisOrbits() const 
+		{ return cobasisList; }
 	
-	void print(std::ostream& o, permutation_list& l) {
-		bool isFirst = true;
-		o << "{";
-		for (permutation_list::const_iterator it = l.begin();
-				it != l.end(); ++it) {
-			if (isFirst) isFirst = false; else o << ", ";
-			o << **it;
-		}
-		o << "}";
-	}
+	ind dfs::getDimension() const 
+		{ return dim - 1; }
 	
-	std::ostream& operator<< (std::ostream& o, dfs::results& r) {
-		o << "{\n\tdimension: " << r.dimension
-				<< "\n\tinitial cobasis: ";
-		print(o, r.initialCobasis);
-		o << "\n\tsymmetry generators: ";
-		print(o, r.symmetryGroup.S);
-		o << "\n\tbasis orbits #: " << r.basisOrbits.size()
-				<< "\n\tvertex orbits #: " << r.vertexOrbits.size()
-				<< "\n\tray orbits #: " << r.rayOrbits.size()
-				<< "\n}" << std::endl;
-		
-		return o;
-	}
+	dfs::index_set dfs::getInitialCobasis() const 
+		{ return initialCobasis->cob; }
+	
+	bool dfs::isFinished() const 
+		{ return !hitMaxBasis; }
+	
+	dfs::vertex_rep_list const& dfs::getRayOrbits() const 
+		{ return rayOrbits; }
+	
+	permutation_group const& dfs::getSymmetryGroup() const 
+		{ return g; }
+	
+	dfs::vertex_rep_list const& dfs::getVertexOrbits() const 
+		{ return vertexOrbits; }
+	
 	
 	////////////////////////////////////////////////////////////////////////////
 	// Private Members
@@ -90,6 +72,7 @@ namespace basil {
 	
 	void dfs::addCobasis(dfs::cobasis_invariants_ptr cob) {
 		/* TODO lots of stuff in dfs.gap AddCobasis() that could be added */
+		/* TODO see if cob->index is actually ever used ... */
 		
 		cob->index = ++basisCount;
 		cobasisList.push_back(cob);
@@ -116,24 +99,33 @@ namespace basil {
 	
 	dfs::index_set dfs::dfsFirstBasis() {
 		
+		/* get initial solution from LRS */
 		if (! l.getFirstBasis() ) 
 			throw dfs_error("LRS failed to find first basis.");
+		/* print initial solution */
 		if (opts.showsAllDicts) l.printDict();
 		
+		/* go to the initial cobasis, if supplied */
+		if ( opts.firstCobasis ) l.setCobasis( *opts.firstCobasis );
+		
+		/* get true problem dimension */
 		realDim = l.getRealDim();
+		/* add this vertex / cobasis as a representative of its orbit 
+		 * (obviously there aren't any others yet) */
 		cobasis_ptr cob(l.getCobasis(0));
 		coordinates_ptr sol(l.getVertex());
 		cobasis_invariants_ptr rep(cobasisInvariants(cob, sol));
 		
-		initialCobasis = rep;
+		initialCobasis = rep; /* save the initial cobasis */
 		addCobasis(rep);
 		addVertex(vertexRep(cob, sol));
 		getRays();
 		
+		/* return the initial cobasic indices */
 		return cob->cob;
 	}
 	
-	bool dfs::dfsFromRoot(dfs::index_set& root) {
+	bool dfs::dfsFromRoot(basil::dfs::index_set& root) {
 		
 		/* Add new vertex representations / cobases adjacent to the root 
 		 * vertex to the work stack */
@@ -162,6 +154,8 @@ namespace basil {
 			
 			/* pivot to the vertex to explore */
 			l.pivot(p.leave, p.enter);
+			/* print the dictionary pivoted to */
+			if ( opts.showsAllDicts ) l.printDict();
 			
 			/* get the new cobasis */
 			cobasis_ptr cob(l.getCobasis(0));
@@ -177,7 +171,8 @@ namespace basil {
 		}
 		
 		/* Did this finish, or terminate at too many bases? */
-		return opts.basisLimit > basisCount;
+		hitMaxBasis = opts.basisLimit <= basisCount;
+		return ! hitMaxBasis;
 	}
 	
 	void dfs::getRays() {
@@ -195,16 +190,19 @@ namespace basil {
 	bool dfs::findSymmetry(dfs::cobasis_invariants_ptr rep, 
 						   dfs::cobasis_invariants_list list) {
 		
+		/* for each possible size of superset of this cobasis */
 		for (ind groundSize = rep->cob.count()+1; groundSize <= rows; 
 				groundSize++) {
 			
+			/* for each cobasis in the list to check for symmetry */
 			for (cobasis_invariants_list::iterator it = list.begin(); 
 					it != list.end(); ++it) {
 				
+				/* the cobasis to check for symmetry */
 				cobasis_invariants_ptr old = (*it);
 				
 				if ( rep->cob == old->cob ) {
-					//duplicate cobasis
+					/* duplicate cobasis */
 					return true;
 				}
 				
@@ -239,6 +237,7 @@ namespace basil {
 			}
 		}
 		
+		/* no symmetry between this cobasis and any other in the list */
 		return false;
 	}
 
@@ -254,11 +253,14 @@ namespace basil {
 		
 		cobasis_invariants_list possibleMatches = matchingInvariants(rep);
 		
-		/* new by invariants */
+		/* if no known cobasis has invariants matching this one, it's new */
 		if ( possibleMatches.size() == 0 ) return true;
 		
+		/* if a known cobasis (with matching invariants) is symmetric to this 
+		 * one, it's not new */
 		if ( findSymmetry(rep, possibleMatches) ) return false;
 		
+		/* if we can't find a matching cobasis, this one must be new */
 		return true;
 	}
 
@@ -274,6 +276,7 @@ namespace basil {
 			/* incidence set to check */
 			index_set& old = (*it)->inc;
 			
+			/* if we assume no symmetry, simply check for equal cobases */
 			if ( opts.assumesNoSymmetry ) {
 				if ( find == old ) return *it; else continue;
 			}
@@ -296,12 +299,15 @@ namespace basil {
 		
 		/* TODO add gramVec / invariants handling */
 		
+		/* a normalization of this vertex */
 		coordinates norm = rep->coords.normalization();
+		/* if it's already in the set, it's not new */
 		if ( vertexSet.find(norm) != vertexSet.end() ) {
 			/* duplicate vertex */
 			return rep;
 		}
 		
+		/* if we assume no symmetry, it must be new */
 		if ( opts.assumesNoSymmetry ) return vertex_rep_ptr();
 		
 		/* incedence set to find */
@@ -333,16 +339,20 @@ namespace basil {
 		
 		/* TODO lots of stuff in equivalent Symbal code to add */
 		
+		/* list of cobases with matching invariants */
 		cobasis_invariants_list matches;
 		
+		/* for each known cobasis */
 		for (cobasis_invariants_list::iterator it = cobasisList.begin(); 
 				it != cobasisList.end(); ++it) {
 			
 			cobasis_invariants_ptr old = *it;
 			
+			/* skip if they have non-matching determinants */
 			if ( old->det != rep->det ) continue;
 			
-			/* if we reach here, all invariant checks have passed. */
+			/* if we reach here, all invariant checks have passed, add the 
+			 * cobasis to the list, then */
 			matches.push_back(old);
 		}
 		
@@ -350,22 +360,28 @@ namespace basil {
 	}
 
 	void dfs::pushNewEdges(dfs::index_set& oldCob) {
-		/* TODO add capability for turning off lexOnly option */
 		
+		/* for each index in the old cobasis */
 		for (index_set_iter it = lrs::begin(oldCob); 
 				it != lrs::end(oldCob); ++it) {
 			
+			/* the leaving index */
 			ind leave = *it;
+			/* the appropriate entering indices */
 			index_set entering(oldCob.size());
+			/* the entering index */
 			ind enter;
 			
 			if (opts.lexOnly) {
+				/* calculate entering index lexicographically (BAD) */
 				enter = l.lexRatio(leave);
 				if (enter >= 0) entering.set(enter); else continue;
 			} else {
+				/* calculate set of valid entering indices */
 				entering = l.allRatio(leave);
 			}
 			
+			/* for each valid entering index */
 			for (index_set_iter it2 = lrs::begin(entering); 
 					it2 != lrs::end(entering); ++it2) {
 				
@@ -373,33 +389,39 @@ namespace basil {
 				
 				/* Do the given pivot, then get the cobasis for the new edge */
 				l.pivot(leave, enter);
-				if (opts.showsAllDicts) l.printDict();
 				cobasis_ptr cob(l.getCobasis(0));
 				coordinates_ptr sol(l.getVertex());
+				/* pivot back */
 				l.pivot(enter, leave);
 				
-				/*TODO verify with Dr. Bremner that just using the cobasis set
-				 * of this is acceptable, rather than the whole record */
+				/* avoid expensive invariant calculations by caching recently 
+				 * seen cobases (which could be reached from different pivots) 
+				 */
 				if ( ! cobasisCache.lookup(cob->cob) ) {
 					
-					/* if this cobasis is not in the cache, add it and 
-					 * recalculate */
+					/* if this cobasis is not in the cache, add it */
 					cobasisCache.insert(cob->cob);
 					
+					/* calculate invariants of new cobasis */
 					cobasis_invariants_ptr newRep(cobasisInvariants(cob, sol));
 					vertex_rep_ptr newVertex(vertexRep(cob, sol));
 					vertex_rep_ptr oldVertex(knownVertex(newVertex));
 					
 					if ( ! oldVertex ) {
 						
-						/* this vertex has yet to be seen */
+						/* this vertex has yet to be seen, add it */
 						addVertex(newVertex);
 						addCobasis(newRep);
+						/* add this vertex to the search stack */
 						workStack.push_back(pivot(oldCob, leave, enter));
 						
 					} else if ( oldVertex->coords == newRep->coords  
 								|| ! opts.dualFacetTrick ) {
 						
+						/* if this is a new cobasis for a previously seen 
+						 * vertex, and we are not employing the dual facet 
+						 * trick to prune the search tree, add the cobasis to 
+						 * the search stack if it is unique */
 						if ( isNewCobasis(newRep) ) {
 							addCobasis(newRep);
 							workStack.push_back(pivot(oldCob, leave, enter));

@@ -178,9 +178,40 @@ namespace basil {
 			rows = m.n();
 		}
 		
-		/** Perform the DFS. */
-		results doDfs();
-	
+		
+		/** Perform the DFS.
+		 *  @return did the DFS run to completion, or halt because of too many 
+		 *  	bases?
+		 */
+		bool doDfs();
+		
+		////////////////////////////////////////////////////////////////////////
+		// Query methods for after completion of doDfs()
+		////////////////////////////////////////////////////////////////////////
+		
+		/** @return representatives of each of the orbits of the cobases */
+		cobasis_invariants_list const& getBasisOrbits() const;
+		
+		/** @return the dimension of the polytope */
+		ind getDimension() const;
+		
+		/** @return the initial cobasis for the DFS */
+		index_set getInitialCobasis() const;
+		
+		/** @return did the DFS complete (true) or terminate due to too many 
+		 *  	bases (false) */
+		bool isFinished() const;
+		
+		/** @return representatives of each of the orbits of the extreme rays */
+		vertex_rep_list const& getRayOrbits() const;
+		
+		/** @return the symmetry group used in the DFS */
+		permutation_group const& getSymmetryGroup() const;
+		
+		/** @return representatives of each of the orbits of the vertices */
+		vertex_rep_list const& getVertexOrbits() const;
+		
+		
 	private:
 		
 		////////////////////////////////////////////////////////////////////////
@@ -266,9 +297,12 @@ namespace basil {
 		index_set dfsFirstBasis();
 		
 		/** DFS from a starting cobasis. Caller is responsible for pivoting to 
-		 *  the correct dictionary before calling.
+		 *  the correct dictionary before calling. Will set the hitMaxBasis 
+		 *  variable appropriately before returning.
 		 *  @param root		The root cobasis to DFS from
-		 *  @return did the DFS finish, or terminate because of too many bases?
+		 *  @return did the DFS run to completion, or halt because of too many 
+		 *  	bases? (will set hitMaxBasis to the negation of this before 
+		 *  	returning)
 		 */
 		bool dfsFromRoot(index_set& root);
 		
@@ -360,6 +394,8 @@ namespace basil {
 		cobasis_invariants_list cobasisList;
 		/** Search queue for cobases */
 		std::deque<index_set> cobasisQueue;
+		/** If the basis count hit the maximum count */
+		bool hitMaxBasis;
 		/** The first cobasis found */
 		cobasis_invariants_ptr initialCobasis;
 		/** Backtracking stack. */
