@@ -120,16 +120,21 @@ namespace lrs {
 	 *  will be preferred to more mathematically random algorithms.
 	 */
 	static ind pseudoRandomInd(index_set& s) {
-		/* generate a random index in the range [ 0 , s.size() ) */
-		uind randInd = rand() * ( s.size() - 1 ) / RAND_MAX;
+		/* The first index set */
+		uind firstInd = s.find_first();
+		/* The number of set indices that are possibly set */
+		uind setSize = s.size() - firstInd;
+		
+		/* generate a random index in the range [ firstInd , s.size() ) */
+		uind randInd = firstInd + ( rand() * ( setSize - 1 ) / RAND_MAX );
 		if ( ! s.test(randInd) ) {
 			/* if this is not an element of the set, find the next element */
 			randInd = s.find_next(randInd);
-			/* if this overflowed the set, find the first element */
-			if ( randInd >= s.size() ) randInd = s.find_first();
+			/* if this overflowed the set, use first element */
+			if ( randInd >= s.size() ) randInd = firstInd;
 		}
 		/* note that this will be biased toward indices with large empty ranges 
-		 * preceding them, and is likely still worst-case linear, but should be 
+		 * preceding them, and is still worst-case linear, but should be 
 		 * acceptably distributed. */
 		return ind(randInd);
 	}

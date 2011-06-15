@@ -87,10 +87,15 @@ extern "C" {
 /*  + = remains invariant   * = indices may be permuted ? = swapped by pivot  */
 /*                                                                            */
 /*  m = number of input rows   n= number of input columns                     */
+/*                                                                            */
 /*  input dimension inputd = n-1 (H-rep) or n (V-rep)                         */
+/*                                                                            */
 /*  lastdv = inputd-nredundcol  (each redundant column removes a dec. var)    */
-/*  working dimension d=lastdv-nlinearity (an input linearity removes a slack) */
+/*                                                                            */
+/*  working dimension d=lastdv-nlinearity (an input linearity removes a slack)*/
+/*                                                                            */
 /*  obj function in row 0, index 0=B[0]  col 0 has index m+d+1=C[d]           */
+/*                                                                            */
 /*  H-rep: b-vector in col 0, A matrix in columns 1..n-1                      */
 /*  V-rep: col 0 all zero, b-vector in col 1, A matrix in columns 1..n        */
 /******************************************************************************/
@@ -98,14 +103,14 @@ extern "C" {
 typedef struct lrs_dic_struct	/* dynamic dictionary data */
   {
     lrs_mp_matrix A;
-    long m;			/* A has m+1 rows, row 0 is cost row            */
-    long m_A;           	/* =m or m-d if nonnegative flag set            */
-    long d;			/* A has d+1 columns, col 0 is b-vector         */
+    long m;				/* A has m+1 rows, row 0 is cost row            */
+    long m_A;           /* =m or m-d if nonnegative flag set            */
+    long d;				/* A has d+1 columns, col 0 is b-vector         */
     long d_orig;		/* value of d as A was allocated  (E.G.)        */
     long lexflag;		/* true if lexmin basis for this vertex         */
     long depth;			/* depth of basis/vertex in reverse search tree */
     long i, j;			/* last pivot row and column pivot indices      */
-    lrs_mp det;                 /* current determinant of basis                 */
+    lrs_mp det;			/* current determinant of basis                 */
     lrs_mp objnum;		/* objective numerator value                    */
     lrs_mp objden;		/* objective denominator value                  */
     long *B, *Row;		/* basis, row location indices                  */
@@ -116,8 +121,8 @@ lrs_dic;
 
 typedef struct lrs_dat		/* global problem data   */
   {
-    lrs_mp_vector Gcd;		/* Gcd of each row of numerators               */
-    lrs_mp_vector Lcm;		/* Lcm for each row of input denominators      */
+    lrs_mp_vector Gcd;	/* Gcd of each row of numerators                */
+    lrs_mp_vector Lcm;	/* Lcm for each row of input denominators       */
 
     lrs_mp sumdet;		/* sum of determinants                          */
     lrs_mp Nvolume;		/* volume numerator                             */
@@ -125,9 +130,9 @@ typedef struct lrs_dat		/* global problem data   */
     lrs_mp boundn;		/* objective bound numerator                    */
     lrs_mp boundd;		/* objective bound denominator                  */
     long unbounded;		/* lp unbounded */
-    char fname[100];		/* input file name from line 1 of input         */
+    char fname[100];	/* input file name from line 1 of input         */
 
-    long *inequality;		/* indices of inequalities corr. to cobasic ind */
+    long *inequality;	/* indices of inequalities corr. to cobasic ind */
     /* initially holds order used to find starting  */
     /* basis, default: m,m-1,...,2,1                */
     long *facet;		/* cobasic indices for restart in needed        */

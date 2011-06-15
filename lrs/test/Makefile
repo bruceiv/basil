@@ -9,7 +9,7 @@ LDFLAGS = -lboost_unit_test_framework
 .PHONY:  test
 
 
-test:  test.out ../cache.hpp
+test:  test.out ../cobasis.hpp
 	@echo "*** LRS wrapper test ***"
 	@./test.out
 	@rm test.out

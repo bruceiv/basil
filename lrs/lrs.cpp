@@ -155,7 +155,7 @@ namespace lrs {
 		ind *B = P->B;
 		ind m = P->m;
 		
-		for (j = 0; j < m && inequality[ B[j]-lastdv ] != enter; j++);
+		for (j = lastdv+1; j <= m && inequality[ B[j]-lastdv ] != enter; j++);
 		
 		return (inequality[ B[j]-lastdv ] != enter) ? -1 : j;
 	}

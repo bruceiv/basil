@@ -34,7 +34,7 @@ namespace lru {
 		 *  @param size		The maximum size of the cache (if 0, will be set to 
 		 * 					1 - defaults to 1, but that's a bad choice)
 		 */
-		cache(unsigned long maxSize = 1) : size_(0), 
+		cache(unsigned long maxSize = 1) : cache_(), index_(), size_(0), 
 				maxSize_(maxSize == 0 ? 1 : maxSize) {}
 		
 		/** Inserts an object into the cache. This object will be the 

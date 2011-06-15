@@ -224,7 +224,6 @@ namespace basil {
 				permutation_group_ptr stab = permlib::setStabilizer(
 						g, plBegin(ground), plEnd(ground));
 				
-				
 				/* look for a permutation in the stabilizer group that maps the 
 				 * incidence set of the cobasis we are trying to find to the 
 				 * incidence set of the known cobasis. */
@@ -235,6 +234,9 @@ namespace basil {
 				/* This cobasis is symmetric to one we already know of */
 				if (act) return true;
 			}
+			
+			/* only check the cobases once if assuming no symmetry */
+			if ( opts.assumesNoSymmetry ) break;
 		}
 		
 		/* no symmetry between this cobasis and any other in the list */
@@ -242,9 +244,10 @@ namespace basil {
 	}
 
 	void dfs::initGlobals() {
-		allIndices = index_set(rows+1).set(); /* set all bits of this index set */
-		cobasisCache.resize(opts.cacheSize); /* resize the cobasis cache to its 
-											  * proper value */
+		/* represents the set [1..rows] */
+		allIndices = index_set(rows+1).set().set(0, false);
+		/* resize the cobasis cache to its proper size */
+		cobasisCache.resize(opts.cacheSize);
 	}
 	
 	bool dfs::isNewCobasis(dfs::cobasis_invariants_ptr rep) {

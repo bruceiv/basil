@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "basilCommon.hpp"
 #include "dfs.hpp"
@@ -64,24 +65,86 @@ std::ostream& operator<< (std::ostream& o, dfs::vertex_rep_list const& l) {
 	return o;
 }
 
+namespace basil {
+	/** Contains runtime custimizations for basil
+	 */
+	class opts {
+	public:
+		/** Default constructor. Equivalent to calling iterator constructor with an 
+		*  empty iterator */
+		opts() {}
+		
+		/** Iterator constructor; parses program arguments.
+		*  Arguments are expected in the following format:
+		*  	./basil [ matIn [grpIn] ]
+		*  
+		*  matIn: the name of the matrix input file [default: standard input]
+		*  grpIn: the name of the permutation group input file [default: matIn]
+		*  
+		*  @param begin	The beginning iterator for the list of arguments
+		*  @param end		The end iterator for the list of arguments
+		*  @param Iter		the type of the options iterator
+		*/
+		template <typename Iter>
+		opts(Iter begin, Iter end) {
+			/* consume program name */
+			if (begin != end) ++begin;
+			
+			/* parse matrix file name */
+			if (begin != end) {
+				matFile.open(*begin);
+				++begin;
+			}
+			
+			/* parse group file name */
+			if (begin != end) {
+				grpFile.open(*begin);
+				++begin;
+			}
+		}
+		
+		/** Destructor. */
+		~opts() {
+			if ( grpFile.is_open() ) grpFile.close();
+			if ( matFile.is_open() ) matFile.close();
+		}
+		
+		/** get the input stream for the matrix */
+		std::istream& matIn() 
+			{ return matFile.is_open() ? matFile : std::cin; }
+		
+		std::istream& grpIn()
+			{ return grpFile.is_open() ? grpFile : matIn(); }
+		
+	private:
+		/** Matrix input stream */
+		std::ifstream matFile;
+		/** Group input stream */
+		std::ifstream grpFile;
+	}; /* class opts */
+} /* namespace basil */
+
+
 /** Simple test driver for basil.
  *  Accepts a matrix and permutation_group on standard input, generating them 
  *  using genMatrixFromStream() and genPermutationGroupFromStream().
  */
 int main(int argc, char **argv) {
-	std::istream& cin = std::cin;
+	/* parse command line arguments */
+	opts o(argv, argv+argc);
+	
 	std::ostream& cout = std::cout;
 	std::ostream& (*endl)(std::ostream&) = std::endl;
 	
 	//read in & print matrix
-	matrix_ptr m(genMatrixFromStream(cin));
+	matrix_ptr m(genMatrixFromStream( o.matIn() ));
 	cout << *m << endl;
 	
 	//read in & print permutation group
-	permutation_group_ptr g(genPermutationGroupFromStream(cin, *m));
+	permutation_group_ptr g(genPermutationGroupFromStream(o.grpIn(), *m));
 	cout << *g << endl;
 	
-	//initialize DFS algorithm NOTE debug mode, no PermLib
+	//initialize DFS algorithm NOTE debug mode
 	dfs d(*m, *g, dfs_opts().showAllDicts() );
 	
 	//run DFS algorithm
