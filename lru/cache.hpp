@@ -39,12 +39,13 @@ namespace lru {
 					/* with primary index a hash table with the given hash 
 					 * function and equality predicate, tagged hash_lookup */
 					boost::multi_index::hashed_unique<
-						/* boost::multi_index::tag<hash_lookup>,*/
+						/* boost::multi_index::tag<hash_lookup>, */
 						boost::multi_index::identity<T>,
 						Hash,
 						Pred
 					>,
-					/* and with secondary index an insertion-order list */
+					/* with secondary index an insertion-order list, tagged 
+					 * lru_list */
 					boost::multi_index::sequenced<
 						boost::multi_index::tag<lru_list>
 					>
@@ -52,27 +53,33 @@ namespace lru {
 			>
 			cache_map;
 		
+		
 		typedef
 			typename cache_map::iterator
 			hash_iterator;
 		
-		/*
-		typedef 
-			typename cache_map::template index<hash_lookup>::type
-			hash_view;
-		
 		typedef
-			typename hash_view::iterator
-			hash_iterator;
-		*/
-		
-		typedef
-			typename cache_map::template index<lru_list>::type
-			list_view;
-		
-		typedef
-			typename list_view::iterator
+			typename cache_map::template index<lru_list>::type::iterator
 			list_iterator;
+		
+		typedef
+			hash_iterator
+			primary_iterator;
+		
+		/*
+		typedef
+			typename cache_map::template index<hash_lookup>::type::iterator
+			hash_iterator;
+		
+		
+		typedef
+			typename cache_map::iterator
+			list_iterator;
+		
+		typedef
+			list_iterator
+			primary_iterator;
+		*/
 		
 	public:
 		
@@ -81,6 +88,7 @@ namespace lru {
 		/** Cache iterator type. Iterates from least recently used to most 
 		 *  recently used type. */
 		typedef list_iterator iterator;
+		/* typedef typename cache_map::reverse_iterator iterator; */
 		
 		/** Constructs a cache of the given size.
 		 *  @param size		The maximum size of the cache (default 0)
@@ -94,7 +102,7 @@ namespace lru {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool insert(T const& obj) {
-			std::pair<hash_iterator, bool> p = cache_.insert(obj);
+			std::pair<primary_iterator, bool> p = add(obj);
 			
 			if (p.second) {
 				/* Cache miss - item was not already in cache. 
@@ -116,11 +124,9 @@ namespace lru {
 		 *  @return true if the object is found, false otherwise
 		 */
 		bool lookup(T const& obj) {
-			//hash_view h = cache_.template get<hash_lookup>();
-			//hash_iterator p = h.find(obj);
-			hash_iterator p = cache_.find(obj);
+			hash_iterator p = find(obj);
 			
-			if ( p == cache_.end() ) {
+			if ( invalid(p) ) {
 				/* cache miss */
 				return false;
 			} else {
@@ -135,14 +141,14 @@ namespace lru {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool remove(T const& obj) {
-			hash_iterator p = cache_.find(obj);
+			hash_iterator p = find(obj);
 			
-			if ( p == cache_.end() ) {
+			if ( invalid(p) ) {
 				/* cache miss */
 				return false;
 			} else {
 				/* cache hit - remove value */
-				cache_.erase(p);
+				erase(p);
 				return true;
 			}
 		}
@@ -150,47 +156,82 @@ namespace lru {
 		/** Gets the beginning iterator (points to the least recently used 
 		 *  item). Iteration using this iterator will not modify the use order 
 		 *  of the cache. */
-		iterator begin() { return cache_.template get<lru_list>().begin(); }
+		iterator begin() const { 
+			return cache_.template get<lru_list>().begin();
+			/* return cache_.rbegin(); */
+		}
 		
 		/** Gets the ending iterator (points just past the most recently used 
 		 *  item). Iteration using this iterator will not modify the use order 
 		 *  of the cache. */
-		iterator end() { return cache_.template get<lru_list>().end(); }
+		iterator end() const { 
+			return cache_.template get<lru_list>().end();
+			/* return cache_.rend(); */
+		}
 		
 		/** @return the current size of the cache */
-		unsigned long size() { return cache_.size(); }
+		unsigned long size() const { return cache_.size(); }
 		
 		/** @return the maximum size of the cache */
-		unsigned long maxSize() { return maxSize_; }
+		unsigned long maxSize() const { return maxSize_; }
 		
 		/** Change the cache's maximum size. If the new maximum is less than 
 		 *  the current number of elements, will remove the least recently used 
 		 *  element until the size is at the new maximum.
-		 *  @param newSize		The new maximum size of the cache. Will be set 
-		 * 						to 1 if 0.
+		 *  @param newSize		The new maximum size of the cache.
 		 */
 		void resize(unsigned long newSize) {
-			if (newSize == 0) newSize = 1;
 			maxSize_ = newSize;
 			while (cache_.size() > maxSize_) eraseLru();
 		}
 		
 	private:
 		
+		/** Adds an item to the cache as most recently used */
+		inline std::pair<primary_iterator, bool> add(T const& obj) {
+			return cache_.insert(obj);
+			/* return cache_.push_front(obj); */
+		}
+		
+		/** Removes the given element from the cache */
+		inline void erase(hash_iterator p) {
+			cache_.erase(p);
+			/* cache_.template get<hash_lookup>().erase(p); */
+		}
+		
 		/** Removes the LRU element from the cache */
 		inline void eraseLru() {
 			cache_.template get<lru_list>().pop_front();
+			/* cache_.pop_back(); */
 		}
+		
+		/** Finds an object in the cache, returning a valid hash iterator if 
+		 *  it is present */
+		inline hash_iterator find(T const& obj) const {
+			return cache_.find(obj);
+			/* return cache_.template get<hash_lookup>().find(obj); */
+		}
+		
+		/** Tests if the given iterator is invalid */
+		inline bool invalid(hash_iterator p) const {
+			return p == cache_.end();
+			/* return p == cache_.template get<hash_lookup>().end(); */
+		}
+		
+		/** Touches the element of the cache given by the given iterator, 
+		 *  making it most recently used. */
+		/* inline void touch(list_iterator p) {
+			touch(cache_.template project<hash_lookup>(p));
+		} */
 		
 		/** Touches the element of the cache given by the given iterator, 
 		 *  making it most recently used. */
 		inline void touch(hash_iterator p) {
 			T v = *p;
-			cache_.erase(p);
-			cache_.insert(v);
-			/* list_view& l = cache_.template get<lru_list>();
-			l.relocate(cache_.template project<lru_list>(p), l.end()); */
+			erase(p);
+			add(v);
 		}
+		
 		
 		/** Hashtable based cache implementation */
 		cache_map cache_;
