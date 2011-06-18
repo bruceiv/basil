@@ -1,11 +1,12 @@
 #ifndef _LRU_CACHE_HPP_
 #define _LRU_CACHE_HPP_
 
-#include <list>
-#include <memory>
+#include <utility>
 
-#include <boost/unordered_map.hpp>
-#include <boost/functional/hash.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
 
 namespace lru {
 	
@@ -17,25 +18,67 @@ namespace lru {
 	 *  				defined for all types.)
 	 *  @param Pred		the equality predicate to use for the cache (defaults 
 	 *  				to std::equal_to\<T\> )
-	 *  @param Alloc	the allocator to use in the hash (defaults to 
-	 *  				std::allocator\<T\> )
 	 *  
 	 *  @author Aaron Moss
 	 */
 	template<
 			typename T, 
 			typename Hash = boost::hash<T>,
-			typename Pred = std::equal_to<T>,
-			typename Alloc = std::allocator<T>
+			typename Pred = std::equal_to<T>
 		>
 	class cache {
+	private:
+		/* struct hash_lookup {}; */
+		struct lru_list {};
+		
+		typedef
+			typename boost::multi_index::multi_index_container<
+				/* a container of T */
+				T,
+				boost::multi_index::indexed_by<
+					/* with primary index a hash table with the given hash 
+					 * function and equality predicate, tagged hash_lookup */
+					boost::multi_index::hashed_unique<
+						/* boost::multi_index::tag<hash_lookup>,*/
+						boost::multi_index::identity<T>,
+						Hash,
+						Pred
+					>,
+					/* and with secondary index an insertion-order list */
+					boost::multi_index::sequenced<
+						boost::multi_index::tag<lru_list>
+					>
+				>
+			>
+			cache_map;
+		
+		typedef
+			typename cache_map::iterator
+			iterator;
+		
+		/*
+		typedef 
+			typename cache_map::template index<hash_lookup>::type
+			hash_view;
+		
+		typedef
+			typename hash_view::iterator
+			hash_iterator;
+		*/
+		
+		typedef
+			typename cache_map::template index<lru_list>::type
+			list_view;
+		
+		typedef
+			typename list_view::iterator
+			list_iterator;
+		
 	public:
 		/** Constructs a cache of the given size.
-		 *  @param size		The maximum size of the cache (if 0, will be set to 
-		 * 					1 - defaults to 1, but that's a bad choice)
+		 *  @param size		The maximum size of the cache (default 0)
 		 */
-		cache(unsigned long maxSize = 1) : cache_(), index_(), size_(0), 
-				maxSize_(maxSize == 0 ? 1 : maxSize) {}
+		cache(unsigned long maxSize = 0) : cache_(), maxSize_(maxSize) {}
 		
 		/** Inserts an object into the cache. This object will be the 
 		 *  most-recently used object, regardless of whether it was already in 
@@ -44,24 +87,20 @@ namespace lru {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool insert(T const& obj) {
-			map_iter ptr = cache_.find(obj);
-			bool isPresent = ( ptr != cache_.end() );
+			std::pair<iterator, bool> p = cache_.insert(obj);
 			
-			if ( isPresent ) {
-				//cache hit - clear previous use pointer for this object
-				index_.erase( index(ptr) );
-				size_--;
+			if (p.second) {
+				/* Cache miss - item was not already in cache. 
+				 * Ensure that cache does not exceed maximum size */
+				if ( cache_.size() > maxSize() ) eraseLru();
+				
+			} else {
+				/* Cache hit - item was already in cache.
+				 * Move to most recently used. */
+				touch(p.first);
 			}
 			
-			//make sure cache doesn't get overfull
-			if (size_ == maxSize_) remove_lru();
-			
-			//put object at tail of use queue
-			index_.push_back(obj);
-			cache_[obj] = --(index_.end());
-			size_++;
-			
-			return isPresent;
+			return ! p.second;
 		}
 		
 		/** Looks up an object in the cache. If the object is present, it will 
@@ -70,16 +109,16 @@ namespace lru {
 		 *  @return true if the object is found, false otherwise
 		 */
 		bool lookup(T const& obj) {
-			map_iter ptr = cache_.find(obj);
+			//hash_view h = cache_.template get<hash_lookup>();
+			//hash_iterator p = h.find(obj);
+			iterator p = cache_.find(obj);
 			
-			if ( ptr == cache_.end() ) {
-				//cache miss
+			if ( p == cache_.end() ) {
+				/* cache miss */
 				return false;
 			} else {
-				//cache hit - touch object
-				index_.erase( index(ptr) );
-				index_.push_back(obj);
-				cache_[obj] = --(index_.end());
+				/* cache hit - touch object */
+				touch(p);
 				return true;
 			}
 		}
@@ -89,22 +128,20 @@ namespace lru {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool remove(T const& obj) {
-			map_iter ptr = cache_.find(obj);
+			iterator p = cache_.find(obj);
 			
-			if ( ptr == cache_.end() ) {
-				//cache miss
+			if ( p == cache_.end() ) {
+				/* cache miss */
 				return false;
 			} else {
-				//cache hit - remove value
-				cache_.quick_erase(ptr);
-				index_.erase( index(ptr) );
-				size_--;
+				/* cache hit - remove value */
+				cache_.erase(p);
 				return true;
 			}
 		}
 		
 		/** @return the current size of the cache */
-		unsigned long size() { return size_; }
+		unsigned long size() { return cache_.size(); }
 		
 		/** @return the maximum size of the cache */
 		unsigned long maxSize() { return maxSize_; }
@@ -118,43 +155,25 @@ namespace lru {
 		void resize(unsigned long newSize) {
 			if (newSize == 0) newSize = 1;
 			maxSize_ = newSize;
-			while (size_ > maxSize_) remove_lru();
+			while (cache_.size() > maxSize_) cache_.pop_front();
 		}
 		
 	private:
-		typedef 
-			typename std::list<T, Alloc> 
-			index_list;
-		typedef 
-			typename index_list::iterator 
-			val_ptr;
-		typedef 
-			typename boost::unordered_map<T, val_ptr, Hash, Pred, Alloc> 
-			cache_map;
-		typedef 
-			typename cache_map::iterator 
-			map_iter;
 		
-		/** Remove the least recently used element from the cache. */
-		inline void remove_lru() {
-			cache_.erase( index_.front() );
-			index_.pop_front();
-			size_--;
+		/** Removes the LRU element from the cache */
+		inline void eraseLru() {
+			cache_.template get<lru_list>().pop_front();
 		}
 		
-		/** Gets the index pointer from a given map pointer.
-		 *  @param mp		The map pointer to return the index from
-		 *  @return the index pointer from that map's value
-		 */
-		inline val_ptr& index(map_iter& mp) { return mp->second; }
+		/** Touches the element of the cache given by the given iterator, 
+		 *  making it most recently used. */
+		inline void touch(iterator p) {
+			list_view& l = cache_.template get<lru_list>();
+			l.relocate(cache_.template project<lru_list>(p), l.end());
+		}
 		
 		/** Hashtable based cache implementation */
 		cache_map cache_;
-		/** The LRU ordering on the cache. Items are ordered from least to most 
-		 *  recently used. */
-		index_list index_;
-		/** Current size of the cache */
-		unsigned long size_;
 		/** Maximum size of the cache */
 		unsigned long maxSize_;
 			
