@@ -99,6 +99,8 @@ namespace lrs {
 		/** Functor that XOR's its argument with its internal state. */
 		class xor_fun {
 		public:
+			xor_fun() : val(0UL) {}
+			
 			void operator() (index_set::block_type const& x) { val ^= x; }
 			
 			std::size_t val;

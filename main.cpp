@@ -72,7 +72,10 @@ namespace basil {
 	public:
 		/** Default constructor. Equivalent to calling iterator constructor with an 
 		*  empty iterator */
-		opts() {}
+		opts() : dfsOpts_() {
+			/* set default options */
+			dfsOpts_.showAllDicts();
+		}
 		
 		/** Iterator constructor; parses program arguments.
 		*  Arguments are expected in the following format:
@@ -86,9 +89,17 @@ namespace basil {
 		*  @param Iter		the type of the options iterator
 		*/
 		template <typename Iter>
-		opts(Iter begin, Iter end) {
+		opts(Iter begin, Iter end) : dfsOpts_() {
 			/* consume program name */
 			if (begin != end) ++begin;
+			
+			/* set default options */
+			dfsOpts_.showAllDicts();
+			
+			if (begin != end && str_equals(*begin, "--assume-no-symmetry")) {
+				dfsOpts_.assumeNoSymmetry();
+				++begin;
+			}
 			
 			/* parse matrix file name */
 			if (begin != end) {
@@ -116,7 +127,18 @@ namespace basil {
 		std::istream& grpIn()
 			{ return grpFile.is_open() ? grpFile : matIn(); }
 		
+		dfs_opts& dfsOpts() { return dfsOpts_; }
+		
 	private:
+		
+		/** Checks two objects for equality by casting them to std::string. */
+		template<typename T1, typename T2>
+		bool str_equals(T1 a, T2 b) {
+			return string(a) == string(b);
+		}
+		
+		/** options to provide to the DFS */
+		dfs_opts dfsOpts_;
 		/** Matrix input stream */
 		std::ifstream matFile;
 		/** Group input stream */
@@ -145,7 +167,7 @@ int main(int argc, char **argv) {
 	cout << *g << endl;
 	
 	//initialize DFS algorithm NOTE debug mode
-	dfs d(*m, *g, dfs_opts().showAllDicts() );
+	dfs d(*m, *g, o.dfsOpts() );
 	
 	//run DFS algorithm
 	if ( d.doDfs() ) {

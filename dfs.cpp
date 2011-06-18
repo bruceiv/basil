@@ -24,9 +24,6 @@ namespace basil {
 	////////////////////////////////////////////////////////////////////////////
 	
 	bool dfs::doDfs() {
-		/* set up algorithm globals */
-		initGlobals();
-		
 		/* print initial dictionary */
 		if (opts.showsAllDicts) l.printDict();
 		
@@ -248,6 +245,19 @@ namespace basil {
 		allIndices = index_set(rows+1).set().set(0, false);
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
+		
+		basisCount = 0;
+		cobasisList = cobasis_invariants_list();
+		cobasisQueue = std::deque<index_set>();
+		hitMaxBasis = false;
+		initialCobasis = cobasis_invariants_ptr();
+		pathStack = std::deque<index_pair>();
+		rayOrbits = vertex_rep_list();
+		realDim = 0;
+		vertexOrbits = vertex_rep_list();
+		vertexSet = std::set<coordinates>();
+		workStack = std::deque<pivot>();
+		
 	}
 	
 	bool dfs::isNewCobasis(dfs::cobasis_invariants_ptr rep) {

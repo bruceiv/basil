@@ -152,6 +152,9 @@ namespace basil {
 				: l(m), g(g), opts(opts) { 
 			dim = m.d();
 			rows = m.n();
+			
+			/* set up algorithm globals */
+			initGlobals();
 		}
 		
 		

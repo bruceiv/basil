@@ -1,6 +1,8 @@
 #ifndef _BASIL_COMMON_HPP_
 #define _BASIL_COMMON_HPP_
 
+#include <string>
+
 #include <boost/shared_ptr.hpp>
 
 #include <permlib/common.h> //because the PermLib author didn't ...
@@ -16,6 +18,9 @@
  *  with the std namespace.
  */
 namespace basil {
+	/** import STL string into this namespace */
+	using std::string;
+	
 	/** import boost shared pointer into this namespace */
 	using boost::shared_ptr;
 	
