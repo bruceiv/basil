@@ -54,7 +54,7 @@ namespace lru {
 		
 		typedef
 			typename cache_map::iterator
-			iterator;
+			hash_iterator;
 		
 		/*
 		typedef 
@@ -75,6 +75,13 @@ namespace lru {
 			list_iterator;
 		
 	public:
+		
+		/** Type of values stored in this cache */
+		typedef T value_type;
+		/** Cache iterator type. Iterates from least recently used to most 
+		 *  recently used type. */
+		typedef list_iterator iterator;
+		
 		/** Constructs a cache of the given size.
 		 *  @param size		The maximum size of the cache (default 0)
 		 */
@@ -87,7 +94,7 @@ namespace lru {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool insert(T const& obj) {
-			std::pair<iterator, bool> p = cache_.insert(obj);
+			std::pair<hash_iterator, bool> p = cache_.insert(obj);
 			
 			if (p.second) {
 				/* Cache miss - item was not already in cache. 
@@ -111,7 +118,7 @@ namespace lru {
 		bool lookup(T const& obj) {
 			//hash_view h = cache_.template get<hash_lookup>();
 			//hash_iterator p = h.find(obj);
-			iterator p = cache_.find(obj);
+			hash_iterator p = cache_.find(obj);
 			
 			if ( p == cache_.end() ) {
 				/* cache miss */
@@ -128,7 +135,7 @@ namespace lru {
 		 *  @return true if the object was present in the cache, false otherwise
 		 */
 		bool remove(T const& obj) {
-			iterator p = cache_.find(obj);
+			hash_iterator p = cache_.find(obj);
 			
 			if ( p == cache_.end() ) {
 				/* cache miss */
@@ -139,6 +146,16 @@ namespace lru {
 				return true;
 			}
 		}
+		
+		/** Gets the beginning iterator (points to the least recently used 
+		 *  item). Iteration using this iterator will not modify the use order 
+		 *  of the cache. */
+		iterator begin() { return cache_.template get<lru_list>().begin(); }
+		
+		/** Gets the ending iterator (points just past the most recently used 
+		 *  item). Iteration using this iterator will not modify the use order 
+		 *  of the cache. */
+		iterator end() { return cache_.template get<lru_list>().end(); }
 		
 		/** @return the current size of the cache */
 		unsigned long size() { return cache_.size(); }
@@ -155,7 +172,7 @@ namespace lru {
 		void resize(unsigned long newSize) {
 			if (newSize == 0) newSize = 1;
 			maxSize_ = newSize;
-			while (cache_.size() > maxSize_) cache_.pop_front();
+			while (cache_.size() > maxSize_) eraseLru();
 		}
 		
 	private:
@@ -167,9 +184,12 @@ namespace lru {
 		
 		/** Touches the element of the cache given by the given iterator, 
 		 *  making it most recently used. */
-		inline void touch(iterator p) {
-			list_view& l = cache_.template get<lru_list>();
-			l.relocate(cache_.template project<lru_list>(p), l.end());
+		inline void touch(hash_iterator p) {
+			T v = *p;
+			cache_.erase(p);
+			cache_.insert(v);
+			/* list_view& l = cache_.template get<lru_list>();
+			l.relocate(cache_.template project<lru_list>(p), l.end()); */
 		}
 		
 		/** Hashtable based cache implementation */
