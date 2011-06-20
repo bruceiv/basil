@@ -14,7 +14,7 @@ OBJS = dfs.o
 
 # generate main program
 basil:  lrs $(OBJS) main.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) -lboost_program_options $(LDFLAGS)
 
 # generate lrs library
 lrs:  

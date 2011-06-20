@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <boost/program_options.hpp>
+
 #include "basilCommon.hpp"
 #include "dfs.hpp"
 #include "groupGen.hpp"
@@ -72,10 +74,7 @@ namespace basil {
 	public:
 		/** Default constructor. Equivalent to calling iterator constructor with an 
 		*  empty iterator */
-		opts() : dfsOpts_() {
-			/* set default options */
-			dfsOpts_.showAllDicts();
-		}
+		opts() : dfsOpts_() {}
 		
 		/** Iterator constructor; parses program arguments.
 		*  Arguments are expected in the following format:
@@ -84,38 +83,59 @@ namespace basil {
 		*  matIn: the name of the matrix input file [default: standard input]
 		*  grpIn: the name of the permutation group input file [default: matIn]
 		*  
-		*  @param begin	The beginning iterator for the list of arguments
-		*  @param end		The end iterator for the list of arguments
-		*  @param Iter		the type of the options iterator
+		*  @param argc		The number of arguments
+		*  @param argv		The list of arguments
 		*/
-		template <typename Iter>
-		opts(Iter begin, Iter end) : dfsOpts_() {
-			/* consume program name */
-			if (begin != end) ++begin;
+		opts(int argc, char** argv) : dfsOpts_() {
+			using namespace boost::program_options;
 			
-			/* set default options */
-			dfsOpts_.showAllDicts();
+			string matFileName = "", grpFileName = "", outFileName = "";
 			
-			if (begin != end && str_equals(*begin, "--assume-no-symmetry")) {
-				dfsOpts_.assumeNoSymmetry();
-				++begin;
-			}
+			options_description o("Basil options");
+			o.add_options()
+				("assume-no-symmetry", 
+					bool_switch(&dfsOpts_.assumesNoSymmetry),
+					"Forces Basil to assume there is no symmetry in the input.")
+				("show-all-dicts", 
+					bool_switch(&dfsOpts_.showsAllDicts), 
+					"Show all intermediate dictionaries in the search tree.")
+				("input-file,i",
+					value<string>(&matFileName),
+					"Input file name. "
+					"Alias for matrix-file.")
+				("matrix-file,m",
+					value<string>(&matFileName),
+					"Matrix file name. "
+					"Standard input if none supplied; may also be supplied as "
+					"first positional argument.")
+				("group-file,g",
+					value<string>(&grpFileName),
+					"Group file name. "
+					"Matrix input stream if none supplied; may also be "
+					"supplied as second positional argument.")
+				("output-file,o",
+					value<string>(&outFileName),
+					"Output file name. "
+					"Standard output if none supplied; may also be supplied as "
+					"third positional argument.")
+				;
+			positional_options_description p;
+ 			p.add("input-file", 1).add("group-file", 2).add("output-file", 3);
 			
-			/* parse matrix file name */
-			if (begin != end) {
-				matFile.open(*begin);
-				++begin;
-			}
+			variables_map v;
+			store(command_line_parser(argc, argv)
+					.options(o).positional(p).allow_unregistered().run(), v);
+			notify(v);
 			
-			/* parse group file name */
-			if (begin != end) {
-				grpFile.open(*begin);
-				++begin;
-			}
+			/* Open I/O files, if supplied */
+			if ( ! matFileName.empty() ) matFile.open(matFileName.c_str());
+			if ( ! grpFileName.empty() ) grpFile.open(grpFileName.c_str());
+			if ( ! outFileName.empty() ) outFile.open(outFileName.c_str());
 		}
 		
 		/** Destructor. */
 		~opts() {
+			if ( outFile.is_open() ) outFile.close();
 			if ( grpFile.is_open() ) grpFile.close();
 			if ( matFile.is_open() ) matFile.close();
 		}
@@ -126,6 +146,9 @@ namespace basil {
 		
 		std::istream& grpIn()
 			{ return grpFile.is_open() ? grpFile : matIn(); }
+		
+		std::ostream& out()
+			{ return outFile.is_open() ? outFile : std::cout; }
 		
 		dfs_opts& dfsOpts() { return dfsOpts_; }
 		
@@ -143,6 +166,8 @@ namespace basil {
 		std::ifstream matFile;
 		/** Group input stream */
 		std::ifstream grpFile;
+		/** Output stream */
+		std::ofstream outFile;
 	}; /* class opts */
 } /* namespace basil */
 
@@ -153,18 +178,18 @@ namespace basil {
  */
 int main(int argc, char **argv) {
 	/* parse command line arguments */
-	opts o(argv, argv+argc);
+	opts o(argc, argv);
 	
-	std::ostream& cout = std::cout;
+	std::ostream& out = o.out();
 	std::ostream& (*endl)(std::ostream&) = std::endl;
 	
 	//read in & print matrix
 	matrix_ptr m(genMatrixFromStream( o.matIn() ));
-	cout << *m << endl;
+	out << *m << endl;
 	
 	//read in & print permutation group
 	permutation_group_ptr g(genPermutationGroupFromStream(o.grpIn(), *m));
-	cout << *g << endl;
+	out << *g << endl;
 	
 	//initialize DFS algorithm NOTE debug mode
 	dfs d(*m, *g, o.dfsOpts() );
@@ -172,7 +197,7 @@ int main(int argc, char **argv) {
 	//run DFS algorithm
 	if ( d.doDfs() ) {
 		
-		cout 	<< "\nBEGIN RESULTS" 
+		out 	<< "\nBEGIN RESULTS" 
 				<< "\n{"
 				<< "\n\tdimension:" << d.getDimension()
 				<< "\n\tinitial cobasis: " << d.getInitialCobasis() 
@@ -185,7 +210,7 @@ int main(int argc, char **argv) {
 				<< endl;
 		
 	} else {
-		cout << "ERROR: DFS terminated due to too many bases" << endl;
+		out << "ERROR: DFS terminated due to too many bases" << endl;
 	}
 		
 	return 0;
