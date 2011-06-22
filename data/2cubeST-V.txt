@@ -1,0 +1,14 @@
+2-cube
+V-representation
+begin
+4 3 rational
+1 -1 -1
+1 -1  1
+1  1 -1
+1  1  1
+end
+symmetry begin
+1 2 , 3 4
+1 3 , 2 4
+1 4
+symmetry end
