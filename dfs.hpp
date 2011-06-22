@@ -42,7 +42,7 @@ namespace basil {
 		dfs_opts() 
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<long>::max()), cacheSize(1000), 
-				dualFacetTrick(true), firstCobasis(), lexOnly(false), 
+				dualFacetTrick(true), firstCobasis(), lexOnly(false), lrs_o(), 
 				showsAllDicts(false) {}
 		
 		
@@ -74,6 +74,10 @@ namespace basil {
 		dfs_opts& showAllDicts(bool opt = true) 
 			{ showsAllDicts = opt; return *this; }
 		
+		/** Sets (or unsets) the V-representation flag  */
+		dfs_opts& inVRepresentation(bool opt = true)
+			{ lrs_o.inVRepresentation(opt); return *this; }
+		
 		
 		/** assumes the given polytope is asymmetric [false]. This is primarily 
 		 *  a debugging option */
@@ -91,6 +95,8 @@ namespace basil {
 		/** lexically based pivots only [false]. This is bad and breaks the 
 		 *  algorithm, don't use it */
 		bool lexOnly;
+		/** options for LRS (modifier methods are cloned into here) */
+		lrs::lrs_opts lrs_o;
 		/** show all dictionaries as they are generated [false] */
 		bool showsAllDicts;
 	}; /* struct dfs_opts */
@@ -148,8 +154,8 @@ namespace basil {
 		 *  @param opts		The options for this DFS (default values if not 
 		 * 					provided)
 		 */
-		dfs(matrix& m, permutation_group& g, dfs_opts opts = dfs_opts()) 
-				: l(m), g(g), opts(opts) { 
+		dfs(matrix& m, permutation_group& g, dfs_opts o = dfs_opts()) 
+				: l(m, o.lrs_o), g(g), opts(o) { 
 			dim = m.d();
 			rows = m.n();
 			

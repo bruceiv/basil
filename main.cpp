@@ -1,7 +1,14 @@
 #include <iostream>
+#include <istream>
 #include <fstream>
+#include <sstream>
+#include <vector>
 
 #include <boost/program_options.hpp>
+
+#include <gmpxx.h>
+
+#include <permlib/permlib_api.h>
 
 #include "basilCommon.hpp"
 #include "dfs.hpp"
@@ -71,12 +78,107 @@ namespace basil {
 	/** Contains runtime custimizations for basil
 	 */
 	class opts {
-	public:
-		/** Default constructor. Equivalent to calling iterator constructor with an 
-		*  empty iterator */
-		opts() : dfsOpts_() {}
+	private:
+		/* utility methods */
 		
-		/** Iterator constructor; parses program arguments.
+		/** Gets a line that isn't a comment (begins with '*' or '#').
+		 *  @param in		the input stream to read the line from
+		 *  @param s		the string to store the line in
+		 *  @return the input stream
+		 */
+		std::istream& getContentLine(std::istream& in, string& s) {
+			do {
+				std::getline(in, s);
+			} while (s.empty() || s[0] == '*' || s[0] == '#');
+			
+			return in;
+		}
+		
+		/** Allocates new matrix on heap and returns it.
+		 *  Expects input in the following format (to match lrs):
+		 *  
+		 *  [name]
+		 *  [V-representation]
+		 *  [\<lrs options\>]
+		 *  begin
+		 *  \<n\> \<d\> rational
+		 *  \< n * d whitespace-delimited data values \>
+		 *  end
+		 *  
+		 *  where [] denotes an optional value, \<\> denotes a variable, and any 
+		 *  line beginning with '#' or '*' is ignored as a comment line.
+		 */
+		matrix_ptr genMatrixFromStream(std::istream& in) {
+			
+			string s = "";
+			
+			/* parse options up to begin line */
+			while ( s != string("begin") ) {
+				
+				if ( s.compare("V-representation") ) { 
+					/* Set vertex representation flag */
+					dfsOpts_.inVRepresentation(); 
+				}
+				
+				/* get next line */
+				getContentLine(in, s);
+			}
+			
+			/* get dimension line */
+			getContentLine(in, s);
+			std::istringstream lin(s);
+			
+			/* read dimensions */
+			ind n, d;
+			lin >> n;
+			lin >> d;
+			
+			/* create new matrix and load data */
+			matrix_ptr m(new matrix(n, d));
+			mpq_class t;
+			for (ind i = 0; i < n; i++) {
+				for (ind j = 0; j < d; j++) {
+					in >> t;
+					(*m)[i][j] = t;
+				}
+			}
+			
+			/* ignore up to end line */
+			getContentLine(in, s);
+			while ( s != string("end") ) getContentLine(in, s);
+			
+			return m;
+		}
+	
+		/** Allocates new permutation group on heap and returns it.
+		 *  creates permutation groups on n elements, where n is m.size1()
+		 *  expects input on the stream in to be a newline-delimited list of 
+		 *  permuataions, where a permutation is a comma-delimited lists of 
+		 *  cycles, and a cycle is a whitespace-delimited list of elements from 
+		 *  the range [1..n].
+		 */
+		permutation_group_ptr genPermutationGroupFromStream(std::istream& in, 
+															const matrix& m) {
+			
+			ind n = m.n();
+			
+			//vector< shared_ptr<permutation> > generators;
+			std::vector<permutation_ptr> generators;
+			
+			//read in generators
+			string s;
+			permutation_ptr p;
+			while (std::getline(in, s)) {
+				p.reset(new permutation(n, s));
+				generators.push_back(p);
+			}
+			
+			return permlib::construct(n, generators.begin(), generators.end());
+			
+		}
+		
+	public:
+		/** Argument constructor; parses program arguments.
 		*  Arguments are expected in the following format:
 		*  	./basil [ matIn [grpIn] ]
 		*  
@@ -86,7 +188,9 @@ namespace basil {
 		*  @param argc		The number of arguments
 		*  @param argv		The list of arguments
 		*/
-		opts(int argc, char** argv) : dfsOpts_() {
+		opts(int argc, char** argv) 
+				: dfsOpts_(), matFile(), grpFile(), outFile(), m(), g() {
+			
 			using namespace boost::program_options;
 			
 			string matFileName = "", grpFileName = "", outFileName = "";
@@ -144,22 +248,32 @@ namespace basil {
 		std::istream& matIn() 
 			{ return matFile.is_open() ? matFile : std::cin; }
 		
+		/** get the input stream for the permuation group */
 		std::istream& grpIn()
 			{ return grpFile.is_open() ? grpFile : matIn(); }
 		
+		/** get the output stream */
 		std::ostream& out()
 			{ return outFile.is_open() ? outFile : std::cout; }
 		
+		/** get the DFS options */
 		dfs_opts& dfsOpts() { return dfsOpts_; }
 		
-	private:
-		
-		/** Checks two objects for equality by casting them to std::string. */
-		template<typename T1, typename T2>
-		bool str_equals(T1 a, T2 b) {
-			return string(a) == string(b);
+		/** get the problem matrix. Will read it from the matrix input stream 
+		 *  the first time, caching it for later use */
+		matrix& mat() {
+			if (!m) m = genMatrixFromStream(matIn());
+			return *m;
 		}
 		
+		/** get the problem permutation group. Will read it from the group 
+		 *  input stream the first time, caching it for later use */
+		permutation_group& grp() {
+			if (!g) g = genPermutationGroupFromStream(grpIn(), mat());
+			return *g;
+		}
+		
+	private:
 		/** options to provide to the DFS */
 		dfs_opts dfsOpts_;
 		/** Matrix input stream */
@@ -168,6 +282,11 @@ namespace basil {
 		std::ifstream grpFile;
 		/** Output stream */
 		std::ofstream outFile;
+		
+		/** Pointer to the matrix for the problem */
+		matrix_ptr m;
+		/** Pointer to the permutation group for the problem */
+		permutation_group_ptr g;
 	}; /* class opts */
 } /* namespace basil */
 
@@ -184,15 +303,13 @@ int main(int argc, char **argv) {
 	std::ostream& (*endl)(std::ostream&) = std::endl;
 	
 	//read in & print matrix
-	matrix_ptr m(genMatrixFromStream( o.matIn() ));
-	out << *m << endl;
+	out << "Matrix:\t" <<  o.mat() << endl;
 	
 	//read in & print permutation group
-	permutation_group_ptr g(genPermutationGroupFromStream(o.grpIn(), *m));
-	out << *g << endl;
+	out << "Group:\t" << o.grp().S << endl;
 	
 	//initialize DFS algorithm NOTE debug mode
-	dfs d(*m, *g, o.dfsOpts() );
+	dfs d(o.mat(), o.grp(), o.dfsOpts() );
 	
 	//run DFS algorithm
 	if ( d.doDfs() ) {

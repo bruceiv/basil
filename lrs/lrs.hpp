@@ -24,16 +24,36 @@ namespace lrs {
 	 *  equations */
 	enum exp_type { eq = 0L, ge = 1L };
 	
+	/** Options for LRS.
+	 *  The default constructor initializes the data members to their default 
+	 *  values, while the methods can be used to modify the options.
+	 */
+	struct lrs_opts {
+		
+		lrs_opts() : vRepresentation(false) {}
+		
+		
+		/** Sets (or unsets) the V-representation flag  */
+		lrs_opts& inVRepresentation(bool opt = true)
+			{ vRepresentation = opt; return *this; }
+		
+		
+		/** Specify the input is in vertex representation rather than halfspace 
+		 *  representation [false]. Equivalent to the LRS input 
+		 *  "V-representation" */
+		bool vRepresentation;
+	};
 	
 	/** C++ wrapper class for the LRS library. */
 	class lrs {
 	public:
 		/** Constructor / initializer.
 		 *  @param m 			the matrix to load into LRS
+		 *  @param o			LRS options (if unsupplied, will use default)
 		 *  @throw bad_alloc	if the LRS process or matrix data structures 
 		 * 						cannot be properly initialized.
 		 */
-		lrs(const matrix& m) throw(std::bad_alloc);
+		lrs(matrix const& m, lrs_opts o = lrs_opts()) throw(std::bad_alloc);
 		
 		/** destructor */
 		~lrs();
@@ -108,12 +128,31 @@ namespace lrs {
 		void setCobasis(index_set& cob);
 		
 	private:
+		
+		/** Initializes LRS's problem data structure appropriately for Basil. 
+		 *  Derived from lrs_read_dat (very loosely)
+		 *  @param Q		The data structure to set up (should be allocated)
+		 *  @param n		The number of input rows (Q->m)
+		 *  @param d		The dimension of the input rows (Q->n)
+		 */
+		void initDat(lrs_dat* Q, ind n, ind d);
+		
+		/** Initializes LRS's dictionary for a problem.
+		 *  Derived from lrs_read_dic (very loosely)
+		 *  @param Q		The problem data (should be initialized)
+		 *  @param P		The dictionary to initialize (should be allocated)
+		 *  @param mat		The matrix to read in
+		 */
+		void initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat);
+		
 		/** Structure for holding static problem data */
 		lrs_dat* Q;
 		/** Structure for holding current dictionary and indices */
 		lrs_dic* P;
 		/** Matrix holding linearities */
 		lrs_mp_matrix Lin;
+		/** Options provided to this instance of LRS */
+		lrs_opts o;
 	}; /* class lrs */
 	
 } /* namespace lrs */

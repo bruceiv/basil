@@ -16,58 +16,7 @@
 
 namespace lrs {
 	
-		/** Initializes LRS's problem data structure appropriately for Basil. 
-	 *  Derived from lrs_read_dat (very loosely)
-	 *  @param Q		The data structure to set up (should be allocated)
-	 *  @param n		The number of input rows (Q->m)
-	 *  @param d		The dimension of the input rows (Q->n)
-	 */
-	void initDat(lrs_dat* Q, ind n, ind d) {
-		
-		/* Tell LRS we are dealing with a vertex representation.
-		 * This would be specified in the LRS input file by "V-representation". 
-		 */
-// 		Q->hull = true;
-// 		Q->polytope = true;		/* will be updated as input read */
-		Q->hull = false;		/* H-representation, to match Symbal */
-		
-		Q->m = n; Q->n = d;
-		
-		/* copied from Symbal, equivalent to setting the geometric option in 
-		 * LRS */
-		Q->geometric = true;
-		
-	}
-	
-	/** Initializes LRS's dictionary for a problem.
-	 *  Derived from lrs_read_dic (very loosely)
-	 *  @param Q		The problem data (should be initialized)
-	 *  @param P		The dictionary to initialize (should be allocated)
-	 *  @param mat		The matrix to read in
-	 */
-	void initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat) {
-		
-// 		matrix_t& A = P->A;
-// 		vector_t& Gcd = Q->Gcd;
-// 		vector_t& Lcm = Q->Lcm;
-		ind m = Q->m;
-		
-		/* to match Symbal */
-// 		itomp(1L, A[0][0]);
-// 		itomp(1L, Lcm[0]);
-// 		itomp(1L, Gcd[0]);
-		
-		/* read matrix row by row */
-		matrix& m_nc = const_cast<matrix &>(mat);
-		for (ind i = 0; i < m; i++) {
-			/* TODO allow for linearities */
-			lrs_set_row_mp(
-				P, Q, i+1, m_nc[i].num(), m_nc[i].den(), ge);
-		}
-		
-	}
-	
-	lrs::lrs(const matrix& m) throw(std::bad_alloc) {
+	lrs::lrs(matrix const& m, lrs_opts o) throw(std::bad_alloc) : o(o) {
 		/* Initialize LRS */
 		lrs_init_quiet(stdin, stdout);
 		
@@ -316,6 +265,39 @@ namespace lrs {
 		reducearray(output.v, n);
 		
 		return &output;
+	}
+	
+	void lrs::initDat(lrs_dat* Q, ind n, ind d) {
+		
+		if (o.vRepresentation) {
+			/* V-representation */
+			Q->hull = true;
+			Q->polytope = true;
+		} else {
+			/* H-representation */
+			Q->hull = false;
+		}
+		
+		Q->m = n; Q->n = d;
+		
+		/* copied from Symbal, equivalent to setting the geometric option in 
+		 * LRS */
+		Q->geometric = true;
+		
+	}
+	
+	void lrs::initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat) {
+		
+		ind m = Q->m;
+		
+		/* read matrix row by row */
+		matrix& m_nc = const_cast<matrix &>(mat);
+		for (ind i = 0; i < m; i++) {
+			/* TODO allow for linearities */
+			lrs_set_row_mp(
+				P, Q, i+1, m_nc[i].num(), m_nc[i].den(), ge);
+		}
+		
 	}
 	
 	ind lrs::lexRatio(ind leave) {
