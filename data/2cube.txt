@@ -1,5 +1,9 @@
-4 3
+2-cube
+V-representation
+begin
+4 3 rational
 1 -1 -1
 1 -1  1
 1  1 -1
 1  1  1
+end

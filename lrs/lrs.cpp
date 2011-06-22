@@ -16,6 +16,57 @@
 
 namespace lrs {
 	
+		/** Initializes LRS's problem data structure appropriately for Basil. 
+	 *  Derived from lrs_read_dat (very loosely)
+	 *  @param Q		The data structure to set up (should be allocated)
+	 *  @param n		The number of input rows (Q->m)
+	 *  @param d		The dimension of the input rows (Q->n)
+	 */
+	void initDat(lrs_dat* Q, ind n, ind d) {
+		
+		/* Tell LRS we are dealing with a vertex representation.
+		 * This would be specified in the LRS input file by "V-representation". 
+		 */
+// 		Q->hull = true;
+// 		Q->polytope = true;		/* will be updated as input read */
+		Q->hull = false;		/* H-representation, to match Symbal */
+		
+		Q->m = n; Q->n = d;
+		
+		/* copied from Symbal, equivalent to setting the geometric option in 
+		 * LRS */
+		Q->geometric = true;
+		
+	}
+	
+	/** Initializes LRS's dictionary for a problem.
+	 *  Derived from lrs_read_dic (very loosely)
+	 *  @param Q		The problem data (should be initialized)
+	 *  @param P		The dictionary to initialize (should be allocated)
+	 *  @param mat		The matrix to read in
+	 */
+	void initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat) {
+		
+// 		matrix_t& A = P->A;
+// 		vector_t& Gcd = Q->Gcd;
+// 		vector_t& Lcm = Q->Lcm;
+		ind m = Q->m;
+		
+		/* to match Symbal */
+// 		itomp(1L, A[0][0]);
+// 		itomp(1L, Lcm[0]);
+// 		itomp(1L, Gcd[0]);
+		
+		/* read matrix row by row */
+		matrix& m_nc = const_cast<matrix &>(mat);
+		for (ind i = 0; i < m; i++) {
+			/* TODO allow for linearities */
+			lrs_set_row_mp(
+				P, Q, i+1, m_nc[i].num(), m_nc[i].den(), ge);
+		}
+		
+	}
+	
 	lrs::lrs(const matrix& m) throw(std::bad_alloc) {
 		/* Initialize LRS */
 		lrs_init_quiet(stdin, stdout);
@@ -25,23 +76,15 @@ namespace lrs {
 		if (Q == 0) throw std::bad_alloc();
 		
 		/* Init LRS LP dictionary */
-		ind n = m.n(), d = m.d();
-		
-		Q->m = n; Q->n = d;
-		Q->geometric = true;
+		initDat(Q, m.n(), m.d());
 		
 		P = lrs_alloc_dic(Q);
 		if (P == 0) throw std::bad_alloc();
 		
-		matrix& m_nc = const_cast<matrix &>(m);
-		for (ind i = 0; i < n; i++) {
-			lrs_set_row_mp(P, Q, i+1, m_nc[i].num(), m_nc[i].den(), ge );
-		}
+		initDic(Q, P, m);
 	}
 	
 	lrs::~lrs() {
-		/* FIXME This one I'm not quite sure about the memory management for */
-		//if (Q->nredundcol > 0) lrs_clear_mp_matrix(Lin, Q->nredundcol, Q->n);
 		lrs_free_dic(P, Q);
 		lrs_free_dat(Q);
 		lrs_close_quiet();
@@ -253,13 +296,12 @@ namespace lrs {
 		ind* redundCol = Q->redundcol;
 		ind n = Q->n;
 		
-		vector_mpz* output_p = new vector_mpz(n);
-		vector_mpz& output = *output_p;
+		vector_mpz& output = *new vector_mpz(n);
 		
 		/* copy column 0 to output */
 		copy( output[0], P->det );
 		
-		for (ind j = 0; j < n; j++) {
+		for (ind j = 1; j < n; j++) {
 			if (iRedund < nRedundCol && redundCol[iRedund] == j) {
 				/* column was deleted as redundant */
 				itomp(0L, output[j]);
@@ -273,7 +315,7 @@ namespace lrs {
 		
 		reducearray(output.v, n);
 		
-		return output_p;
+		return &output;
 	}
 	
 	ind lrs::lexRatio(ind leave) {

@@ -17,14 +17,16 @@ namespace lrs {
 	////////////////////////////////////////////////////////////////////////////
 	//
 	// VECTOR_MPZ CLASS
+	// TODO see if anything breaks if you alloc a vector one smaller
 	//
 	////////////////////////////////////////////////////////////////////////////
+	
 	
 	vector_mpz::vector_mpz ( ind d ) : v(lrs_alloc_mp_vector(d)), d(d) {}
 	
 	vector_mpz::vector_mpz ( vector_mpz const& that ) 
 			: v(lrs_alloc_mp_vector(that.d)), d(that.d) {
-		for (ind i = 0; i <= d; i++) copy(v[i], that.v[i]);
+		for (ind i = 0; i < d; i++) copy(v[i], that.v[i]);
 	}
 	
 	vector_mpz::~vector_mpz() {
@@ -37,7 +39,7 @@ namespace lrs {
 			
 			d = that.d;
 			v = lrs_alloc_mp_vector(d);
-			for (ind i = 0; i <= d; i++) copy(v[i], that.v[i]);
+			for (ind i = 0; i < d; i++) copy(v[i], that.v[i]);
 		}
 		return *this;
 	}
@@ -55,14 +57,14 @@ namespace lrs {
 		
 		/* NOTE this uses truncating integer division. If rational arithmetic 
 		 * is needed, this should be changed to reflect such. */
-		for (ind i = 0; i <= v.d; i++) mpz_tdiv_q(u[i], v[i], s);
+		for (ind i = 0; i < v.d; i++) mpz_tdiv_q(u[i], v[i], s);
 		
 		return u;
 	}
 	
 	std::ostream& operator<< (std::ostream& o, vector_mpz const& v) {
 		o << "[";
-		for (ind i = 0; i <= v.d; i++) {
+		for (ind i = 0; i < v.d; i++) {
 			o << " " << mpz_class(v[i]);
 		}
 		o << " ]";
@@ -70,7 +72,7 @@ namespace lrs {
 	}
 	
 	vector_mpz vector_mpz::normalization() const {
-		for (ind i = 0; i <= d; i++) {
+		for (ind i = 0; i < d; i++) {
 			if (! zero(v[i]) ) return *this / v[i];
 		}
 		//it's all zeros anyway
@@ -97,8 +99,7 @@ namespace lrs {
 	int vector_mpz::compare(vector_mpz const& that) const {
 		mpz_class t; int s = 0;
 		
-		
-		for (ind i = 0; i <= d && i <= that.d; ++i) {
+		for (ind i = 0; i < d && i < that.d; ++i) {
 			mpz_sub(t.get_mpz_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
 			/* s = mpz_sgn(t.get_mpz_t()); */ s = sgn(t);
 			if (s != 0) return s;
