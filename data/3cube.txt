@@ -1,6 +1,6 @@
 3-cube
-begin
 V-representation
+begin
 8 4 rational
 1 -1 -1 -1
 1 -1 -1  1

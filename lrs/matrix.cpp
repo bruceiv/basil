@@ -17,20 +17,22 @@ namespace lrs {
 	////////////////////////////////////////////////////////////////////////////
 	//
 	// VECTOR_MPZ CLASS
-	// TODO see if anything breaks if you alloc a vector one smaller
 	//
 	////////////////////////////////////////////////////////////////////////////
 	
-	
-	vector_mpz::vector_mpz ( ind d ) : v(lrs_alloc_mp_vector(d)), d(d) {}
+	vector_mpz::vector_mpz ( ind d ) 
+			: /* lrs_alloc_mp_vector() allocs one more than needed */ 
+			v(lrs_alloc_mp_vector(d-1)), d(d) {}
 	
 	vector_mpz::vector_mpz ( vector_mpz const& that ) 
-			: v(lrs_alloc_mp_vector(that.d)), d(that.d) {
+			: /* lrs_alloc_mp_vector() allocs one more than needed */ 
+			v(lrs_alloc_mp_vector(that.d-1)), d(that.d) {
 		for (ind i = 0; i < d; i++) copy(v[i], that.v[i]);
 	}
 	
 	vector_mpz::~vector_mpz() {
-		lrs_clear_mp_vector(v, d);
+		/* lrs_clear_mp_vector() clears one more than needed */
+		lrs_clear_mp_vector(v, d-1);
 	}
 	
 	vector_mpz& vector_mpz::operator= ( vector_mpz const& that ) {
