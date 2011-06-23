@@ -147,6 +147,9 @@ namespace basil {
 			getContentLine(in, s);
 			while ( s != string("end") ) getContentLine(in, s);
 			
+			/* NOTE if not split input, could consume the rest of it here to 
+			 * parse options. */
+			
 			return m;
 		}
 	
@@ -162,15 +165,19 @@ namespace basil {
 			
 			ind n = m.n();
 			
-			//vector< shared_ptr<permutation> > generators;
 			std::vector<permutation_ptr> generators;
 			
 			//read in generators
-			string s;
+			string s = "";
 			permutation_ptr p;
-			while (std::getline(in, s)) {
+			while ( s != string("symmetry begin") ) getContentLine(in, s);
+			
+			std::getline(in, s);
+			while ( s != string("symmetry end") ) {
 				p.reset(new permutation(n, s));
 				generators.push_back(p);
+				
+				std::getline(in, s);
 			}
 			
 			return permlib::construct(n, generators.begin(), generators.end());
@@ -178,18 +185,15 @@ namespace basil {
 		}
 		
 	public:
-		/** Argument constructor; parses program arguments.
-		*  Arguments are expected in the following format:
-		*  	./basil [ matIn [grpIn] ]
-		*  
-		*  matIn: the name of the matrix input file [default: standard input]
-		*  grpIn: the name of the permutation group input file [default: matIn]
-		*  
-		*  @param argc		The number of arguments
-		*  @param argv		The list of arguments
-		*/
+		/** Argument constructor; parses program arguments. Read code for 
+		 *  option descriptions
+		 *  
+		 *  @param argc		The number of arguments
+		 *  @param argv		The list of arguments
+		 */
 		opts(int argc, char** argv) 
-				: dfsOpts_(), matFile(), grpFile(), outFile(), m(), g() {
+				: dfsOpts_(), matFile(), grpFile(), outFile(), m(), g(), 
+				splitInput(false) {
 			
 			using namespace boost::program_options;
 			
@@ -231,6 +235,11 @@ namespace basil {
 					.options(o).positional(p).allow_unregistered().run(), v);
 			notify(v);
 			
+			/* mark input as split if group or matrix file explicitly set */
+			if (v.count("group-file") || v.count("matrix-file")) {
+				splitInput = true;
+			}
+			
 			/* Open I/O files, if supplied */
 			if ( ! matFileName.empty() ) matFile.open(matFileName.c_str());
 			if ( ! grpFileName.empty() ) grpFile.open(grpFileName.c_str());
@@ -244,13 +253,20 @@ namespace basil {
 			if ( matFile.is_open() ) matFile.close();
 		}
 		
+		/** true if input is split over two files, false otherwise */
+		bool isSplitInput() { return splitInput; }
+		
 		/** get the input stream for the matrix */
 		std::istream& matIn() 
 			{ return matFile.is_open() ? matFile : std::cin; }
 		
 		/** get the input stream for the permuation group */
-		std::istream& grpIn()
-			{ return grpFile.is_open() ? grpFile : matIn(); }
+		std::istream& grpIn() {
+			return grpFile.is_open() ? 
+					grpFile : 
+					splitInput ? std::cin : matIn()
+			;
+		}
 		
 		/** get the output stream */
 		std::ostream& out()
@@ -287,6 +303,10 @@ namespace basil {
 		matrix_ptr m;
 		/** Pointer to the permutation group for the problem */
 		permutation_group_ptr g;
+		
+		/** true if the input is split across two files [false]. Can be made 
+		 *  true by specifying group file, or explicitly specifying group */
+		bool splitInput;
 	}; /* class opts */
 } /* namespace basil */
 
