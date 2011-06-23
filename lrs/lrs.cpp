@@ -273,16 +273,19 @@ namespace lrs {
 			/* V-representation */
 			Q->hull = true;
 			Q->polytope = true;
+			/* NOTE Symbal appears to always turn on geometric, LRS ignores it 
+			 * for V-representation. I'm following Symbal here. */
+			Q->geometric = true;
 		} else {
 			/* H-representation */
 			Q->hull = false;
+			
+			/* copied from Symbal, equivalent to setting the geometric option 
+			 * in LRS */
+			Q->geometric = true;
 		}
 		
 		Q->m = n; Q->n = d;
-		
-		/* copied from Symbal, equivalent to setting the geometric option in 
-		 * LRS */
-		Q->geometric = true;
 		
 	}
 	

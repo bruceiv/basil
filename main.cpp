@@ -115,9 +115,10 @@ namespace basil {
 			/* parse options up to begin line */
 			while ( s != string("begin") ) {
 				
-				if ( s.compare("V-representation") ) { 
+				if ( s == string("V-representation") ) {
 					/* Set vertex representation flag */
-					dfsOpts_.inVRepresentation(); 
+					dfsOpts_.inVRepresentation();
+					out() << "**V-representation**" << std::endl;
 				}
 				
 				/* get next line */
