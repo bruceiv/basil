@@ -39,8 +39,6 @@ namespace basil {
 	// Query methods for after completion of doDfs()
 	////////////////////////////////////////////////////////////////////////////
 	
-// 	dfs::cobasis_invariants_list const& dfs::getBasisOrbits() const 
-// 		{ return cobasisList; }
 	dfs::cobasis_map const& dfs::getBasisOrbits() const 
 		{ return basisOrbits; }
 	
@@ -53,14 +51,12 @@ namespace basil {
 	bool dfs::isFinished() const 
 		{ return !hitMaxBasis; }
 	
-// 	dfs::vertex_rep_list const& dfs::getRayOrbits() const 
 	dfs::coordinates_map const& dfs::getRayOrbits() const 
 		{ return rayOrbits; }
 	
 	permutation_group const& dfs::getSymmetryGroup() const 
 		{ return g; }
 	
-// 	dfs::vertex_rep_list const& dfs::getVertexOrbits() const 
 	dfs::coordinates_map const& dfs::getVertexOrbits() const 
 		{ return vertexOrbits; }
 	
@@ -71,25 +67,12 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////////////
 	
-// 	void dfs::addCobasis(dfs::cobasis_invariants_ptr cob) {
-// 		/* TODO lots of stuff in dfs.gap AddCobasis() that could be added */
-// 				
-// 		cobasisList.push_back(cob);
-// 	}
-	
 	void dfs::addCobasis(dfs::index_set const& cob, dfs::vertex_data_ptr dat) {
 		/* TODO lots of stuff in dfs.gap AddCobasis() that should be looked at 
 		 */
 		
 		basisOrbits.insert(std::make_pair(cob, dat));
 	}
-	
-// 	void dfs::addVertex(dfs::vertex_rep_ptr rep) {
-// 		vertexOrbits.push_back(rep);
-// 		
-// 		coordinates norm = rep->coords.normalization();
-// 		vertexSet.insert(norm);
-// 	}
 	
 	void dfs::addVertex(dfs::vertex_data_ptr dat) {
 		/* TODO look into handling invariants, gramVec in this framework.
@@ -105,17 +88,6 @@ namespace basil {
 			addCobasis(*it, dat);
 		}
 	}
-	
-// 	dfs::cobasis_invariants_ptr dfs::cobasisInvariants(dfs::cobasis_ptr cob, 
-// 			coordinates_ptr coords) { 
-// 		
-// 		cobasis_invariants_ptr cobI(
-// 				new cobasis_invariants(cob->cob, cob->extraInc, *coords, 
-// 									   cob->det)
-// 				);
-// 		
-// 		return cobI;
-// 	}
 	
 	dfs::index_set dfs::dfsFirstBasis() {
 		
@@ -134,12 +106,9 @@ namespace basil {
 		 * (obviously there aren't any others yet) */
 		cobasis_ptr cob(l.getCobasis(0));
 		coordinates_ptr sol(l.getVertex());
-// 		cobasis_invariants_ptr rep(cobasisInvariants(cob, sol));
 		vertex_data_ptr dat(vertexData(cob, sol));
 		
 		initialCobasis = cob->cob;
-// 		addCobasis(rep);
-// 		addVertex(vertexRep(cob, sol));
 		addVertex(dat);
 		getRays();
 		
@@ -203,9 +172,7 @@ namespace basil {
 			
 			if (s) {
 				cobasis_ptr c( l.getCobasis(j) );
-// 				vertex_rep_ptr rep( rayRep(c, s) );
 				vertex_data_ptr dat( rayData(c, s) );
-// 				if (! knownRay(rep) ) rayOrbits.push_back(rep);
 				if ( ! knownRay(dat) ) {
 					rayOrbits.insert(std::make_pair(dat->coords, dat));
 				}
@@ -213,25 +180,19 @@ namespace basil {
 		}
 	}
 	
-// 	bool dfs::findSymmetry(dfs::cobasis_invariants_ptr rep, 
-// 						   dfs::cobasis_invariants_list list) {
 	bool dfs::findSymmetry(dfs::index_set find, dfs::index_set_list list) {
 		
 		/* for each possible size of superset of this cobasis */
-// 		for (ind groundSize = rep->cob.count()+1; groundSize <= rows; 
 		for (ind groundSize = find.count() + 1; groundSize <= rows; 
 				groundSize++) {
 			
 			/* for each cobasis in the list to check for symmetry */
-// 			for (cobasis_invariants_list::iterator it = list.begin(); 
 			for (index_set_list::iterator it = list.begin(); it != list.end(); 
 					++it) {
 				
 				/* the cobasis to check for symmetry */
-// 				cobasis_invariants_ptr old = (*it);
 				index_set old = *it;
 				
-// 				if ( rep->cob == old->cob ) {
 				if ( find == old ) {
 					/* duplicate cobasis */
 					return true;
@@ -240,7 +201,6 @@ namespace basil {
 				if ( opts.assumesNoSymmetry ) continue;
 				
 				/* Take the set union of the two cobases into ground */
-// 				index_set ground = rep->cob | old->cob;
 				index_set ground = find | old;
 				/* Take the complement of ground into leftOut */
 				index_set leftOut = allIndices - ground;
@@ -259,9 +219,6 @@ namespace basil {
 				/* look for a permutation in the stabilizer group that maps the 
 				 * incidence set of the cobasis we are trying to find to the 
 				 * incidence set of the known cobasis. */
-// 				permutation_ptr act = permlib::setImage(
-// 						*stab, plBegin(rep->cob), plEnd(rep->cob), 
-// 						plBegin(old->cob), plEnd(old->cob));
 				permutation_ptr act = permlib::setImage(*stab, 
 						plBegin(find), plEnd(find), plBegin(old), plEnd(old));
 				
@@ -284,29 +241,23 @@ namespace basil {
 		cobasisCache.resize(opts.cacheSize);
 		
 		basisCount = 0;
-// 		cobasisList = cobasis_invariants_list();
 		basisOrbits = cobasis_map();
 		cobasisQueue = std::deque<index_set>();
 		hitMaxBasis = false;
 		initialCobasis = index_set();
 		pathStack = std::deque<index_pair>();
-// 		rayOrbits = vertex_rep_list();
 		rayOrbits = coordinates_map();
 		realDim = 0;
-// 		vertexOrbits = vertex_rep_list();
 		vertexOrbits = coordinates_map();
-// 		vertexSet = std::set<coordinates>();
 		workStack = std::deque<pivot>();
 		
 	}
 	
-// 	bool dfs::isNewCobasis(dfs::cobasis_invariants_ptr rep) {
 	bool dfs::isNewCobasis(dfs::index_set cob, dfs::vertex_data_ptr dat) {
 		
 		/* TODO look at adding canonTest, gramMotion from dfs.gap 
 		 * IsNewCobasis() */
 		
-// 		cobasis_invariants_list possibleMatches = matchingInvariants(rep);
 		index_set_list possibleMatches = matchingInvariants(dat);
 		
 		/* if no known cobasis has invariants matching this one, it's new */
@@ -314,31 +265,26 @@ namespace basil {
 		
 		/* if a known cobasis (with matching invariants) is symmetric to this 
 		 * one, it's not new */
-// 		if ( findSymmetry(rep, possibleMatches) ) return false;
 		if ( findSymmetry(cob, possibleMatches) ) return false;
 		
 		/* if we can't find a matching cobasis, this one must be new */
 		return true;
 	}
 
-// 	dfs::vertex_rep_ptr dfs::knownRay(dfs::vertex_rep_ptr rep) {
 	dfs::vertex_data_ptr dfs::knownRay(dfs::vertex_data_ptr rep) {
 		
 		/* incidence set to find */
 		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
-// 		for (vertex_rep_list::iterator it = rayOrbits.begin();
 		for (coordinates_map::iterator it = rayOrbits.begin(); 
 				it != rayOrbits.end(); ++it) {
 			
 			/* incidence set to check */
-// 			index_set& old = (*it)->inc;
 			index_set& old = it->second->inc;
 			
 			/* if we assume no symmetry, simply check for equal cobases */
 			if ( opts.assumesNoSymmetry ) {
-// 				if ( find == old ) return *it; else continue;
 				if ( find == old ) return it->second; else continue;
 			}
 			
@@ -349,16 +295,13 @@ namespace basil {
 					g, plBegin(find), plEnd(find), plBegin(old), plEnd(old));
 			
 			/* if such a permuation is found, return the known ray */
-// 			if (act) return *it;
 			if (act) return it->second;
 		}
 		
 		/* no known ray that is equivalent up to symmetry */
-// 		return vertex_rep_ptr();
 		return vertex_data_ptr();
 	}
 	
-// 	dfs::vertex_rep_ptr dfs::knownVertex(dfs::vertex_rep_ptr rep) {
 	dfs::vertex_data_ptr dfs::knownVertex(dfs::vertex_data_ptr rep) {
 		
 		/* TODO add gramVec / invariants handling */
@@ -366,26 +309,22 @@ namespace basil {
 		/* a normalization of this vertex */
 		coordinates norm = rep->coords.normalization();
 		/* if it's already in the set, it's not new */
-// 		if ( vertexSet.find(norm) != vertexSet.end() ) {
 		if ( vertexOrbits.find(norm) != vertexOrbits.end() ) {
 			/* duplicate vertex */
 			return rep;
 		}
 		
 		/* if we assume no symmetry, it must be new */
-// 		if ( opts.assumesNoSymmetry ) return vertex_rep_ptr();
 		if ( opts.assumesNoSymmetry ) return vertex_data_ptr();
 		
 		/* incedence set to find */
 		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
-// 		for (vertex_rep_list::iterator it = vertexOrbits.begin(); 
 		for (coordinates_map::iterator it = vertexOrbits.begin(); 
 				it != vertexOrbits.end(); ++it) {
 			
 			/* incidence set to check */
-// 			index_set& old = (*it)->inc;
 			index_set& old = it->second->inc;
 			
 			/* look for a permutation in the global group that maps the 
@@ -395,41 +334,31 @@ namespace basil {
 					g, plBegin(find), plEnd(find), plBegin(old), plEnd(old));
 			
 			/* if such a permuation is found, return the known vertex */
-// 			if (act) return *it;
 			if (act) return it->second;
 		}
 		
 		/* no known vertex that is equivalent up to symmetry */
-// 		return vertex_rep_ptr();
 		return vertex_data_ptr();
 	}
 	
-// 	dfs::cobasis_invariants_list dfs::matchingInvariants(
-// 			dfs::cobasis_invariants_ptr rep) {
 	dfs::index_set_list dfs::matchingInvariants(dfs::vertex_data_ptr dat) {
 		
 		/* TODO lots of stuff in equivalent Symbal code to add */
 		
 		/* list of cobases with matching invariants */
-// 		cobasis_invariants_list matches;
 		index_set_list matches;
 		
 		/* for each known cobasis */
-// 		for (cobasis_invariants_list::iterator it = cobasisList.begin(); 
-// 				it != cobasisList.end(); ++it) {
 		for (cobasis_map::iterator it = basisOrbits.begin();
 				it != basisOrbits.end(); ++it) {
 			
-// 			cobasis_invariants_ptr old = *it;
 			vertex_data_ptr old = it->second;
 			
 			/* skip if they have non-matching determinants */
-// 			if ( old->det != rep->det ) continue;
 			if ( old->det != dat->det ) continue;
 			
 			/* if we reach here, all invariant checks have passed, add the 
 			 * cobasis to the list, then */
-// 			matches.push_back(old);
 			matches.push_back(it->first);
 		}
 		
@@ -473,6 +402,7 @@ namespace basil {
 				
 				/* avoid expensive invariant calculations by caching recently 
 				 * seen cobases (which could be reached from different pivots).
+				 * 
 				 * As the time to insert or lookup should be similar, using 
 				 * insert instead of lookup saves the extra call to insert here 
 				 */
@@ -482,9 +412,6 @@ namespace basil {
 					/* cobasisCache.insert(cob->cob); */
 					
 					/* calculate invariants of new cobasis */
-// 					cobasis_invariants_ptr newRep(cobasisInvariants(cob, sol));
-// 					vertex_rep_ptr newVertex(vertexRep(cob, sol));
-// 					vertex_rep_ptr oldVertex(knownVertex(newVertex));
 					vertex_data_ptr newVertex(vertexData(cob, sol));
 					vertex_data_ptr oldVertex(knownVertex(newVertex));
 					
@@ -492,11 +419,9 @@ namespace basil {
 						
 						/* this vertex has yet to be seen, add it */
 						addVertex(newVertex);
-// 						addCobasis(newRep);
 						/* add this vertex to the search stack */
 						workStack.push_back(pivot(oldCob, leave, enter));
 						
-// 					} else if ( oldVertex->coords == newRep->coords 
 					} else if (oldVertex->coords == newVertex->coords 
 								|| ! opts.dualFacetTrick ) {
 						
@@ -504,8 +429,6 @@ namespace basil {
 						 * vertex, and we are not employing the dual facet 
 						 * trick to prune the search tree, add the cobasis to 
 						 * the search stack if it is unique */
-// 						if ( isNewCobasis(newRep) ) {
-// 							addCobasis(newRep);
 						if ( isNewCobasis(cob->cob, newVertex) ) {
 							addCobasis(cob->cob, oldVertex);
 							workStack.push_back(pivot(oldCob, leave, enter));
@@ -537,24 +460,6 @@ namespace basil {
 		
 		return dat;
 	}
-
-	
-// 	dfs::vertex_rep_ptr dfs::rayRep(dfs::cobasis_ptr cob, 
-// 			dfs::coordinates_ptr coords) {
-// 		
-// 		/* TODO add gramVec option */
-// 		
-// 		//concatenate the cobasis and extra incidence of the cobasis invariants
-// 		index_set inc = cob->cob | cob->extraInc;
-// 		//remove the ray index
-// 		inc.set(cob->ray, false);
-// 		
-// 		vertex_rep_ptr rep(
-// 			new vertex_rep(inc, *coords, cob->det)
-// 		);
-// 		
-// 		return rep;
-// 	}
 	
 	dfs::vertex_data_ptr dfs::vertexData(dfs::cobasis_ptr cob, 
 			dfs::coordinates_ptr coords) {
@@ -570,19 +475,5 @@ namespace basil {
 		
 		return dat;
 	}
-	
-// 	dfs::vertex_rep_ptr dfs::vertexRep(dfs::cobasis_ptr cob, 
-// 			dfs::coordinates_ptr coords) {
-// 		/* TODO lots of stuf in dfs.gap VertexRep() that could be added */
-// 		
-// 		//concatenate the cobasis and extra incidence of the cobasis invariants
-// 		index_set inc = cob->cob | cob->extraInc;
-// 		
-// 		vertex_rep_ptr rep(
-// 			new vertex_rep(inc, *coords, cob->det)
-// 		);
-// 		
-// 		return rep;
-// 	}
 	
 } /* namespace basil */

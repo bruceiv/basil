@@ -200,35 +200,6 @@ namespace basil {
 		typedef shared_ptr<index_set> index_set_ptr;
 		typedef std::vector<index_set> index_set_list;
 		
-// 		/** Invariants of a cobasis */
-// 		struct cobasis_invariants {
-// 			
-// 			cobasis_invariants(index_set cob, index_set extraInc, 
-// 					coordinates coords, mpz_class det)
-// 					: cob(cob), extraInc(extraInc), coords(coords), det(det)
-// 					{}
-// 			
-// 			index_set cob;
-// 			index_set extraInc;
-// 			coordinates coords;
-// 			mpz_class det;
-// 		};
-// 		typedef shared_ptr<cobasis_invariants> cobasis_invariants_ptr;
-// 		typedef std::vector<cobasis_invariants_ptr> cobasis_invariants_list;
-// 		
-// 		/** Vertex representation. */
-// 		struct vertex_rep {
-// 			
-// 			vertex_rep(index_set inc, coordinates coords, 
-// 					mpz_class det) : inc(inc), coords(coords), det(det) {}
-// 			
-// 			index_set inc;
-// 			coordinates coords;
-// 			mpz_class det;
-// 		};
-// 		typedef shared_ptr<vertex_rep> vertex_rep_ptr;
-// 		typedef std::vector<vertex_rep_ptr> vertex_rep_list;
-		
 		/** Joint vertex-cobasis storage */
 		struct vertex_data {
 			
@@ -299,7 +270,6 @@ namespace basil {
 		////////////////////////////////////////////////////////////////////////
 		
 		/** @return representatives of each of the orbits of the cobases */
-// 		cobasis_invariants_list const& getBasisOrbits() const;
 		cobasis_map const& getBasisOrbits() const;
 		
 		/** @return the dimension of the polytope */
@@ -313,14 +283,12 @@ namespace basil {
 		bool isFinished() const;
 		
 		/** @return representatives of each of the orbits of the extreme rays */
-// 		vertex_rep_list const& getRayOrbits() const;
 		coordinates_map const& getRayOrbits() const;
 		
 		/** @return the symmetry group used in the DFS */
 		permutation_group const& getSymmetryGroup() const;
 		
 		/** @return representatives of each of the orbits of the vertices */
-// 		vertex_rep_list const& getVertexOrbits() const;
 		coordinates_map const& getVertexOrbits() const;
 		
 		
@@ -378,11 +346,6 @@ namespace basil {
 			);
 		}
 		
-// 		/** Adds a cobasis to the global list.
-// 		 *  @param cob		The cobasis to add
-// 		 */
-// 		void addCobasis(cobasis_invariants_ptr cob);
-		
 		/** Adds a cobasis to the global map of cobasis representatives. Note 
 		 *  that the vertex data pointer given should already be present in the 
 		 *  global map of vertex representatives (added by another cobasis), or 
@@ -392,25 +355,12 @@ namespace basil {
 		 */
 		void addCobasis(index_set const& cob, vertex_data_ptr dat);
 		
-// 		/** Adds a vertex to the global list
-// 		 *  @param rep		The representation of the vertex
-// 		 */
-// 		void addVertex(vertex_rep_ptr rep);
-		
 		/** Adds a vertex to the global map of vertex representatives.
 		 *  This will add all cobases defined for this vertex to the global map 
 		 *  of cobasis representatives as well.
 		 *  @param dat		The data for this vertex
 		 */
 		void addVertex(vertex_data_ptr dat);
-		
-// 		/** Gets the cobasis invariants for a given cobasis and coordinates
-// 		 *  @param cob		The cobasis
-// 		 *  @param coords	The vector coordinates
-// 		 *  @return the invariants for the parameters
-// 		 */
-// 		cobasis_invariants_ptr cobasisInvariants(cobasis_ptr cob, 
-// 				coordinates_ptr coords);
 		
 		/** Find the first vertex for the DFS */
 		index_set dfsFirstBasis();
@@ -432,18 +382,11 @@ namespace basil {
 		 *  candidate cobases.
 		 *  @return true if a symmetry is found, false otherwise
 		 */
-// 		bool findSymmetry(cobasis_invariants_ptr rep, 
-// 						  cobasis_invariants_list list);
 		bool findSymmetry(index_set find, index_set_list list);
 		
 		/** Initializes algorithm globals */
 		void initGlobals();
 		
-// 		/** Checks if a given cobasis has been seen before. 
-// 		 *  @param rep		The cobasis to check
-// 		 *  @return true for likely seen, false for likely not
-// 		 */
-// 		bool isNewCobasis(cobasis_invariants_ptr rep);
 		/** Checks if a cobasis has been seen before.
 		 *  @param cob		The cobasis to check
 		 *  @param dat		The invariant data for this cobasis
@@ -456,7 +399,6 @@ namespace basil {
 		 *  @return a pointer to the ray representative of this ray's orbit, or 
 		 * 		a null pointer if there is none such.
 		 */
-// 		vertex_rep_ptr knownRay(vertex_rep_ptr rep);
 		vertex_data_ptr knownRay(vertex_data_ptr rep);
 		
 		/** Gets the canonical vertex for each vertex in a known orbit.
@@ -464,14 +406,12 @@ namespace basil {
 		 *  @return a pointer to the vertex representative of this vertex's 
 		 * 		orbit, or a null pointer if there is none such.
 		 */
-// 		vertex_rep_ptr knownVertex(vertex_rep_ptr rep);
 		vertex_data_ptr knownVertex(vertex_data_ptr rep);
 		
 		/** Gets the cobases whose invariants match the given one.
 		 *  @param dat		The invariant data to match
 		 *  @return a list of cobases with matching invariants.
 		 */
-// 		cobasis_invariants_list matchingInvariants(cobasis_invariants_ptr rep);
 		index_set_list matchingInvariants(vertex_data_ptr dat);
 		
 		/** Add new edges to the search stack.
@@ -486,28 +426,12 @@ namespace basil {
 		 */
 		vertex_data_ptr rayData(cobasis_ptr cob, coordinates_ptr coords);
 		
-// 		/** Gets the ray representation for the given cobasis and 
-// 		 *  coordinates.
-// 		 *  @param cob		The cobasis
-// 		 *  @param coords	The coordinates
-// 		 *  @return the ray representation for the parameters
-// 		 */
-// 		vertex_rep_ptr rayRep(cobasis_ptr cob, coordinates_ptr coords);
-		
 		/** Combines the cobasis and coordinate data into a vertex_data object
 		 *  @param cob		The cobasis data
 		 *  @param coords	The vertex coordinates
 		 *  @return the vertex data from the parameters
 		 */
 		vertex_data_ptr vertexData(cobasis_ptr cob, coordinates_ptr coords);
-		
-// 		/** Gets the vertex representation for the given cobasis and 
-// 		 *  coordinates.
-// 		 *  @param cob		The cobasis
-// 		 *  @param coords	The coordinates
-// 		 *  @return the vertex representation for the parameters
-// 		 */
-// 		vertex_rep_ptr vertexRep(cobasis_ptr cob, coordinates_ptr coords);
 		
 		////////////////////////////////////////////////////////////////////////
 		// Initialization-time globals
@@ -534,8 +458,6 @@ namespace basil {
 		ind basisCount;
 		/** Cache of recently seen cobases */
 		lru::cache<index_set, index_set_hash> cobasisCache;
-// 		/** Global list of seen cobases */
-// 		cobasis_invariants_list cobasisList;
 		/** Global map of seen cobases, up to symmetry */
 		cobasis_map basisOrbits;
 		/** Search queue for cobases */
@@ -547,15 +469,11 @@ namespace basil {
 		/** Backtracking stack. */
 		std::deque<index_pair> pathStack;
 		/** representatives of each orbit (of rays) */
-// 		vertex_rep_list rayOrbits;
 		coordinates_map rayOrbits;
 		/** The true dimension of the polytope */
 		ind realDim;
 		/** representatives of each orbit (of vertices) */
-// 		vertex_rep_list vertexOrbits;
 		coordinates_map vertexOrbits;
-// 		/** coordinates found */
-// 		std::set<coordinates> vertexSet;
 		/** Pivots in the working stack */
 		std::deque<pivot> workStack;
 		
