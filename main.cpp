@@ -34,13 +34,16 @@ std::ostream& operator<< (std::ostream& o, lrs::index_set const& s) {
 }
 
 /** Prints a list of cobases. */
-std::ostream& operator<< (std::ostream& o, dfs::cobasis_invariants_list l) {
+// std::ostream& operator<< (std::ostream& o, dfs::cobasis_invariants_list l) {
+std::ostream& operator<< (std::ostream& o, dfs::cobasis_map const& m) {
 	bool isFirst = true;
 	o << "{";
-	for (dfs::cobasis_invariants_list::const_iterator it = l.begin();
-			it != l.end(); ++it) {
+// 	for (dfs::cobasis_invariants_list::const_iterator it = l.begin();
+// 			it != l.end(); ++it) {
+	for (dfs::cobasis_map::const_iterator it = m.begin(); it != m.end(); ++it) {
 		if (isFirst) isFirst = false; else o << ", ";
-		o << (**it).cob;
+// 		o << (**it).cob;
+		o << it->first;
 	}
 	o << "}";
 	return o;
@@ -60,13 +63,17 @@ std::ostream& operator<< (std::ostream& o, permutation_list const& l) {
 }
 
 /** prints a representation of a list of vertices */
-std::ostream& operator<< (std::ostream& o, dfs::vertex_rep_list const& l) {
+// std::ostream& operator<< (std::ostream& o, dfs::vertex_rep_list const& l) {
+std::ostream& operator<< (std::ostream& o, dfs::coordinates_map const& m) {
 	bool isFirst = true;
 	o << "{";
-	for (dfs::vertex_rep_list::const_iterator it = l.begin();
-			it != l.end(); ++it) {
+// 	for (dfs::vertex_rep_list::const_iterator it = l.begin();
+// 			it != l.end(); ++it) {
+	for (dfs::coordinates_map::const_iterator it = m.begin(); it != m.end(); 
+			++it) {
 		if (isFirst) isFirst = false; else o << ", ";
-		o << (**it).coords;
+// 		o << (**it).coords;
+		o << it->first;
 	}
 	o << "}";
 	return o;
