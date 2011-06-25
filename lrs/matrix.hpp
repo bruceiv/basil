@@ -130,20 +130,6 @@ namespace lrs {
 				boost::hash_combine(seed, mptoi(*i) );
 			}
 			return seed;
-			/*
-			return boost::hash_range(
-				boost::make_transform_iterator( 
-					v.begin(), 
-					boost::pointer_to_unary_function<val_t const, long>(
-						getLong) 
-				),
-				boost::make_transform_iterator( 
-					v.end(), 
-					boost::pointer_to_unary_function<val_t const, long>(
-						getLong) 
-				)
-			);
-			*/
 		}
 	
 	};
