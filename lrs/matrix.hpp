@@ -1,13 +1,19 @@
 #ifndef _LRS_MATRIX_HPP_
 #define _LRS_MATRIX_HPP_
 
+#include <cstdlib>
 #include <istream>
 #include <new>
 #include <ostream>
 
+#include <boost/functional.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+
 #include <gmpxx.h>
 
 #include "clrs.hpp"
+#include "cobasis.hpp"
 
 namespace lrs {
 	
@@ -16,10 +22,21 @@ namespace lrs {
 	//assign these friends so they can get at the v member
 	friend class lrs;
 	public:
+		/* typedef's for STL compatibility */
+		typedef val_t&			reference;
+		typedef val_t const&	const_reference;
+		typedef val_t* 			iterator;
+		typedef val_t const*	const_iterator;
+		typedef ind				size_type;
+		typedef ind				difference_type;
+		typedef val_t			value_type;
+		typedef val_t*			pointer;
+		typedef val_t const*	const_pointer;
+		
 		/** Constructs a vector with the given dimension. 
 		 *  @param d		The dimension of the vector
 		 */
-		vector_mpz(ind d);
+		vector_mpz(size_type d);
 		
 		/** Copy constructor.
 		 *  @param that		The vector to copy
@@ -34,22 +51,34 @@ namespace lrs {
 		 */
 		vector_mpz& operator= (vector_mpz const& that);
 		
+		/** Gets an iterator at the first element of the vector. */
+		iterator begin();
+		
+		/** Gets a constant iterator at the first element of the vector. */
+		const_iterator begin() const;
+		
+		/** Gets an iterator one past the last element of the vector. */
+		iterator end();
+		
+		/** Gets a constant iterator one past the last element of the vector. */
+		const_iterator end() const;
+		
 		/** Indexing operator. Returns a mutable element reference.
 		 *  @param i		The index of the element to return.
 		 */
-		val_t& operator[] (ind i);
+		reference operator[] (size_type i);
 		
 		/** Indexing operator. Returns a constant element reference.
 		 *  @param i		The index of the element to return.
 		 */
-		val_t const& operator[] (ind i) const;
+		const_reference operator[] (size_type i) const;
 		
 		/** Returns the vector obtained from dividing every element in v by s.
 		 *  Uses truncating integer arithmetic.
 		 *  @param v		The vector to divide
 		 *  @param s		The value to divide it by
 		 */
-		friend vector_mpz operator/ (vector_mpz const& v, val_t const& s);
+		friend vector_mpz operator/ (vector_mpz const& v, const_reference s);
 		
 		/** Prints the vector with space-separated elements inside square 
 		 *  brackets.
@@ -86,7 +115,37 @@ namespace lrs {
 		/** Internal storage of vector data */
 		vector_t v;
 		/** Dimension of the vector. */
-		ind d;
+		size_type d;
+	};
+	
+	/** Functional to hash a vector_mpz */
+	class vector_mpz_hash 
+			: public std::unary_function<vector_mpz, std::size_t> {
+	public:
+		
+		std::size_t operator() (vector_mpz const& v) const {
+			std::size_t seed = 0UL;
+			vector_mpz& v_n = const_cast<vector_mpz&>(v);
+			for (vector_mpz::iterator i = v_n.begin(); i != v_n.end(); ++i) {
+				boost::hash_combine(seed, mptoi(*i) );
+			}
+			return seed;
+			/*
+			return boost::hash_range(
+				boost::make_transform_iterator( 
+					v.begin(), 
+					boost::pointer_to_unary_function<val_t const, long>(
+						getLong) 
+				),
+				boost::make_transform_iterator( 
+					v.end(), 
+					boost::pointer_to_unary_function<val_t const, long>(
+						getLong) 
+				)
+			);
+			*/
+		}
+	
 	};
 	
 	/** Wraps an LRS-compatible matrix. */

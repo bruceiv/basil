@@ -1,8 +1,6 @@
 #ifndef _CLRS_HPP_
 #define _CLRS_HPP_
 
-#include <vector>
-
 #include "lrslib.h"
 #include "lrsgmp.h"
 

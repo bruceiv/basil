@@ -12,16 +12,84 @@
 #include <vector>
 
 #include <boost/functional.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "basilCommon.hpp"
+#include <gmpxx.h>
+
+#include <permlib/common.h> //because the PermLib author didn't ...
+#include <permlib/bsgs.h>
+#include <permlib/permutation.h>
+#include <permlib/transversal/schreier_tree_transversal.h>
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
+#include "lrs/matrix.hpp"
 
 #include "lru/cache.hpp"
 
+
 namespace basil {
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
+	//  Imports and typedefs for use in Basil
+	//
+	////////////////////////////////////////////////////////////////////////////
+	
+	/** import STL string into this namespace */
+	using std::string;
+	
+	/** import boost shared pointer into this namespace */
+	using boost::shared_ptr;
+	
+
+	/** matrix type */
+	typedef 
+		lrs::matrix
+		matrix;
+	typedef
+		shared_ptr<matrix>
+		matrix_ptr;
+	
+	/** typesafe index into matrix */
+	typedef 
+		lrs::ind
+		ind;
+	/** unsigned version of ind */
+	typedef
+		lrs::uind
+		uind;
+	
+	/** permutation type */
+	typedef 
+		permlib::Permutation 
+		permutation;
+	typedef
+		shared_ptr<permutation>
+		permutation_ptr;
+		
+	/** permutation tree traversal type */
+	typedef 
+		permlib::SchreierTreeTransversal<permutation>
+		permutation_transversal;
+	typedef
+		shared_ptr<permutation_transversal>
+		permutation_transversal_ptr;
+	
+	/** permutation group type */
+	typedef 
+		permlib::BSGS<permutation, permutation_transversal> 
+		permutation_group;
+	typedef
+		shared_ptr<permutation_group>
+		permutation_group_ptr;
+	
+	/** list of permutation type */
+	typedef
+		typename permutation_group::PERMlist
+		permutation_list;
 	
 	/** Exception thrown for unexpected circumstances in the DFS algorithm.
 	 *  The what string will describe the error.
@@ -103,6 +171,20 @@ namespace basil {
 	
 	/** Stateful wrapper class for DFS algorithm. */
 	class dfs {
+	private:
+		
+		////////////////////////////////////////////////////////////////////////
+		// Typedefs for internal data types
+		////////////////////////////////////////////////////////////////////////
+		
+		typedef lrs::index_set_iter index_set_iter;
+		typedef lrs::index_set_hash index_set_hash;
+		
+		typedef lrs::cobasis cobasis;
+		typedef shared_ptr<cobasis> cobasis_ptr;
+		
+		typedef std::pair<ind, ind> index_pair;
+	
 	public:
 		
 		////////////////////////////////////////////////////////////////////////
@@ -111,8 +193,6 @@ namespace basil {
 		
 		typedef lrs::vector_mpz coordinates;
 		typedef shared_ptr<coordinates> coordinates_ptr;
-		
-		typedef lrs::ind ind;
 		
 		typedef lrs::index_set index_set;
 		typedef shared_ptr<index_set> index_set_ptr;
@@ -129,7 +209,6 @@ namespace basil {
 			index_set extraInc;
 			coordinates coords;
 			mpz_class det;
-			ind index;
 		};
 		typedef shared_ptr<cobasis_invariants> cobasis_invariants_ptr;
 		typedef std::vector<cobasis_invariants_ptr> cobasis_invariants_list;
@@ -146,6 +225,48 @@ namespace basil {
 		};
 		typedef shared_ptr<vertex_rep> vertex_rep_ptr;
 		typedef std::vector<vertex_rep_ptr> vertex_rep_list;
+		
+		/** Joint vertex-cobasis storage */
+		struct vertex_data {
+			
+			/** Single-cobasis constructor. Initializes all fields as you would 
+			 *  think, where cobs is set up to be a set initially including 
+			 *  only cob. 
+			 */
+			vertex_data(coordinates coords, index_set inc, index_set cob, 
+					mpz_class det) : coords(coords), inc(inc), cobs(), 
+					det(det) {
+				cobs.insert(cob);
+			}
+			
+			/** Multiple-cobasis constructor. Initializes all fields to the 
+			 *  given values */
+			vertex_data(coordinates coords, index_set inc, 
+					std::set<index_set> cobs, mpz_class det) : coords(coords), 
+					inc(inc), cobs(cobs), det(det) { }
+			
+			/* Key data */
+			/** Coordinates of the vertex */
+			coordinates coords;
+			/** Set of incident cobasis indices */
+			index_set inc;
+			/** Set of cobases for this vertex */
+			std::set<index_set> cobs;
+			
+			/* Invariants */
+			/** determinant TODO (?) */
+			mpz_class det;
+		};
+		typedef shared_ptr<vertex_data> vertex_data_ptr;
+		
+		/** map of vertex coordinates to a vertex data pointer */
+		typedef 
+			boost::unordered_map<coordinates, vertex_data_ptr>
+			coordinates_map;
+		/** map of a cobasis to a vertex data pointer */
+		typedef
+			boost::unordered_map<index_set, vertex_data_ptr, index_set_hash>
+			cobasis_map;
 		
 		
 		/** Set up a DFS on the given matrix, with the given permuation group.
@@ -200,17 +321,8 @@ namespace basil {
 	private:
 		
 		////////////////////////////////////////////////////////////////////////
-		// Typedefs for internal data types
+		// More internal data structures
 		////////////////////////////////////////////////////////////////////////
-		
-		typedef lrs::index_set_iter index_set_iter;
-		typedef lrs::index_set_hash index_set_hash;
-		
-		typedef lrs::cobasis cobasis;
-		typedef shared_ptr<cobasis> cobasis_ptr;
-		
-		typedef std::pair<ind, ind> index_pair;
-		
 		
 		/** Representation of a pivot */
 		struct pivot {

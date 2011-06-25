@@ -8,7 +8,6 @@
 #include <permlib/permlib_api.h>
 #include <permlib/permutation.h>
 
-#include "basilCommon.hpp"
 #include "dfs.hpp"
 
 #include "lrs/cobasis.hpp"
@@ -69,16 +68,13 @@ namespace basil {
 	
 	void dfs::addCobasis(dfs::cobasis_invariants_ptr cob) {
 		/* TODO lots of stuff in dfs.gap AddCobasis() that could be added */
-		/* TODO see if cob->index is actually ever used ... */
-		
-		cob->index = ++basisCount;
+				
 		cobasisList.push_back(cob);
 	}
 	
 	void dfs::addVertex(dfs::vertex_rep_ptr rep) {
 		vertexOrbits.push_back(rep);
 		
-		//TODO consult with Dr. Bremner about the normalization algo
 		coordinates norm = rep->coords.normalization();
 		vertexSet.insert(norm);
 	}
@@ -408,12 +404,14 @@ namespace basil {
 				l.pivot(enter, leave);
 				
 				/* avoid expensive invariant calculations by caching recently 
-				 * seen cobases (which could be reached from different pivots) 
+				 * seen cobases (which could be reached from different pivots).
+				 * As the time to insert or lookup should be similar, using 
+				 * insert instead of lookup saves the extra call to insert here 
 				 */
-				if ( ! cobasisCache.lookup(cob->cob) ) {
+				if ( ! cobasisCache.insert(cob->cob) ) {
 					
 					/* if this cobasis is not in the cache, add it */
-					cobasisCache.insert(cob->cob);
+					/* cobasisCache.insert(cob->cob); */
 					
 					/* calculate invariants of new cobasis */
 					cobasis_invariants_ptr newRep(cobasisInvariants(cob, sol));

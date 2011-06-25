@@ -46,6 +46,22 @@ namespace lrs {
 		return *this;
 	}
 	
+	val_t* vector_mpz::begin() {
+		return v;
+	}
+	
+	val_t const* vector_mpz::begin() const {
+		return v;
+	}
+	
+	val_t* vector_mpz::end() {
+		return v + d;
+	}
+	
+	val_t const* vector_mpz::end() const {
+		return v + d;
+	}
+	
 	val_t& vector_mpz::operator[] ( ind i ) {
 		return v[i];
 	}
