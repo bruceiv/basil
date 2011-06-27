@@ -1,0 +1,32 @@
+true
+#I  Starting pass 1
+#I  Found  0 Linearities
+#I  adding vertex[ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+#I  starting from [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
+#I  100 bases found (492 ms)
+#I  200 bases found (792 ms)
+#I  300 bases found (1092 ms)
+#I  400 bases found (1396 ms)
+#I  500 bases found (1732 ms)
+#I  600 bases found (2140 ms)
+#I  700 bases found (2552 ms)
+#I  800 bases found (3000 ms)
+#I  900 bases found (3484 ms)
+#I  1000 bases found (4004 ms)
+#I  1100 bases found (4500 ms)
+#I  1200 bases found (5068 ms)
+#I  1300 bases found (5668 ms)
+#I  1400 bases found (6488 ms)
+#I  1500 bases found (7140 ms)
+#I  1600 bases found (8048 ms)
+#I  1700 bases found (8888 ms)
+#I  1800 bases found (9796 ms)
+#I  1900 bases found (10528 ms)
+#I  2000 bases found (11564 ms)
+#I  2100 bases found (12600 ms)
+#I  2200 bases found (13748 ms)
+#I  2300 bases found (15641 ms)
+#I  2400 bases found (17361 ms)
+#I  2500 bases found (19509 ms)
+#I  2600 bases found (22449 ms)
+#I  adding vertex[ 1, 7/4, 15/8, 17/8, 5/2 ]

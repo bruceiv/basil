@@ -5,6 +5,8 @@
 #include <set>
 #include <vector>
 
+#include <boost/make_shared.hpp>
+
 #include <permlib/permlib_api.h>
 #include <permlib/permutation.h>
 
@@ -288,6 +290,12 @@ namespace basil {
 				if ( find == old ) return it->second; else continue;
 			}
 			
+			/* PermLib chokes on trying to find set image of sets with 
+			 * non-equal size. As equal size of incidence sets should be a 
+			 * cheap invariant, though, I'll check it here. TODO verify with 
+			 * Dr. Bremner */
+			if ( find.count() != old.count() ) continue;
+			
 			/* look for a permutation in the global group that maps the 
 			 * incidence set of the ray we are trying to find to the incidence 
 			 * set of the known ray. */
@@ -326,6 +334,12 @@ namespace basil {
 			
 			/* incidence set to check */
 			index_set& old = it->second->inc;
+			
+			/* PermLib chokes on trying to find set image of sets with 
+			 * non-equal size. As equal size of incidence sets should be a 
+			 * cheap invariant, though, I'll check it here. TODO verify with 
+			 * Dr. Bremner */
+			if ( find.count() != old.count() ) continue;
 			
 			/* look for a permutation in the global group that maps the 
 			 * incidence set of the vertex we are trying to find to the 
@@ -454,9 +468,11 @@ namespace basil {
 		/* less the ray index */
 		inc.set(cob->ray, false);
 		
-		vertex_data_ptr dat(
-			new vertex_data(*coords, inc, cob->cob, cob->det)
-		);
+// 		vertex_data_ptr dat(
+// 			new vertex_data(*coords, inc, cob->cob, cob->det)
+// 		);
+		vertex_data_ptr dat = boost::make_shared<vertex_data>(
+				*coords, inc, cob->cob, cob->det);
 		
 		return dat;
 	}
@@ -469,9 +485,11 @@ namespace basil {
 		/* union of the cobasis and extra incidence of the cobasis data */
 		index_set inc = cob->cob | cob->extraInc;
 		
-		vertex_data_ptr dat(
-			new vertex_data(*coords, inc, cob->cob, cob->det)
-		);
+// 		vertex_data_ptr dat(
+// 			new vertex_data(*coords, inc, cob->cob, cob->det)
+// 		);
+		vertex_data_ptr dat = boost::make_shared<vertex_data>(
+				*coords, inc, cob->cob, cob->det);
 		
 		return dat;
 	}
