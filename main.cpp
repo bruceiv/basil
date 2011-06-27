@@ -221,6 +221,10 @@ namespace basil {
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
 					"Show all intermediate dictionaries in the search tree.")
+				("print-basis",
+					value<long>(&dfsOpts_.printBasis),
+					"Print the number of cobases found and running time every "
+					"n cobases.")
 				("input-file,i",
 					value<string>(&matFileName),
 					"Input file name. "
@@ -257,7 +261,10 @@ namespace basil {
 			/* Open I/O files, if supplied */
 			if ( ! matFileName.empty() ) matFile.open(matFileName.c_str());
 			if ( ! grpFileName.empty() ) grpFile.open(grpFileName.c_str());
-			if ( ! outFileName.empty() ) outFile.open(outFileName.c_str());
+			if ( ! outFileName.empty() ) {
+				outFile.open(outFileName.c_str());
+				dfsOpts_.withOutput(outFile);
+			}
 		}
 		
 		/** Destructor. */
@@ -357,6 +364,7 @@ int main(int argc, char **argv) {
 				<< "\n\tvertex orbits: " << d.getVertexOrbits()
 				<< "\n\tray orbits: " << d.getRayOrbits()
 				<< "\n}"
+				<< "\ntotal running time: " << d.getRunningTime() << " ms"
 				<< "\nEND RESULTS" 
 				<< endl;
 		

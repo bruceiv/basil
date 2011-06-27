@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <ctime>
 #include <deque>
 #include <iterator>
 #include <ostream>
@@ -27,6 +28,10 @@ namespace basil {
 	////////////////////////////////////////////////////////////////////////////
 	
 	bool dfs::doDfs() {
+		
+		/* set algorithm start time */
+		start_time = std::clock();
+		
 		/* print initial dictionary */
 		if (opts.showsAllDicts) l.printDict();
 		
@@ -34,7 +39,12 @@ namespace basil {
 		index_set cob = dfsFirstBasis();
 		
 		/* DFS the edge graph, returning whether it successfully completes */
-		return dfsFromRoot(cob);
+		bool res = dfsFromRoot(cob);
+		
+		/* set algorithm end time */
+		diff_time = std::clock() - start_time;
+		
+		return res;
 	}
 
 	////////////////////////////////////////////////////////////////////////////
@@ -56,6 +66,9 @@ namespace basil {
 	dfs::coordinates_map const& dfs::getRayOrbits() const 
 		{ return rayOrbits; }
 	
+	unsigned long dfs::getRunningTime() const 
+		{ return diff_time * 1000 / CLOCKS_PER_SEC ; }
+	
 	permutation_group const& dfs::getSymmetryGroup() const 
 		{ return g; }
 	
@@ -74,6 +87,15 @@ namespace basil {
 		 */
 		
 		basisOrbits.insert(std::make_pair(cob, dat));
+		basisCount++;
+		
+		/* print cobasis, if option set */
+		if ( opts.printBasis && basisCount % opts.printBasis == 0 ) {
+			diff_time = std::clock() - start_time;
+			opts.output() << "# " << basisCount << " bases seen (" 
+					<< (diff_time * 1000 / CLOCKS_PER_SEC) << " ms)" 
+					<< std::endl;
+		}
 	}
 	
 	void dfs::addVertex(dfs::vertex_data_ptr dat) {
@@ -292,8 +314,7 @@ namespace basil {
 			
 			/* PermLib chokes on trying to find set image of sets with 
 			 * non-equal size. As equal size of incidence sets should be a 
-			 * cheap invariant, though, I'll check it here. TODO verify with 
-			 * Dr. Bremner */
+			 * cheap invariant, though, I'll check it here. */
 			if ( find.count() != old.count() ) continue;
 			
 			/* look for a permutation in the global group that maps the 
@@ -337,8 +358,7 @@ namespace basil {
 			
 			/* PermLib chokes on trying to find set image of sets with 
 			 * non-equal size. As equal size of incidence sets should be a 
-			 * cheap invariant, though, I'll check it here. TODO verify with 
-			 * Dr. Bremner */
+			 * cheap invariant, though, I'll check it here. */
 			if ( find.count() != old.count() ) continue;
 			
 			/* look for a permutation in the global group that maps the 
@@ -468,9 +488,6 @@ namespace basil {
 		/* less the ray index */
 		inc.set(cob->ray, false);
 		
-// 		vertex_data_ptr dat(
-// 			new vertex_data(*coords, inc, cob->cob, cob->det)
-// 		);
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
 				*coords, inc, cob->cob, cob->det);
 		
@@ -485,9 +502,6 @@ namespace basil {
 		/* union of the cobasis and extra incidence of the cobasis data */
 		index_set inc = cob->cob | cob->extraInc;
 		
-// 		vertex_data_ptr dat(
-// 			new vertex_data(*coords, inc, cob->cob, cob->det)
-// 		);
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
 				*coords, inc, cob->cob, cob->det);
 		

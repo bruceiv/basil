@@ -1,8 +1,10 @@
 #ifndef _DFS_HPP_
 #define _DFS_HPP_
 
+#include <ctime>
 #include <deque>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <ostream>
 #include <set>
@@ -111,7 +113,7 @@ namespace basil {
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<long>::max()), cacheSize(1000), 
 				dualFacetTrick(true), firstCobasis(), lexOnly(false), lrs_o(), 
-				showsAllDicts(false) {}
+				out(&std::cout), printBasis(0), showsAllDicts(false) {}
 		
 		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
@@ -137,6 +139,16 @@ namespace basil {
 		/** Activates (or deactivates) the lexOnly option */
 		dfs_opts& withLexOnly(bool opt = true)
 			{ lexOnly = opt; return *this; }
+		
+		dfs_opts& withOutput(std::ostream& o) 
+			{ out = &o; return *this; }
+		
+		std::ostream& output()
+			{ return *out; }
+		
+		/** Sets the basis printing interval */
+		dfs_opts& printBasisAt(long n)
+			{ printBasis = n; return *this; }
 		
 		/** Activates (or deactivates) the showsAllDicts option */
 		dfs_opts& showAllDicts(bool opt = true) 
@@ -165,6 +177,12 @@ namespace basil {
 		bool lexOnly;
 		/** options for LRS (modifier methods are cloned into here) */
 		lrs::lrs_opts lrs_o;
+		/** output stream for this algorithm [standard output]. */
+		std::ostream* out;
+		/** number of cobases to print a basis progress report after; if 0, 
+		 *  will not print ever, otherwise prints after every printBasis 
+		 *  cobases found [0]. */
+		long printBasis;
 		/** show all dictionaries as they are generated [false] */
 		bool showsAllDicts;
 	}; /* struct dfs_opts */
@@ -284,6 +302,9 @@ namespace basil {
 		
 		/** @return representatives of each of the orbits of the extreme rays */
 		coordinates_map const& getRayOrbits() const;
+		
+		/** @return the running time of the algorithm, in milliseconds */
+		unsigned long getRunningTime() const;
 		
 		/** @return the symmetry group used in the DFS */
 		permutation_group const& getSymmetryGroup() const;
@@ -462,6 +483,9 @@ namespace basil {
 		cobasis_map basisOrbits;
 		/** Search queue for cobases */
 		std::deque<index_set> cobasisQueue;
+		/** Temporary to store time diffs into. Will hold total running time on 
+		 *  algorithm completion. */
+		std::clock_t diff_time;
 		/** If the basis count hit the maximum count */
 		bool hitMaxBasis;
 		/** The first cobasis found */
@@ -472,6 +496,8 @@ namespace basil {
 		coordinates_map rayOrbits;
 		/** The true dimension of the polytope */
 		ind realDim;
+		/** the time at which the algorithm was started */
+		std::clock_t start_time;
 		/** representatives of each orbit (of vertices) */
 		coordinates_map vertexOrbits;
 		/** Pivots in the working stack */
