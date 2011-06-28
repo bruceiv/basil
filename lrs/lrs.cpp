@@ -18,7 +18,7 @@ namespace lrs {
 	
 	lrs::lrs(matrix const& m, lrs_opts o) throw(std::bad_alloc) : o(o) {
 		/* Initialize LRS */
-		lrs_init_quiet(stdin, stdout);
+		lrs_init_quiet(stdin, stderr);
 		
 		/* Init LRS global data */
 		Q = lrs_alloc_dat((char*)"LRS globals");
@@ -334,7 +334,40 @@ namespace lrs {
 	}
 	
 	void lrs::printDict() {
-		printA(P, Q);
+		/* Copied the code up to lrs.cpp to use iostreams, rather than trying 
+		 * to mix iostreams and stdio on the same output stream */
+// 		printA(P, Q);
+		ind i, j;
+		
+		matrix_t& A = P->A;
+		ind* B = P->B;
+		ind* C = P->C;
+		ind* Row = P->Row;
+		ind* Col = P->Col;
+		ind m = P->m, d = P->d, lastdv = Q->lastdv;
+		
+		std::ostream& out = o.output();
+		
+		out << "\n Basis    "; for (i = 0; i <= m; i++) out << B[i] << " ";
+		out << " Row "; for (i = 0; i <= m; i++) out << Row[i] << " ";
+		
+		out << "\n Co-Basis "; for (i = 0; i <= d; i++) out << C[i] << " ";
+		out << " Column "; for (i = 0; i <= d; i++) out << Col[i] << " ";
+		out << " det= " << toString(P->det) << " \n";
+		
+		for (i = 0; i <= m; i++) {
+			out << "A[" << B[i] << "]";
+			for (j = 0; j <= d; j++) {
+				out << "[" << C[j] << "]= " << toString(A[Row[i]][Col[j]]) 
+					<< " ";
+			}
+			
+			if (i == 0 && Q->nonnegative) { /* skip basic rows - don't exist! */
+				i = d;
+			}
+			
+			out << std::endl;
+		}
 	}
 	
 	void lrs::setCobasis(index_set& cob) {
@@ -349,7 +382,7 @@ namespace lrs {
 		for ( ; j < d && k != end(cob); ++j, ++k) {
 			facet[j] = *k;
 			
-			/* check errors */
+			/* check errors TODO replace with asserts? Boost asserts? */
 			if ( facet[j] < 1 || facet[j] > m ) {
 				std::ostringstream err;
 				err << "Start/restart cobasic indices must be in range [1," 
@@ -376,6 +409,13 @@ namespace lrs {
 		if ( !restartpivots(P, Q) )
 			throw lrs_error("Could not restart pivots from given cobasis");
 		
+	}
+	
+	std::string lrs::toString(val_t& x) {
+		std::stringstream s;
+		if ( ! negative(x) ) s << " ";
+		s << mpz_class(x);
+		return s.str();
 	}
 	
 } /* namespace lrs */

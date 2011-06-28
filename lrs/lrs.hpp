@@ -1,6 +1,7 @@
 #ifndef _LRS_HPP_
 #define _LRS_HPP_
 
+#include <iostream>
 #include <new>
 #include <stdexcept>
 #include <string>
@@ -30,14 +31,24 @@ namespace lrs {
 	 */
 	struct lrs_opts {
 		
-		lrs_opts() : vRepresentation(false) {}
+		lrs_opts() : out(&std::cout), vRepresentation(false) {}
 		
+		
+		/** Sets output file */
+		lrs_opts& withOutput(std::ostream& o)
+			{ out = &o; return *this; }
+		
+		/** Gets output file */
+		std::ostream& output()
+			{ return *out; }
 		
 		/** Sets (or unsets) the V-representation flag  */
 		lrs_opts& inVRepresentation(bool opt = true)
 			{ vRepresentation = opt; return *this; }
 		
 		
+		/** output stream to print output on [standard output]. */
+		std::ostream* out;
 		/** Specify the input is in vertex representation rather than halfspace 
 		 *  representation [false]. Equivalent to the LRS input 
 		 *  "V-representation" */
@@ -144,6 +155,10 @@ namespace lrs {
 		 *  @param mat		The matrix to read in
 		 */
 		void initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat);
+		
+		/** Prints the parameter to a string. Non-negative values will be 
+		 *  padded with a single space. */
+		std::string toString(val_t& x);
 		
 		/** Structure for holding static problem data */
 		lrs_dat* Q;

@@ -141,7 +141,7 @@ namespace basil {
 			{ lexOnly = opt; return *this; }
 		
 		dfs_opts& withOutput(std::ostream& o) 
-			{ out = &o; return *this; }
+			{ out = &o; lrs_o.withOutput(o); return *this; }
 		
 		std::ostream& output()
 			{ return *out; }

@@ -35,7 +35,7 @@ namespace lrs {
 	/* Bring these types into the wrapper namespace to C++-ize them */
 	/** LRS lib scalar type. */
 	typedef
-		lrs_mp_t
+		lrs_mp
 		val_t;
 	/** LRS lib vector type.
 	 *  Application of the indexing operator yeilds a val_t.
