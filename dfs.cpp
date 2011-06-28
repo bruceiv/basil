@@ -87,14 +87,11 @@ namespace basil {
 		 */
 		
 		basisOrbits.insert(std::make_pair(cob, dat));
-		basisCount++;
 		
 		/* print cobasis, if option set */
-		if ( opts.printBasis && basisCount % opts.printBasis == 0 ) {
-			diff_time = std::clock() - start_time;
-			opts.output() << "# " << basisCount << " bases seen (" 
-					<< (diff_time * 1000 / CLOCKS_PER_SEC) << " ms)" 
-					<< std::endl;
+		if ( opts.printBasis && basisOrbits.size() % opts.printBasis == 0 ) {
+			opts.output() << "# cobases: " << basisOrbits.size() << " (" 
+					<< currentTime() << " ms)" << std::endl;
 		}
 	}
 	
@@ -110,6 +107,12 @@ namespace basil {
 		for (std::set<index_set>::iterator it = dat->cobs.begin();
 				it != dat->cobs.end(); ++it) {
 			addCobasis(*it, dat);
+		}
+		
+		/* print vertex, if option set */
+		if ( opts.printVertex && vertexOrbits.size() % opts.printVertex == 0 ) {
+			opts.output() << "# vertices: " << vertexOrbits.size() << " ("
+					<< currentTime() << " ms)" << std::endl;
 		}
 	}
 	
@@ -148,7 +151,7 @@ namespace basil {
 		
 		/* While there are new (up to symmetry) vertices to explore, and the 
 		 * maximum problem size has not been exceeded... */
-		while ( ! workStack.empty() && opts.basisLimit > basisCount ) {
+		while ( ! workStack.empty() && opts.basisLimit > basisOrbits.size() ) {
 			
 			/* get the current cobasis */
 			cobasis_ptr dict(l.getCobasis(0));
@@ -186,7 +189,7 @@ namespace basil {
 		}
 		
 		/* Did this finish, or terminate at too many bases? */
-		hitMaxBasis = opts.basisLimit <= basisCount;
+		hitMaxBasis = opts.basisLimit <= basisOrbits.size();
 		return ! hitMaxBasis;
 	}
 	
@@ -199,6 +202,12 @@ namespace basil {
 				vertex_data_ptr dat( rayData(c, s) );
 				if ( ! knownRay(dat) ) {
 					rayOrbits.insert(std::make_pair(dat->coords, dat));
+					
+					if ( opts.printRay 
+							&& rayOrbits.size() % opts.printRay == 0 ) {
+						opts.output() << "# rays: " << rayOrbits.size() 
+								<< " (" << currentTime() << " ms)" << std::endl;
+					}
 				}
 			}
 		}
@@ -264,7 +273,6 @@ namespace basil {
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
 		
-		basisCount = 0;
 		basisOrbits = cobasis_map();
 		cobasisQueue = std::deque<index_set>();
 		hitMaxBasis = false;

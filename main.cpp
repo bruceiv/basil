@@ -212,6 +212,7 @@ namespace basil {
 			using namespace boost::program_options;
 			
 			string matFileName = "", grpFileName = "", outFileName = "";
+			long printInterval = 0;
 			
 			options_description o("Basil options");
 			o.add_options()
@@ -223,6 +224,19 @@ namespace basil {
 					"Show all intermediate dictionaries in the search tree.")
 				("print-basis",
 					value<long>(&dfsOpts_.printBasis),
+					"Print the number of cobases found and running time every "
+					"n cobases.")
+				("print-interval",
+					value<long>(&printInterval),
+					"Convenience for print-{basis,ray,vertex} with the given "
+					"parameter. If any of the others are given, they take "
+					"precedence")
+				("print-ray",
+					value<long>(&dfsOpts_.printRay),
+					"Print the number of cobases found and running time every "
+					"n cobases.")
+				("print-vertex",
+					value<long>(&dfsOpts_.printVertex),
 					"Print the number of cobases found and running time every "
 					"n cobases.")
 				("input-file,i",
@@ -264,6 +278,18 @@ namespace basil {
 			if ( ! outFileName.empty() ) {
 				outFile.open(outFileName.c_str());
 				dfsOpts_.withOutput(outFile);
+			}
+			
+			/* Handle print-interval overloading */
+			if ( printInterval ) {
+				dfsOpts_.printAt(printInterval);
+				
+				if (v.count("print-basis")) 
+					dfsOpts_.printBasisAt(v["print-basis"].as<long>());
+				if (v.count("print-ray")) 
+					dfsOpts_.printRayAt(v["print-ray"].as<long>());
+				if (v.count("print-vertex")) 
+					dfsOpts_.printVertexAt(v["print-vertex"].as<long>());
 			}
 		}
 		

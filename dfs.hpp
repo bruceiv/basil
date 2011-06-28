@@ -111,9 +111,11 @@ namespace basil {
 		/** Default constructor - sets all options to their default value */
 		dfs_opts() 
 				: assumesNoSymmetry(false), 
-				basisLimit(std::numeric_limits<long>::max()), cacheSize(1000), 
-				dualFacetTrick(true), firstCobasis(), lexOnly(false), lrs_o(), 
-				out(&std::cout), printBasis(0), showsAllDicts(false) {}
+				basisLimit(std::numeric_limits<unsigned long>::max()), 
+				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
+				lexOnly(false), lrs_o(), out(&std::cout), printBasis(0), 
+				printNew(false), printRay(0), printVertex(0), 
+				showsAllDicts(false) {}
 		
 		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
@@ -121,7 +123,7 @@ namespace basil {
 			{ assumesNoSymmetry = opt; return *this; }
 		
 		/** Sets the maximum number of bases to be considered */
-		dfs_opts& withBasisLimit(long lim)
+		dfs_opts& withBasisLimit(unsigned long lim)
 			{ basisLimit = lim; return *this; }
 		
 		/** Sets the size of the cobasis cache */
@@ -140,15 +142,34 @@ namespace basil {
 		dfs_opts& withLexOnly(bool opt = true)
 			{ lexOnly = opt; return *this; }
 		
+		/** Sets the output stream for this DFS. Also sets the output stream 
+		 *  for the associated LRS instance. */
 		dfs_opts& withOutput(std::ostream& o) 
 			{ out = &o; lrs_o.withOutput(o); return *this; }
 		
+		/** Gets the output stream for this DFS */
 		std::ostream& output()
 			{ return *out; }
+		
+		/** Convenience for print{Basis,Ray,Vertex} */
+		dfs_opts& printAt(long n)
+			{ printBasis = n; printRay = n; printVertex = n; return *this; }
 		
 		/** Sets the basis printing interval */
 		dfs_opts& printBasisAt(long n)
 			{ printBasis = n; return *this; }
+		
+		/** Activates (or deactivates) the printNew option */
+		dfs_opts& doPrintNew(bool opt = true)
+			{ printNew = opt; return *this; }
+		
+		/** Sets the ray printing interval */
+		dfs_opts& printRayAt(long n)
+			{ printRay = n; return *this; }
+		
+		/** Sets the vertex printing interval */
+		dfs_opts& printVertexAt(long n)
+			{ printVertex = n; return *this; }
 		
 		/** Activates (or deactivates) the showsAllDicts option */
 		dfs_opts& showAllDicts(bool opt = true) 
@@ -164,7 +185,7 @@ namespace basil {
 		bool assumesNoSymmetry;
 		/** maximum number of bases to consider [numeric_limits\<long\>::max()] 
 		 */
-		long basisLimit;
+		unsigned long basisLimit;
 		/** size of the seen cobasis lookup cache [1000] */
 		long cacheSize;
 		/** use the dual facet trick [true] */
@@ -179,10 +200,17 @@ namespace basil {
 		lrs::lrs_opts lrs_o;
 		/** output stream for this algorithm [standard output]. */
 		std::ostream* out;
-		/** number of cobases to print a basis progress report after; if 0, 
-		 *  will not print ever, otherwise prints after every printBasis 
-		 *  cobases found [0]. */
+		/** number of new (up to symmetry) cobases to print a progress report 
+		 *  after; if 0, will never print [0]. */
 		long printBasis;
+		/** print the new {cobasis,ray,vertex} when seen */
+		bool printNew;
+		/** number of new (up to symmetry) rays to print a progress report 
+		 *  after; if 0, will never print [0]. */
+		long printRay;
+		/** number of new (up to symmetry) vertices to print a progress report 
+		 *  after; if 0, will never print [0]. */
+		long printVertex;
 		/** show all dictionaries as they are generated [false] */
 		bool showsAllDicts;
 	}; /* struct dfs_opts */
@@ -475,8 +503,6 @@ namespace basil {
 		
 		/** A constant list of all the indices */
 		index_set allIndices;
-		/** How many bases have been found */
-		ind basisCount;
 		/** Cache of recently seen cobases */
 		lru::cache<index_set, index_set_hash> cobasisCache;
 		/** Global map of seen cobases, up to symmetry */
@@ -502,6 +528,16 @@ namespace basil {
 		coordinates_map vertexOrbits;
 		/** Pivots in the working stack */
 		std::deque<pivot> workStack;
+		
+		////////////////////////////////////////////////////////////////////////
+		// Time-sensitive inline functions
+		////////////////////////////////////////////////////////////////////////
+		
+		/** Update and return the current running time. */
+		unsigned long currentTime() {
+			diff_time = std::clock() - start_time;
+			return (diff_time * 1000 / CLOCKS_PER_SEC);
+		}
 		
 	}; /* class dfs */
 
