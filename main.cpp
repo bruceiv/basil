@@ -11,83 +11,10 @@
 #include <permlib/permlib_api.h>
 
 #include "dfs.hpp"
-
-
-using namespace basil;
-
-/** Prints a representation of its cobasis (as a set of indices).
- *  NOTE this redefines the standard output operator for an index set, and all 
- *  code included afterward will use this operator. Perhaps this should be 
- *  refactored ...
- */
-std::ostream& operator<< (std::ostream& o, lrs::index_set const& s) {
-	bool isFirst = true;
-	o << "{";
-	for (lrs::index_set_iter it = lrs::begin(s); 
-			it != lrs::end(s); 
-			++it) {
-		if (isFirst) isFirst = false; else o << ", ";
-		o << *it;
-	}
-	o << "}";
-	return o;
-}
-
-/** Prints a list of cobases. */
-std::ostream& operator<< (std::ostream& o, dfs::cobasis_map const& m) {
-	/* sort the set of cobases */
-	std::set<dfs::index_set> s;
-	for (dfs::cobasis_map::const_iterator it = m.begin(); it != m.end(); ++it) {
-		s.insert(it->first);
-	}
-	
-	/* print the sorted set */
-	bool isFirst = true;
-	o << "{";
-	for (std::set<dfs::index_set>::const_iterator it = s.begin(); 
-			it != s.end(); ++it) {
-		if (isFirst) isFirst = false; else o << ", ";
-		o << *it;
-	}
-	o << "}";
-	return o;
-}
-
-/** prints a representation of a list of permutations */
-std::ostream& operator<< (std::ostream& o, permutation_list const& l) {
-	bool isFirst = true;
-	o << "{";
-	for (permutation_list::const_iterator it = l.begin();
-			it != l.end(); ++it) {
-		if (isFirst) isFirst = false; else o << ", ";
-		o << **it;
-	}
-	o << "}";
-	return o;
-}
-
-/** prints a representation of a list of vertices */
-std::ostream& operator<< (std::ostream& o, dfs::coordinates_map const& m) {
-	/* sort the set of coordinates */
-	std::set<dfs::coordinates> s;
-	for (dfs::coordinates_map::const_iterator it = m.begin(); it != m.end(); 
-			++it) {
-		s.insert(it->first);
-	}
-	
-	/* print the sorted set */
-	bool isFirst = true;
-	o << "{";
-	for (std::set<dfs::coordinates>::const_iterator it = s.begin(); 
-			it != s.end(); ++it) {
-		if (isFirst) isFirst = false; else o << ", ";
-		o << *it;
-	}
-	o << "}";
-	return o;
-}
+#include "fmt.hpp"
 
 namespace basil {
+
 	/** Contains runtime custimizations for basil
 	 */
 	class opts {
@@ -212,7 +139,7 @@ namespace basil {
 			using namespace boost::program_options;
 			
 			string matFileName = "", grpFileName = "", outFileName = "";
-			long printInterval = 0;
+			long printInterval = 0; bool verbose = false;
 			
 			options_description o("Basil options");
 			o.add_options()
@@ -231,6 +158,10 @@ namespace basil {
 					"Convenience for print-{basis,ray,vertex} with the given "
 					"parameter. If any of the others are given, they take "
 					"precedence")
+				("print-new",
+					bool_switch(&dfsOpts_.printNew),
+					"Print the added {cobasis,vertex,ray} when printing a "
+					"status message")
 				("print-ray",
 					value<long>(&dfsOpts_.printRay),
 					"Print the number of cobases found and running time every "
@@ -239,6 +170,10 @@ namespace basil {
 					value<long>(&dfsOpts_.printVertex),
 					"Print the number of cobases found and running time every "
 					"n cobases.")
+				("verbose,v",
+					bool_switch(&verbose),
+					"Shorthand for --print-interval=1, --print-new. Those "
+					"settings, if supplied, will take precedence.")
 				("input-file,i",
 					value<string>(&matFileName),
 					"Input file name. "
@@ -278,6 +213,12 @@ namespace basil {
 			if ( ! outFileName.empty() ) {
 				outFile.open(outFileName.c_str());
 				dfsOpts_.withOutput(outFile);
+			}
+			
+			/* Handle verbose flag */
+			if ( verbose ) {
+				if ( ! printInterval ) printInterval = 1;
+				if ( ! v.count("print-new") ) dfsOpts_.doPrintNew();
 			}
 			
 			/* Handle print-interval overloading */
@@ -384,11 +325,11 @@ int main(int argc, char **argv) {
 		out 	<< "\nBEGIN RESULTS" 
 				<< "\n{"
 				<< "\n\tdimension:" << d.getDimension()
-				<< "\n\tinitial cobasis: " << d.getInitialCobasis() 
-				<< "\n\tsymmetry generators: " << d.getSymmetryGroup().S 
-				<< "\n\tbasis orbits: " << d.getBasisOrbits()
-				<< "\n\tvertex orbits: " << d.getVertexOrbits()
-				<< "\n\tray orbits: " << d.getRayOrbits()
+				<< "\n\tinitial cobasis: " << fmt( d.getInitialCobasis() )
+				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup() )
+				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits() )
+				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits() )
+				<< "\n\tray orbits: " << fmt( d.getRayOrbits() )
 				<< "\n}"
 				<< "\ntotal running time: " << d.getRunningTime() << " ms"
 				<< "\nEND RESULTS" 
