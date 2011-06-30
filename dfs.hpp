@@ -332,7 +332,7 @@ namespace basil {
 		coordinates_map const& getRayOrbits() const;
 		
 		/** @return the running time of the algorithm, in milliseconds */
-		unsigned long getRunningTime() const;
+		std::clock_t getRunningTime() const;
 		
 		/** @return the symmetry group used in the DFS */
 		permutation_group const& getSymmetryGroup() const;
@@ -530,13 +530,16 @@ namespace basil {
 		std::deque<pivot> workStack;
 		
 		////////////////////////////////////////////////////////////////////////
-		// Time-sensitive inline functions
+		// Time-related functions and values
 		////////////////////////////////////////////////////////////////////////
 		
+		/** Number of clock ticks for millisecond */
+		static std::clock_t const clocks_per_ms = CLOCKS_PER_SEC / 1000;
+		
 		/** Update and return the current running time. */
-		unsigned long currentTime() {
+		std::clock_t currentTime() {
 			diff_time = std::clock() - start_time;
-			return (diff_time * 1000 / CLOCKS_PER_SEC);
+			return diff_time / clocks_per_ms;
 		}
 		
 	}; /* class dfs */

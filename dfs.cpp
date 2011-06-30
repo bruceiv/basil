@@ -12,12 +12,17 @@
 #include <permlib/permutation.h>
 
 #include "dfs.hpp"
+#include "fmt.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
 #include "lrs/matrix.hpp"
 
 #include "lru/cache.hpp"
+
+/* simple flag to find debug code in source */
+#define BAS_DEBUG 
+//#define BAS_DEBUG //
 
 namespace basil {
 	
@@ -66,8 +71,8 @@ namespace basil {
 	dfs::coordinates_map const& dfs::getRayOrbits() const 
 		{ return rayOrbits; }
 	
-	unsigned long dfs::getRunningTime() const 
-		{ return diff_time * 1000 / CLOCKS_PER_SEC ; }
+	std::clock_t dfs::getRunningTime() const 
+		{ return diff_time / clocks_per_ms; }
 	
 	permutation_group const& dfs::getSymmetryGroup() const 
 		{ return g; }
@@ -90,8 +95,12 @@ namespace basil {
 		
 		/* print cobasis, if option set */
 		if ( opts.printBasis && basisOrbits.size() % opts.printBasis == 0 ) {
-			opts.output() << "# cobases: " << basisOrbits.size() << " (" 
-					<< currentTime() << " ms)" << std::endl;
+			std::ostream& out = opts.output();
+			out << "# cobases: " << basisOrbits.size() << " (" 
+					<< currentTime() << " ms)";
+			if ( opts.printNew ) out << " " << fmt( cob );
+			BAS_DEBUG out << "\n%" << cob << "%";
+			out << std::endl;
 		}
 	}
 	
@@ -111,8 +120,12 @@ namespace basil {
 		
 		/* print vertex, if option set */
 		if ( opts.printVertex && vertexOrbits.size() % opts.printVertex == 0 ) {
-			opts.output() << "# vertices: " << vertexOrbits.size() << " ("
-					<< currentTime() << " ms)" << std::endl;
+			std::ostream& out = opts.output();
+			out << "# vertices: " << vertexOrbits.size() << " (" 
+					<< currentTime() << " ms)";
+			if ( opts.printNew ) out << " " << norm;
+			BAS_DEBUG out << "\n^" << dat->inc << "^";
+			out << std::endl;
 		}
 	}
 	
@@ -205,8 +218,17 @@ namespace basil {
 					
 					if ( opts.printRay 
 							&& rayOrbits.size() % opts.printRay == 0 ) {
-						opts.output() << "# rays: " << rayOrbits.size() 
-								<< " (" << currentTime() << " ms)" << std::endl;
+						std::ostream& out = opts.output();
+						out << "# rays: " << rayOrbits.size() << " (" 
+								<< currentTime() << " ms)";
+						if ( opts.printNew ) out << " " << dat->coords;
+						BAS_DEBUG out << "\n*" << dat->inc << "*";
+						BAS_DEBUG for (std::set<index_set>::iterator it 
+						BAS_DEBUG 		= dat->cobs.begin(); 
+						BAS_DEBUG		it != dat->cobs.end(); ++it) {
+						BAS_DEBUG 	out << "\n%" << *it << "%";
+						BAS_DEBUG }
+						out << std::endl;
 					}
 				}
 			}

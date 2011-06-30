@@ -1,6 +1,7 @@
 # editor-specific files
 *.kdev4
 *~
+*.swp
 
 # build artifacts
 basil

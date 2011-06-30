@@ -218,7 +218,7 @@ namespace basil {
 			/* Handle verbose flag */
 			if ( verbose ) {
 				if ( ! printInterval ) printInterval = 1;
-				if ( ! v.count("print-new") ) dfsOpts_.doPrintNew();
+				dfsOpts_.doPrintNew();
 			}
 			
 			/* Handle print-interval overloading */
@@ -304,6 +304,8 @@ namespace basil {
  *  using genMatrixFromStream() and genPermutationGroupFromStream().
  */
 int main(int argc, char **argv) {
+	using namespace basil;
+	
 	/* parse command line arguments */
 	opts o(argc, argv);
 	
