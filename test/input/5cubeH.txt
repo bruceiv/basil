@@ -1,0 +1,23 @@
+5-cube
+H-representation
+begin
+10 6 rational
+1 -1 0 0 0 0 
+1 0 -1 0 0 0 
+1 0 0 -1 0 0 
+1 0 0 0 -1 0 
+1 0 0 0 0 -1 
+1 0 0 0 0 1 
+1 0 0 0 1 0 
+1 0 0 1 0 0 
+1 0 1 0 0 0 
+1 1 0 0 0 0 
+end
+geometric
+symmetry begin
+5 6
+4 5 , 6 7
+3 4 , 7 8
+2 3 , 8 9
+1 2 , 9 10
+symmetry end

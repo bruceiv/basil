@@ -1,3 +1,6 @@
+# Uses Nauty to find the isomorphism group generators of a matrix M stored in 
+# nautyMat.gap
+
 RequirePackage("require_file");;
 AddToLoadPath("~/research/symbal/src");
 AddToLoadPath("~/research/basil/test");

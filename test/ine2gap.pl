@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+# Converts a Basil input file into an equivalent Symbal script.
+
 my $vrep = "false";		#boolean V-representation flag
 my @mrows = ();			#matrix rows (GAP format)
 my @grows = ();			#group rows (GAP format)
