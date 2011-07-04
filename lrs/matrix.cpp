@@ -207,16 +207,6 @@ namespace lrs {
 		return v[i];
 	}
 	
-	vector_mpz operator/(vector_mpz const& v, val_t const& s) {
-		vector_mpz u(v.d);
-		
-		/* NOTE this uses truncating integer division. If rational arithmetic 
-		 * is needed, this should be changed to reflect such. */
-		for (ind i = 0; i < v.d; i++) mpz_tdiv_q(u[i], v[i], s);
-		
-		return u;
-	}
-	
 	std::ostream& operator<< (std::ostream& o, vector_mpz const& v) {
 		o << "[";
 		for (ind i = 0; i < v.d; i++) {

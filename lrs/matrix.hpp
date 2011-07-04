@@ -196,13 +196,6 @@ namespace lrs {
 		 */
 		const_reference operator[] (size_type i) const;
 		
-		/** Returns the vector obtained from dividing every element in v by s.
-		 *  Uses truncating integer arithmetic.
-		 *  @param v		The vector to divide
-		 *  @param s		The value to divide it by
-		 */
-		friend vector_mpz operator/ (vector_mpz const& v, const_reference s);
-		
 		/** Prints the vector with space-separated elements inside square 
 		 *  brackets.
 		 *  @param o		The output stream to print on
