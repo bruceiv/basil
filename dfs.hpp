@@ -226,7 +226,9 @@ namespace basil {
 		typedef lrs::index_set_iter index_set_iter;
 		typedef lrs::index_set_hash index_set_hash;
 		
-		typedef lrs::vector_mpz_hash vector_mpz_hash;
+		typedef lrs::vector_mpz vector_mpz;
+		typedef shared_ptr<vector_mpz> vector_mpz_ptr;
+		typedef lrs::vector_mpq_hash coordinates_hash;
 		
 		typedef lrs::cobasis cobasis;
 		typedef shared_ptr<cobasis> cobasis_ptr;
@@ -239,8 +241,7 @@ namespace basil {
 		// Typedefs for external data types
 		////////////////////////////////////////////////////////////////////////
 		
-		typedef lrs::vector_mpz coordinates;
-		typedef shared_ptr<coordinates> coordinates_ptr;
+		typedef lrs::vector_mpq coordinates;
 		
 		typedef lrs::index_set index_set;
 		typedef shared_ptr<index_set> index_set_ptr;
@@ -281,7 +282,7 @@ namespace basil {
 		
 		/** map of vertex coordinates to a vertex data pointer */
 		typedef 
-			boost::unordered_map<coordinates, vertex_data_ptr, vector_mpz_hash>
+			boost::unordered_map<coordinates, vertex_data_ptr, coordinates_hash>
 			coordinates_map;
 		/** map of a cobasis to a vertex data pointer */
 		typedef
@@ -473,14 +474,14 @@ namespace basil {
 		 *  @param coords	The ray coordinates
 		 *  @return the vertex data from the parameters
 		 */
-		vertex_data_ptr rayData(cobasis_ptr cob, coordinates_ptr coords);
+		vertex_data_ptr rayData(cobasis_ptr cob, vector_mpz_ptr coords);
 		
 		/** Combines the cobasis and coordinate data into a vertex_data object
 		 *  @param cob		The cobasis data
-		 *  @param coords	The vertex coordinates
+		 *  @param coords	The vertex coordinates (un-normalized)
 		 *  @return the vertex data from the parameters
 		 */
-		vertex_data_ptr vertexData(cobasis_ptr cob, coordinates_ptr coords);
+		vertex_data_ptr vertexData(cobasis_ptr cob, vector_mpz_ptr coords);
 		
 		////////////////////////////////////////////////////////////////////////
 		// Initialization-time globals

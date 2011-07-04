@@ -10,6 +10,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
+#include <gmp.h>
 #include <gmpxx.h>
 
 #include "clrs.hpp"
@@ -17,10 +18,132 @@
 
 namespace lrs {
 	
+	class vector_mpz;
+	
+	/** Wraps a multi-precision rational vector. */
+	class vector_mpq {
+	friend class vector_mpz;
+	public:
+		/* typedef's for STL compatibility */
+		typedef mpq_t&			reference;
+		typedef mpq_t const&	const_reference;
+		typedef mpq_t* 			iterator;
+		typedef mpq_t const*	const_iterator;
+		typedef ind				size_type;
+		typedef ind				difference_type;
+		typedef mpq_t			value_type;
+		typedef mpq_t*			pointer;
+		typedef mpq_t const*	const_pointer;
+		
+		/** Constructs a vector with the given dimension. 
+		 *  @param d		The dimension of the vector
+		 */
+		vector_mpq(size_type d);
+		
+		/** Copy constructor.
+		 *  @param that		The vector to copy
+		 */
+		vector_mpq(vector_mpq const& that);
+		
+		/** Copy constructor.
+		 *  @param that		The integer vector to copy. Will initialize all 
+		 * 					denominators to 1
+		 */
+		vector_mpq(vector_mpz const& that);
+		
+		/** Destructs a vector. */
+		~vector_mpq();
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one.
+		 */
+		vector_mpq& operator= (vector_mpq const& that);
+		
+		/** Assignment operator.
+		 *  @param that		The integer vector to copy into this one. Will 
+		 * 					initialize all denominators to 1
+		 */
+		vector_mpq& operator= (vector_mpz const& that);
+		
+		/** Gets an iterator at the first element of the vector. */
+		iterator begin();
+		
+		/** Gets a constant iterator at the first element of the vector. */
+		const_iterator begin() const;
+		
+		/** Gets an iterator one past the last element of the vector. */
+		iterator end();
+		
+		/** Gets a constant iterator one past the last element of the vector. */
+		const_iterator end() const;
+		
+		/** Indexing operator. Returns a mutable element reference.
+		 *  @param i		The index of the element to return.
+		 */
+		reference operator[] (size_type i);
+		
+		/** Indexing operator. Returns a constant element reference.
+		 *  @param i		The index of the element to return.
+		 */
+		const_reference operator[] (size_type i) const;
+		
+		/** Prints the vector with space-separated elements inside square 
+		 *  brackets.
+		 *  @param o		The output stream to print on
+		 *  @param v		The vector to print
+		 *  @return the same output stream
+		 */
+		friend std::ostream& operator<< (std::ostream& o, vector_mpq const& v);
+		
+		/** Standard comparison operators. Uses lexicographic comparison to 
+		 *  compare the first vector to the second.
+		 */
+		friend bool operator<  (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator== (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator>  (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator<= (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator!= (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator>= (vector_mpq const& a, vector_mpq const& b);
+		
+	private:
+		
+		/** Compares this vector to another. Uses a lexicographic comparison.
+		 *  @param that		The vector to compare to
+		 *  @return -1 for this vector less than that, eq 0 for this vector 
+		 * 		equal to that, or gt 1 for this vector greater than that.
+		 */
+		int compare(vector_mpq const& that) const;
+		
+		/** Internal storage of vector data */
+		mpq_t *v;
+		/** Dimension of the vector. */
+		size_type d;
+	};
+	
+	/** Functional to hash a vector_mpq.  */
+	class vector_mpq_hash 
+			: public std::unary_function<vector_mpq, std::size_t> {
+	public:
+		
+		std::size_t operator() (vector_mpq const& v) const {
+			std::size_t seed = 0UL;
+			vector_mpq& v_n = const_cast<vector_mpq&>(v);
+			for (vector_mpq::iterator i = v_n.begin(); i != v_n.end(); ++i) {
+				/* combine low-order bits of numerator and denominator into 
+				 * hash */
+				boost::hash_combine(seed, mpz_get_si(mpq_numref(*i)) );
+				boost::hash_combine(seed, mpz_get_si(mpq_denref(*i)) );
+			}
+			return seed;
+		}
+	
+	};
+	
 	/** Wraps an LRS-compatible multi-precision integer vector. */
 	class vector_mpz {
 	//assign these friends so they can get at the v member
 	friend class lrs;
+	friend class vector_mpq;
 	public:
 		/* typedef's for STL compatibility */
 		typedef val_t&			reference;
@@ -99,9 +222,10 @@ namespace lrs {
 		friend bool operator>= (vector_mpz const& a, vector_mpz const& b);
 		
 		/** Returns the normalization of the given vector. The normalization is 
-		 *  defined to be the vector divided by its first non-zero coordinate.
+		 *  defined to be the vector divided by its first coordinate (if 
+		 *  non-zero), or the vector otherwise.
 		 */
-		vector_mpz normalization() const;
+		vector_mpq normalization() const;
 		
 	private:
 		
@@ -127,6 +251,7 @@ namespace lrs {
 			std::size_t seed = 0UL;
 			vector_mpz& v_n = const_cast<vector_mpz&>(v);
 			for (vector_mpz::iterator i = v_n.begin(); i != v_n.end(); ++i) {
+				/* combine low-order bits of value into hash */
 				boost::hash_combine(seed, mptoi(*i) );
 			}
 			return seed;

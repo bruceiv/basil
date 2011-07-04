@@ -109,8 +109,7 @@ namespace basil {
 		 * dfs.gap's AddCobasis() and AddVertex() would be helpful */
 		
 		/* map the normalization of the coordinates to the vertex data */
-		coordinates norm = dat->coords.normalization();
-		vertexOrbits.insert(std::make_pair(norm, dat));
+		vertexOrbits.insert(std::make_pair(dat->coords, dat));
 		
 		/* for each defined cobasis, map it to the vertex data */
 		for (std::set<index_set>::iterator it = dat->cobs.begin();
@@ -123,7 +122,7 @@ namespace basil {
 			std::ostream& out = opts.output();
 			out << "# vertices: " << vertexOrbits.size() << " (" 
 					<< currentTime() << " ms)";
-			if ( opts.printNew ) out << " " << norm;
+			if ( opts.printNew ) out << " " << dat->coords;
 			BAS_DEBUG out << "\n^" << dat->inc << "^";
 			out << std::endl;
 		}
@@ -145,7 +144,7 @@ namespace basil {
 		/* add this vertex / cobasis as a representative of its orbit 
 		 * (obviously there aren't any others yet) */
 		cobasis_ptr cob(l.getCobasis(0));
-		coordinates_ptr sol(l.getVertex());
+		vector_mpz_ptr sol(l.getVertex());
 		vertex_data_ptr dat(vertexData(cob, sol));
 		
 		initialCobasis = cob->cob;
@@ -208,7 +207,7 @@ namespace basil {
 	
 	void dfs::getRays() {
 		for (ind j = 1; j <= realDim; j++) {
-			coordinates_ptr s( l.getSolution(j) );
+			vector_mpz_ptr s( l.getSolution(j) );
 			
 			if (s) {
 				cobasis_ptr c( l.getCobasis(j) );
@@ -342,9 +341,8 @@ namespace basil {
 				if ( find == old ) return it->second; else continue;
 			}
 			
-			/* PermLib chokes on trying to find set image of sets with 
-			 * non-equal size. As equal size of incidence sets should be a 
-			 * cheap invariant, though, I'll check it here. */
+			/* PermLib throws an assertion failure on setImage of inequally 
+			 * sized sets, so I check this very cheap invariant here. */
 			if ( find.count() != old.count() ) continue;
 			
 			/* look for a permutation in the global group that maps the 
@@ -365,10 +363,8 @@ namespace basil {
 		
 		/* TODO add gramVec / invariants handling */
 		
-		/* a normalization of this vertex */
-		coordinates norm = rep->coords.normalization();
 		/* if it's already in the set, it's not new */
-		if ( vertexOrbits.find(norm) != vertexOrbits.end() ) {
+		if ( vertexOrbits.find(rep->coords) != vertexOrbits.end() ) {
 			/* duplicate vertex */
 			return rep;
 		}
@@ -386,9 +382,8 @@ namespace basil {
 			/* incidence set to check */
 			index_set& old = it->second->inc;
 			
-			/* PermLib chokes on trying to find set image of sets with 
-			 * non-equal size. As equal size of incidence sets should be a 
-			 * cheap invariant, though, I'll check it here. */
+			/* PermLib throws an assertion failure on setImage of inequally 
+			 * sized sets, so I check this very cheap invariant here. */
 			if ( find.count() != old.count() ) continue;
 			
 			/* look for a permutation in the global group that maps the 
@@ -460,7 +455,7 @@ namespace basil {
 				/* Do the given pivot, then get the cobasis for the new edge */
 				l.pivot(leave, enter);
 				cobasis_ptr cob(l.getCobasis(0));
-				coordinates_ptr sol(l.getVertex());
+				vector_mpz_ptr sol(l.getVertex());
 				/* pivot back */
 				l.pivot(enter, leave);
 				
@@ -510,7 +505,7 @@ namespace basil {
 	}
 	
 	dfs::vertex_data_ptr dfs::rayData(dfs::cobasis_ptr cob, 
-			dfs::coordinates_ptr coords) {
+			dfs::vector_mpz_ptr coords) {
 		/* TODO look at including gramVec from dfs.gap RayRep() */
 		
 		/* union of the cobasis and extra incidence of the cobasis data */
@@ -519,13 +514,13 @@ namespace basil {
 		inc.set(cob->ray, false);
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				*coords, inc, cob->cob, cob->det);
+				coordinates(*coords), inc, cob->cob, cob->det);
 		
 		return dat;
 	}
 	
 	dfs::vertex_data_ptr dfs::vertexData(dfs::cobasis_ptr cob, 
-			dfs::coordinates_ptr coords) {
+			dfs::vector_mpz_ptr coords) {
 		/* TODO look at including gramVec, stabilizerOrbits from dfs.gap 
 		 * VertexRep() */
 		
@@ -533,7 +528,7 @@ namespace basil {
 		index_set inc = cob->cob | cob->extraInc;
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				*coords, inc, cob->cob, cob->det);
+				coords->normalization(), inc, cob->cob, cob->det);
 		
 		return dat;
 	}

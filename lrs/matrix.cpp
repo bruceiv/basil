@@ -16,6 +16,143 @@ namespace lrs {
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
+	// VECTOR_MPQ CLASS
+	//
+	////////////////////////////////////////////////////////////////////////////
+	
+	vector_mpq::vector_mpq ( ind d ) : v(new mpq_t[d]), d(d) {
+		for (ind i = 0; i < d; i++) mpq_init(v[i]);
+	}
+	
+	vector_mpq::vector_mpq ( vector_mpq const& that ) 
+			: v(new mpq_t[that.d]), d(that.d) {
+		for (ind i = 0; i < d; i++) {
+			mpq_init(v[i]);
+			/* v[i] = that.v[i]; */
+			mpq_set(v[i], that.v[i]);
+		}
+	}
+	
+	vector_mpq::vector_mpq ( vector_mpz const& that ) 
+			: v(new mpq_t[that.d]), d(that.d) {
+		for (ind i = 0; i < d; i++) {
+			mpq_init(v[i]);
+			/* v[i] = that.v[i]; */
+			mpq_set_z(v[i], that.v[i]);
+		}
+	}
+	
+	vector_mpq::~vector_mpq() {
+		for (ind i = 0; i < d; i++) mpq_clear(v[i]);
+		delete[] v;
+	}
+	
+	vector_mpq& vector_mpq::operator= ( vector_mpq const& that ) {
+		if (v != that.v) {
+			for (ind i = 0; i < d; i++) mpq_clear(v[i]);
+			
+			if ( d != that.d ) {
+				delete[] v;
+				d = that.d;
+				v = new mpq_t[d];
+			}
+			
+			for (ind i = 0; i < d; i++) {
+				mpq_init(v[i]);
+				/* v[i] = that.v[i]; */
+				mpq_set(v[i], that.v[i]);
+			}
+		}
+		return *this;
+	}
+	
+	vector_mpq& vector_mpq::operator= ( vector_mpz const& that ) {
+		for (ind i = 0; i < d; i++) mpq_clear(v[i]);
+		
+		if ( d != that.d ) {
+			delete[] v;
+			d = that.d;
+			v = new mpq_t[d];
+		}
+		
+		for (ind i = 0; i < d; i++) {
+			mpq_init(v[i]);
+			/* v[i] = that.v[i]; */
+			mpq_set_z(v[i], that.v[i]);
+		}
+		
+		return *this;
+	}
+	
+	mpq_t* vector_mpq::begin() {
+		return v;
+	}
+	
+	mpq_t const* vector_mpq::begin() const {
+		return v;
+	}
+	
+	mpq_t* vector_mpq::end() {
+		return v + d;
+	}
+	
+	mpq_t const* vector_mpq::end() const {
+		return v + d;
+	}
+	
+	mpq_t& vector_mpq::operator[] ( ind i ) {
+		return v[i];
+	}
+	
+	const mpq_t& vector_mpq::operator[] ( ind i ) const {
+		return v[i];
+	}
+	
+	std::ostream& operator<< (std::ostream& o, vector_mpq const& v) {
+		o << "[";
+		for (ind i = 0; i < v.d; i++) {
+			o << " " << mpq_class(v[i]);
+		}
+		o << " ]";
+		return o;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Comparison operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	bool operator<  (vector_mpq const& a, vector_mpq const& b) 
+		{ return a.compare(b) < 0; }
+	bool operator== (vector_mpq const& a, vector_mpq const& b) 
+		{ return a.compare(b) == 0; }
+	bool operator>  (vector_mpq const& a, vector_mpq const& b) 
+		{ return a.compare(b) > 0; }
+	bool operator<= (vector_mpq const& a, vector_mpq const& b) 
+		{ return a.compare(b) <= 0; }
+	bool operator!= (vector_mpq const& a, vector_mpq const& b) 
+		{ return a.compare(b) != 0; }
+	bool operator>= (vector_mpq const& a, vector_mpq const& b) 
+		{ return a.compare(b) >= 0; }
+	
+	int vector_mpq::compare(vector_mpq const& that) const {
+		mpq_class t; int s = 0;
+		
+		for (ind i = 0; i < d && i < that.d; ++i) {
+			mpq_sub(t.get_mpq_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
+			s = sgn(t);
+			if (s != 0) return s;
+		}
+		// if it reaches here, the two are lexicographically equal up to the 
+		// end of the shorter string (and s == 0)
+		
+		if (d < that.d) s = -1; else if (d > that.d) s = 1; /* else s = 0; */
+		
+		return s;
+	}
+	
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
 	// VECTOR_MPZ CLASS
 	//
 	////////////////////////////////////////////////////////////////////////////
@@ -89,12 +226,20 @@ namespace lrs {
 		return o;
 	}
 	
-	vector_mpz vector_mpz::normalization() const {
-		for (ind i = 0; i < d; i++) {
-			if (! zero(v[i]) ) return *this / v[i];
+	vector_mpq vector_mpz::normalization() const {
+		if ( zero(v[0]) ) {
+			/* return mpq_vector equivalent to this one */
+			return vector_mpq(*this);
+		} else {
+			vector_mpq norm(this->d);
+			for (ind i = 0; i < d; i++) {
+				/* norm[i] = v[i] / v[0]; */
+				mpz_set(mpq_numref(norm[i]), v[i]);
+				mpz_set(mpq_denref(norm[i]), v[0]);
+				mpq_canonicalize(norm[i]);
+			}
+			return norm;
 		}
-		//it's all zeros anyway
-		return *this;
 	}
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -119,7 +264,7 @@ namespace lrs {
 		
 		for (ind i = 0; i < d && i < that.d; ++i) {
 			mpz_sub(t.get_mpz_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
-			/* s = mpz_sgn(t.get_mpz_t()); */ s = sgn(t);
+			s = sgn(t);
 			if (s != 0) return s;
 		}
 		// if it reaches here, the two are lexicographically equal up to the 
