@@ -113,8 +113,8 @@ namespace basil {
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<unsigned long>::max()), 
 				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
-				lexOnly(false), lrs_o(), out(&std::cout), printBasis(0), 
-				printNew(false), printRay(0), printVertex(0), 
+				gramVec(true), lexOnly(false), lrs_o(), out(&std::cout), 
+				printBasis(0), printNew(false), printRay(0), printVertex(0), 
 				showsAllDicts(false) {}
 		
 		
@@ -137,6 +137,10 @@ namespace basil {
 		/** Sets the initial cobasis to DFS from */
 		dfs_opts& withFirstCobasis(shared_ptr<lrs::index_set>& ptr) 
 			{ firstCobasis = ptr; return *this; }
+		
+		/** Deactivates (or activates) the gramVec option */
+		dfs_opts& noGramVec(bool opt = true) 
+			{ gramVec = !opt; return *this; }
 		
 		/** Activates (or deactivates) the lexOnly option */
 		dfs_opts& withLexOnly(bool opt = true)
@@ -193,6 +197,8 @@ namespace basil {
 		/** cobasis to start the search from [null]. If this is not set, the 
 		 *  DFS algorithm will find the first cobasis itself */
 		shared_ptr<lrs::index_set> firstCobasis;
+		/** Use gram vector hashing to shrink the cobasis search space [true] */
+		bool gramVec;
 		/** lexically based pivots only [false]. This is bad and breaks the 
 		 *  algorithm, don't use it */
 		bool lexOnly;
@@ -478,7 +484,7 @@ namespace basil {
 		
 		/** Combines the cobasis and coordinate data into a vertex_data object
 		 *  @param cob		The cobasis data
-		 *  @param coords	The vertex coordinates (un-normalized)
+		 *  @param coords	The vertex coordinates (un-rationalized)
 		 *  @return the vertex data from the parameters
 		 */
 		vertex_data_ptr vertexData(cobasis_ptr cob, vector_mpz_ptr coords);

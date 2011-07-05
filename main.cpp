@@ -149,6 +149,10 @@ namespace basil {
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
 					"Show all intermediate dictionaries in the search tree.")
+				("no-gram-vec", 
+					bool_switch(&dfsOpts_.gramVec)
+						->default_value(true)->implicit_value(false),
+					"Deactivate gram vector hashing")
 				("print-basis",
 					value<long>(&dfsOpts_.printBasis),
 					"Print the number of cobases found and running time every "

@@ -6,7 +6,9 @@
 #include <istream>
 #include <new>
 #include <ostream>
+#include <stdexcept>
 
+#include <gmp.h>
 #include <gmpxx.h>
 
 #include "matrix.hpp"
@@ -16,16 +18,201 @@ namespace lrs {
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
+	// MATRIX_MPQ CLASS
+	//
+	////////////////////////////////////////////////////////////////////////////
+	
+	matrix_mpq::matrix_mpq( ind n, ind d ) 
+			: m(new mpq_t[n*d]), n(n), d(d) {
+		for (ind i = 0; i < n*d; i++) mpq_init(m[i]);
+	}
+	
+	matrix_mpq::matrix_mpq( matrix_mpq const& that ) 
+			: m(new mpq_t[that.n*that.d]), n(that.n), d(that.d) {
+		for (ind i = 0; i < n*d; i++) {
+			mpq_init(m[i]);
+			/* m[i] = that.m[i]; */
+			mpq_set(m[i], that.m[i]);
+		}
+	}
+	
+	matrix_mpq::~matrix_mpq() {
+		for (ind i = 0; i < n*d; i++) mpq_clear(m[i]);
+		delete[] m;
+	}
+	
+	matrix_mpq& matrix_mpq::operator= ( matrix_mpq const& that ) {
+		if (m != that.m) {
+			for (ind i = 0; i < n*d; i++) mpq_clear(m[i]);
+			
+			if ( n*d != that.n*that.d ) {
+				delete[] m;
+				n = that.n;
+				d = that.d;
+				m = new mpq_t[n*d];
+			}
+			
+			for (ind i = 0; i < n*d; i++) {
+				mpq_init(m[i]);
+				/* m[i] = that.m[i]; */
+				mpq_set(m[i], that.m[i]);
+			}
+		}
+		return *this;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Element access operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	matrix_mpq::iterator matrix_mpq::begin() 
+		{ return matrix_mpq::iterator(m, 0, d); }
+	
+	matrix_mpq::const_iterator matrix_mpq::begin() const
+		{ return matrix_mpq::const_iterator(m, 0, d); }
+	
+	matrix_mpq::iterator matrix_mpq::end()
+		{ return matrix_mpq::iterator(m, n, d); }
+	
+	matrix_mpq::const_iterator matrix_mpq::end() const
+		{ return matrix_mpq::const_iterator(m, n, d); }
+	
+	ind matrix_mpq::size() const { return n; }
+	
+	ind matrix_mpq::dim() const { return d; }
+	
+	vector_mpq matrix_mpq::operator[] ( ind i )
+		{ return vector_mpq(m+(i*d), d); }
+	
+	vector_mpq const matrix_mpq::operator[] ( ind i ) const
+		{ return vector_mpq(m+(i*d), d); }
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Output operator
+	////////////////////////////////////////////////////////////////////////////
+	
+	std::ostream& operator<< ( std::ostream& o, matrix_mpq const& m ) {
+		o << "[";
+		for (ind i = 0; i < m.n; i++) {
+			o << " " << m[i];
+		}
+		o << " ]";
+		return o;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Comparison operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	bool operator<  ( matrix_mpq const& a, matrix_mpq const& b )
+		{ return a.compare(b) < 0; }
+	
+	bool operator== ( matrix_mpq const& a, matrix_mpq const& b )
+		{ return a.compare(b) == 0; }
+	
+	bool operator>  ( matrix_mpq const& a, matrix_mpq const& b )
+		{ return a.compare(b) > 0; }
+	
+	bool operator<= ( matrix_mpq const& a, matrix_mpq const& b )
+		{ return a.compare(b) <= 0; }
+	
+	bool operator!= ( matrix_mpq const& a, matrix_mpq const& b )
+		{ return a.compare(b) != 0; }
+	
+	bool operator>= ( matrix_mpq const& a, matrix_mpq const& b )
+		{ return a.compare(b) >= 0; }
+
+	int matrix_mpq::compare( matrix_mpq const& that ) const {
+		int s = 0;
+		
+		for (ind i = 0; i < n && i < that.n; ++i) {
+			s = operator[](i).compare(that[i]);
+			if (s != 0) return s;
+		}
+		// if it reaches here, the two are lexicographically equal up to the 
+		// end of the shorter matrix (and s == 0)
+		
+		if (n < that.n) s = -1; else if (n > that.n) s = 1; /* else s = 0; */
+		
+		return s;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Mathematical operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Iterator implementation
+	////////////////////////////////////////////////////////////////////////////
+	
+	matrix_mpq::iterator::iterator( mpq_t* m, ind i, ind d ) 
+			: m(m), i(i), d(d) {}
+	
+	matrix_mpq::const_iterator::const_iterator( mpq_t* m, ind i, ind d ) 
+			: m(m), i(i), d(d) {}
+	
+	matrix_mpq::const_iterator::const_iterator( matrix_mpq::iterator& that ) 
+			: m(that.m), i(that.i), d(that.d) {}
+	
+	vector_mpq matrix_mpq::iterator::dereference() const
+		{ return vector_mpq(m+(i*d), d); }
+	
+	vector_mpq const matrix_mpq::const_iterator::dereference() const
+		{ return vector_mpq(m+(i*d), d); }
+	
+	bool matrix_mpq::iterator::equal( matrix_mpq::iterator& that ) const
+		{ return m == that.m && i == that.i; }
+	
+	bool matrix_mpq::iterator::equal( matrix_mpq::const_iterator& that ) const
+		{ return m == that.m && i == that.i; }
+	
+	bool matrix_mpq::const_iterator::equal( matrix_mpq::iterator& that ) const
+		{ return m == that.m && i == that.i; }
+	
+	bool matrix_mpq::const_iterator::equal( 
+			matrix_mpq::const_iterator& that ) const
+		{ return m == that.m && i == that.i; }
+	
+	void matrix_mpq::iterator::increment() { ++i; }
+	
+	void matrix_mpq::const_iterator::increment() { ++i; }
+	
+	void matrix_mpq::iterator::decrement() { --i; }
+	
+	void matrix_mpq::const_iterator::decrement() { --i; }
+	
+	void matrix_mpq::iterator::advance( ind n ) { i += n; }
+	
+	void matrix_mpq::const_iterator::advance( ind n ) { i += n; }
+	
+	ind matrix_mpq::iterator::distance_to( matrix_mpq::iterator& that ) const 
+		{ return that.i = i; }
+	
+	ind matrix_mpq::iterator::distance_to( 
+			matrix_mpq::const_iterator& that ) const 
+		{ return that.i = i; }
+	
+	ind matrix_mpq::const_iterator::distance_to( 
+			matrix_mpq::iterator& that ) const 
+		{ return that.i = i; }
+	
+	ind matrix_mpq::const_iterator::distance_to( 
+			matrix_mpq::const_iterator& that ) const
+		{ return that.i = i; }
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
 	// VECTOR_MPQ CLASS
 	//
 	////////////////////////////////////////////////////////////////////////////
 	
-	vector_mpq::vector_mpq ( ind d ) : v(new mpq_t[d]), d(d) {
+	vector_mpq::vector_mpq ( ind d ) 
+			: v(new mpq_t[d]), d(d), selfAlloc(true) {
 		for (ind i = 0; i < d; i++) mpq_init(v[i]);
 	}
 	
 	vector_mpq::vector_mpq ( vector_mpq const& that ) 
-			: v(new mpq_t[that.d]), d(that.d) {
+			: v(new mpq_t[that.d]), d(that.d), selfAlloc(true) {
 		for (ind i = 0; i < d; i++) {
 			mpq_init(v[i]);
 			/* v[i] = that.v[i]; */
@@ -34,7 +221,7 @@ namespace lrs {
 	}
 	
 	vector_mpq::vector_mpq ( vector_mpz const& that ) 
-			: v(new mpq_t[that.d]), d(that.d) {
+			: v(new mpq_t[that.d]), d(that.d), selfAlloc(true) {
 		for (ind i = 0; i < d; i++) {
 			mpq_init(v[i]);
 			/* v[i] = that.v[i]; */
@@ -42,16 +229,21 @@ namespace lrs {
 		}
 	}
 	
+	vector_mpq::vector_mpq( mpq_t* v, size_type d ) 
+			: v(v), d(d), selfAlloc(false) {}
+	
 	vector_mpq::~vector_mpq() {
-		for (ind i = 0; i < d; i++) mpq_clear(v[i]);
-		delete[] v;
+		if (selfAlloc) {
+			for (ind i = 0; i < d; i++) mpq_clear(v[i]);
+			delete[] v;
+		}
 	}
 	
 	vector_mpq& vector_mpq::operator= ( vector_mpq const& that ) {
 		if (v != that.v) {
 			for (ind i = 0; i < d; i++) mpq_clear(v[i]);
 			
-			if ( d != that.d ) {
+			if ( d != that.d && selfAlloc ) {
 				delete[] v;
 				d = that.d;
 				v = new mpq_t[d];
@@ -69,7 +261,7 @@ namespace lrs {
 	vector_mpq& vector_mpq::operator= ( vector_mpz const& that ) {
 		for (ind i = 0; i < d; i++) mpq_clear(v[i]);
 		
-		if ( d != that.d ) {
+		if ( d != that.d && selfAlloc ) {
 			delete[] v;
 			d = that.d;
 			v = new mpq_t[d];
@@ -84,31 +276,29 @@ namespace lrs {
 		return *this;
 	}
 	
-	mpq_t* vector_mpq::begin() {
-		return v;
-	}
+	////////////////////////////////////////////////////////////////////////////
+	// Element access operators
+	////////////////////////////////////////////////////////////////////////////
 	
-	mpq_t const* vector_mpq::begin() const {
-		return v;
-	}
+	mpq_t* vector_mpq::begin() { return v; }
 	
-	mpq_t* vector_mpq::end() {
-		return v + d;
-	}
+	mpq_t const* vector_mpq::begin() const { return v; }
 	
-	mpq_t const* vector_mpq::end() const {
-		return v + d;
-	}
+	mpq_t* vector_mpq::end() { return v + d; }
 	
-	mpq_t& vector_mpq::operator[] ( ind i ) {
-		return v[i];
-	}
+	mpq_t const* vector_mpq::end() const { return v + d; }
 	
-	const mpq_t& vector_mpq::operator[] ( ind i ) const {
-		return v[i];
-	}
+	ind vector_mpq::size() const { return d; }
 	
-	std::ostream& operator<< (std::ostream& o, vector_mpq const& v) {
+	mpq_t& vector_mpq::operator[] ( ind i ) { return v[i]; }
+	
+	const mpq_t& vector_mpq::operator[] ( ind i ) const { return v[i]; }
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Output operator
+	////////////////////////////////////////////////////////////////////////////
+	
+	std::ostream& operator<< ( std::ostream& o, vector_mpq const& v ) {
 		o << "[";
 		for (ind i = 0; i < v.d; i++) {
 			o << " " << mpq_class(v[i]);
@@ -121,20 +311,20 @@ namespace lrs {
 	// Comparison operators
 	////////////////////////////////////////////////////////////////////////////
 	
-	bool operator<  (vector_mpq const& a, vector_mpq const& b) 
+	bool operator<  ( vector_mpq const& a, vector_mpq const& b ) 
 		{ return a.compare(b) < 0; }
-	bool operator== (vector_mpq const& a, vector_mpq const& b) 
+	bool operator== ( vector_mpq const& a, vector_mpq const& b ) 
 		{ return a.compare(b) == 0; }
-	bool operator>  (vector_mpq const& a, vector_mpq const& b) 
+	bool operator>  ( vector_mpq const& a, vector_mpq const& b ) 
 		{ return a.compare(b) > 0; }
-	bool operator<= (vector_mpq const& a, vector_mpq const& b) 
+	bool operator<= ( vector_mpq const& a, vector_mpq const& b ) 
 		{ return a.compare(b) <= 0; }
-	bool operator!= (vector_mpq const& a, vector_mpq const& b) 
+	bool operator!= ( vector_mpq const& a, vector_mpq const& b ) 
 		{ return a.compare(b) != 0; }
-	bool operator>= (vector_mpq const& a, vector_mpq const& b) 
+	bool operator>= ( vector_mpq const& a, vector_mpq const& b ) 
 		{ return a.compare(b) >= 0; }
 	
-	int vector_mpq::compare(vector_mpq const& that) const {
+	int vector_mpq::compare( vector_mpq const& that ) const {
 		mpq_class t; int s = 0;
 		
 		for (ind i = 0; i < d && i < that.d; ++i) {
@@ -143,11 +333,29 @@ namespace lrs {
 			if (s != 0) return s;
 		}
 		// if it reaches here, the two are lexicographically equal up to the 
-		// end of the shorter string (and s == 0)
+		// end of the shorter vector (and s == 0)
 		
 		if (d < that.d) s = -1; else if (d > that.d) s = 1; /* else s = 0; */
 		
 		return s;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Mathematical operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	mpq_class inner_prod( vector_mpq const& a, vector_mpq const& b ) {
+		
+		if (a.d != b.d) throw std::runtime_error(
+			"Cannot take inner product of vectors of unequal size");
+		
+		mpq_class r, t;
+		for (ind i = 0; i < a.d; i++) {
+			mpq_mul(t.get_mpq_t(), a.v[i], b.v[i]); /* t = a[i] * b[i] */
+			r += t;
+		}
+		
+		return r;		
 	}
 	
 	
@@ -183,31 +391,29 @@ namespace lrs {
 		return *this;
 	}
 	
-	val_t* vector_mpz::begin() {
-		return v;
-	}
+	////////////////////////////////////////////////////////////////////////////
+	// Element access operators
+	////////////////////////////////////////////////////////////////////////////
 	
-	val_t const* vector_mpz::begin() const {
-		return v;
-	}
+	val_t* vector_mpz::begin() { return v; }
 	
-	val_t* vector_mpz::end() {
-		return v + d;
-	}
+	val_t const* vector_mpz::begin() const { return v; }
 	
-	val_t const* vector_mpz::end() const {
-		return v + d;
-	}
+	val_t* vector_mpz::end() { return v + d; }
 	
-	val_t& vector_mpz::operator[] ( ind i ) {
-		return v[i];
-	}
+	val_t const* vector_mpz::end() const { return v + d; }
 	
-	const val_t& vector_mpz::operator[] ( ind i ) const {
-		return v[i];
-	}
+	val_t& vector_mpz::operator[] ( ind i ) { return v[i]; }
 	
-	std::ostream& operator<< (std::ostream& o, vector_mpz const& v) {
+	ind vector_mpz::size() const { return d; }
+	
+	const val_t& vector_mpz::operator[] ( ind i ) const { return v[i]; }
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Output operator
+	////////////////////////////////////////////////////////////////////////////
+	
+	std::ostream& operator<< ( std::ostream& o, vector_mpz const& v ) {
 		o << "[";
 		for (ind i = 0; i < v.d; i++) {
 			o << " " << mpz_class(v[i]);
@@ -216,7 +422,44 @@ namespace lrs {
 		return o;
 	}
 	
-	vector_mpq vector_mpz::normalization() const {
+	////////////////////////////////////////////////////////////////////////////
+	// Comparison operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	bool operator<  ( vector_mpz const& a, vector_mpz const& b ) 
+		{ return a.compare(b) < 0; }
+	bool operator== ( vector_mpz const& a, vector_mpz const& b ) 
+		{ return a.compare(b) == 0; }
+	bool operator>  ( vector_mpz const& a, vector_mpz const& b ) 
+		{ return a.compare(b) > 0; }
+	bool operator<= ( vector_mpz const& a, vector_mpz const& b ) 
+		{ return a.compare(b) <= 0; }
+	bool operator!= ( vector_mpz const& a, vector_mpz const& b ) 
+		{ return a.compare(b) != 0; }
+	bool operator>= ( vector_mpz const& a, vector_mpz const& b ) 
+		{ return a.compare(b) >= 0; }
+	
+	int vector_mpz::compare( vector_mpz const& that ) const {
+		mpz_class t; int s = 0;
+		
+		for (ind i = 0; i < d && i < that.d; ++i) {
+			mpz_sub(t.get_mpz_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
+			s = sgn(t);
+			if (s != 0) return s;
+		}
+		// if it reaches here, the two are lexicographically equal up to the 
+		// end of the shorter vector (and s == 0)
+		
+		if (d < that.d) s = -1; else if (d > that.d) s = 1; /* else s = 0; */
+		
+		return s;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Mathematical operators
+	////////////////////////////////////////////////////////////////////////////
+	
+	vector_mpq vector_mpz::rationalization() const {
 		if ( zero(v[0]) ) {
 			/* return mpq_vector equivalent to this one */
 			return vector_mpq(*this);
@@ -230,39 +473,6 @@ namespace lrs {
 			}
 			return norm;
 		}
-	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// Comparison operators
-	////////////////////////////////////////////////////////////////////////////
-	
-	bool operator<  (vector_mpz const& a, vector_mpz const& b) 
-		{ return a.compare(b) < 0; }
-	bool operator== (vector_mpz const& a, vector_mpz const& b) 
-		{ return a.compare(b) == 0; }
-	bool operator>  (vector_mpz const& a, vector_mpz const& b) 
-		{ return a.compare(b) > 0; }
-	bool operator<= (vector_mpz const& a, vector_mpz const& b) 
-		{ return a.compare(b) <= 0; }
-	bool operator!= (vector_mpz const& a, vector_mpz const& b) 
-		{ return a.compare(b) != 0; }
-	bool operator>= (vector_mpz const& a, vector_mpz const& b) 
-		{ return a.compare(b) >= 0; }
-	
-	int vector_mpz::compare(vector_mpz const& that) const {
-		mpz_class t; int s = 0;
-		
-		for (ind i = 0; i < d && i < that.d; ++i) {
-			mpz_sub(t.get_mpz_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
-			s = sgn(t);
-			if (s != 0) return s;
-		}
-		// if it reaches here, the two are lexicographically equal up to the 
-		// end of the shorter string (and s == 0)
-		
-		if (d < that.d) s = -1; else if (d > that.d) s = 1; /* else s = 0; */
-		
-		return s;
 	}
 
 	

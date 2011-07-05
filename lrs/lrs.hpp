@@ -13,7 +13,7 @@
 /** Namespace for C++ LRS wrapper */
 namespace lrs {
 	
-	/** Exception thrown for unexpected circumstances in the DFS algorithm.
+	/** Exception thrown for unexpected circumstances in the LRS wrapper.
 	 *  The what string will describe the error.
 	 */
 	class lrs_error : public std::runtime_error {

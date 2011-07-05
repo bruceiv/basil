@@ -20,10 +20,6 @@
 
 #include "lru/cache.hpp"
 
-/* simple flag to find debug code in source */
-#define BAS_DEBUG 
-//#define BAS_DEBUG //
-
 namespace basil {
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -99,7 +95,6 @@ namespace basil {
 			out << "# cobases: " << basisOrbits.size() << " (" 
 					<< currentTime() << " ms)";
 			if ( opts.printNew ) out << " " << fmt( cob );
-			BAS_DEBUG out << "\n%" << cob << "%";
 			out << std::endl;
 		}
 	}
@@ -108,7 +103,7 @@ namespace basil {
 		/* TODO look into handling invariants, gramVec in this framework.
 		 * dfs.gap's AddCobasis() and AddVertex() would be helpful */
 		
-		/* map the normalization of the coordinates to the vertex data */
+		/* map the rationalization of the coordinates to the vertex data */
 		vertexOrbits.insert(std::make_pair(dat->coords, dat));
 		
 		/* for each defined cobasis, map it to the vertex data */
@@ -123,7 +118,6 @@ namespace basil {
 			out << "# vertices: " << vertexOrbits.size() << " (" 
 					<< currentTime() << " ms)";
 			if ( opts.printNew ) out << " " << dat->coords;
-			BAS_DEBUG out << "\n^" << dat->inc << "^";
 			out << std::endl;
 		}
 	}
@@ -221,12 +215,6 @@ namespace basil {
 						out << "# rays: " << rayOrbits.size() << " (" 
 								<< currentTime() << " ms)";
 						if ( opts.printNew ) out << " " << dat->coords;
-						BAS_DEBUG out << "\n*" << dat->inc << "*";
-						BAS_DEBUG for (std::set<index_set>::iterator it 
-						BAS_DEBUG 		= dat->cobs.begin(); 
-						BAS_DEBUG		it != dat->cobs.end(); ++it) {
-						BAS_DEBUG 	out << "\n%" << *it << "%";
-						BAS_DEBUG }
 						out << std::endl;
 					}
 				}
@@ -528,7 +516,7 @@ namespace basil {
 		index_set inc = cob->cob | cob->extraInc;
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				coords->normalization(), inc, cob->cob, cob->det);
+				coords->rationalization(), inc, cob->cob, cob->det);
 		
 		return dat;
 	}
