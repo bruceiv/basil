@@ -6,6 +6,7 @@
 
 #include <boost/program_options.hpp>
 
+#include <gmp.h>
 #include <gmpxx.h>
 
 #include <permlib/permlib_api.h>
@@ -80,7 +81,7 @@ namespace basil {
 			for (ind i = 0; i < n; i++) {
 				for (ind j = 0; j < d; j++) {
 					in >> t;
-					(*m)[i][j] = t;
+					mpq_set((*m)[i][j], t.get_mpq_t() ); /* (*m)[i][j] = t */
 				}
 			}
 			
@@ -104,7 +105,7 @@ namespace basil {
 		permutation_group_ptr genPermutationGroupFromStream(std::istream& in, 
 															const matrix& m) {
 			
-			ind n = m.n();
+			ind n = m.size();
 			
 			std::vector<permutation_ptr> generators;
 			
@@ -320,7 +321,7 @@ int main(int argc, char **argv) {
 	out << "Matrix:\t" <<  o.mat() << endl;
 	
 	//read in & print permutation group
-	out << "Group:\t" << o.grp().S << endl;
+	out << "Group:\t" << fmt( o.grp() ) << endl;
 	
 	//initialize DFS algorithm NOTE debug mode
 	dfs d(o.mat(), o.grp(), o.dfsOpts() );

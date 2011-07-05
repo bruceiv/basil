@@ -64,7 +64,7 @@ namespace lrs {
 		 *  @throw bad_alloc	if the LRS process or matrix data structures 
 		 * 						cannot be properly initialized.
 		 */
-		lrs(matrix const& m, lrs_opts o = lrs_opts()) throw(std::bad_alloc);
+		lrs(matrix_mpq const& m, lrs_opts o = lrs_opts()) throw(std::bad_alloc);
 		
 		/** destructor */
 		~lrs();
@@ -154,7 +154,7 @@ namespace lrs {
 		 *  @param P		The dictionary to initialize (should be allocated)
 		 *  @param mat		The matrix to read in
 		 */
-		void initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat);
+		void initDic(lrs_dat* Q, lrs_dic* P, matrix_mpq const& mat);
 		
 		/** Prints the parameter to a string. Non-negative values will be 
 		 *  padded with a single space. */

@@ -49,7 +49,7 @@ namespace basil {
 
 	/** matrix type */
 	typedef 
-		lrs::matrix
+		lrs::matrix_mpq
 		matrix;
 	typedef
 		shared_ptr<matrix>
@@ -304,8 +304,8 @@ namespace basil {
 		 */
 		dfs(matrix& m, permutation_group& g, dfs_opts o = dfs_opts()) 
 				: l(m, o.lrs_o), g(g), opts(o) { 
-			dim = m.d();
-			rows = m.n();
+			dim = m.dim();
+			rows = m.size();
 			
 			/* set up algorithm globals */
 			initGlobals();

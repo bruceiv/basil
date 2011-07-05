@@ -59,8 +59,7 @@ namespace lrs {
 	typedef 
 		unsigned long 
 		uind;
-		
-		
+	
 	/* 
 	 * Move LRS macros into lrs namespace 
 	 */

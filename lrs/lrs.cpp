@@ -16,7 +16,7 @@
 
 namespace lrs {
 	
-	lrs::lrs(matrix const& m, lrs_opts o) throw(std::bad_alloc) : o(o) {
+	lrs::lrs(matrix_mpq const& m, lrs_opts o) throw(std::bad_alloc) : o(o) {
 		/* Initialize LRS */
 		lrs_init_quiet(stdin, stderr);
 		
@@ -25,7 +25,7 @@ namespace lrs {
 		if (Q == 0) throw std::bad_alloc();
 		
 		/* Init LRS LP dictionary */
-		initDat(Q, m.n(), m.d());
+		initDat(Q, m.size(), m.dim());
 		
 		P = lrs_alloc_dic(Q);
 		if (P == 0) throw std::bad_alloc();
@@ -289,16 +289,16 @@ namespace lrs {
 		
 	}
 	
-	void lrs::initDic(lrs_dat* Q, lrs_dic* P, matrix const& mat) {
+	void lrs::initDic(lrs_dat* Q, lrs_dic* P, matrix_mpq const& mat) {
 		
 		ind m = Q->m;
 		
 		/* read matrix row by row */
-		matrix& m_nc = const_cast<matrix &>(mat);
+		matrix_mpq& m_nc = const_cast<matrix_mpq &>(mat);
 		for (ind i = 0; i < m; i++) {
 			/* TODO allow for linearities */
 			lrs_set_row_mp(
-				P, Q, i+1, m_nc[i].num(), m_nc[i].den(), ge);
+				P, Q, i+1, m_nc[i].num().v, m_nc[i].den().v, ge);
 		}
 		
 	}
