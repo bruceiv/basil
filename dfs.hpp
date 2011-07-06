@@ -235,6 +235,7 @@ namespace basil {
 		typedef lrs::vector_mpz vector_mpz;
 		typedef shared_ptr<vector_mpz> vector_mpz_ptr;
 		typedef lrs::vector_mpq_hash coordinates_hash;
+		typedef lrs::matrix_mpq_hash matrix_hash;
 		
 		typedef lrs::cobasis cobasis;
 		typedef shared_ptr<cobasis> cobasis_ptr;
@@ -294,6 +295,12 @@ namespace basil {
 		typedef
 			boost::unordered_map<index_set, vertex_data_ptr, index_set_hash>
 			cobasis_map;
+		/** map of a gram vector to its cobases, and the associated vertex 
+		 *  data */
+		typedef
+			boost::unordered_multimap<
+				matrix, std::pair<index_set, vertex_data_ptr>, matrix_hash>
+			cobasis_gram_map;
 		
 		
 		/** Set up a DFS on the given matrix, with the given permuation group.
@@ -330,10 +337,6 @@ namespace basil {
 		/** @return the initial cobasis for the DFS */
 		index_set getInitialCobasis() const;
 		
-		/** @return the inner product matrix used for gram vectors. (This 
-		 *  method is of primary use for debugging the gram vectors.) */
-		matrix const& getInnerProdMat() const;
-		
 		/** @return did the DFS complete (true) or terminate due to too many 
 		 *  	bases (false) */
 		bool isFinished() const;
@@ -350,6 +353,13 @@ namespace basil {
 		/** @return representatives of each of the orbits of the vertices */
 		coordinates_map const& getVertexOrbits() const;
 		
+		/** @return the inner product matrix used for gram vectors. (This 
+		 *  method is of primary use for debugging the gram vectors.) */
+		matrix const& getInnerProdMat() const;
+		
+		/** @return the map of gram vectors to cobases. (This method is of 
+		 *  primary use for debugging the gram vectors.) */
+		cobasis_gram_map const& getCobasisGramMap() const;
 		
 	private:
 		
@@ -372,6 +382,10 @@ namespace basil {
 		};
 		typedef shared_ptr<pivot> pivot_ptr;
 		
+		typedef 
+			std::pair<cobasis_gram_map::const_iterator, 
+				cobasis_gram_map::const_iterator> 
+			cobasis_gram_range;
 		
 		/** Transformation of index_set_iter to provide input to PermLib 
 		 *  properly. The public interfaces to PermLib are zero-indexed, 
@@ -476,10 +490,14 @@ namespace basil {
 		vertex_data_ptr knownVertex(vertex_data_ptr rep);
 		
 		/** Gets the cobases whose invariants match the given one.
+		 *  @param cob		The cobasis to match
 		 *  @param dat		The invariant data to match
 		 *  @return a list of cobases with matching invariants.
 		 */
-		index_set_list matchingInvariants(vertex_data_ptr dat);
+		index_set_list matchingInvariants(index_set cob, vertex_data_ptr dat);
+		
+		/** @return true if the invariants of the two vertex data match. */
+		bool invariantsMatch(vertex_data const& a, vertex_data const& b);
 		
 		/** Add new edges to the search stack.
 		 *  @param oldCob	The cobasis to search for adjacent edges
@@ -525,6 +543,8 @@ namespace basil {
 		index_set allIndices;
 		/** Cache of recently seen cobases */
 		lru::cache<index_set, index_set_hash> cobasisCache;
+		/** Lookup cobases by gram vector */
+		cobasis_gram_map cobasisGramMap;
 		/** Global map of seen cobases, up to symmetry */
 		cobasis_map basisOrbits;
 		/** Search queue for cobases */

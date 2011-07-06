@@ -47,7 +47,8 @@ namespace basil {
 		
 		return res;
 	}
-
+	
+	
 	////////////////////////////////////////////////////////////////////////////
 	// Query methods for after completion of doDfs()
 	////////////////////////////////////////////////////////////////////////////
@@ -57,8 +58,6 @@ namespace basil {
 	ind dfs::getDimension() const { return dim - 1; }
 	
 	dfs::index_set dfs::getInitialCobasis() const { return initialCobasis; }
-	
-	basil::matrix const& dfs::getInnerProdMat() const { return innerProdMat; }
 	
 	bool dfs::isFinished() const { return !hitMaxBasis; }
 	
@@ -72,6 +71,11 @@ namespace basil {
 	dfs::coordinates_map const& dfs::getVertexOrbits() const 
 		{ return vertexOrbits; }
 	
+	basil::matrix const& dfs::getInnerProdMat() const { return innerProdMat; }
+	
+	dfs::cobasis_gram_map const& dfs::getCobasisGramMap() const 
+		{ return cobasisGramMap; }
+
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
@@ -84,6 +88,13 @@ namespace basil {
 		 */
 		
 		basisOrbits.insert(std::make_pair(cob, dat));
+		
+		/* add gram vector, if option set */
+		if (opts.gramVec) {
+			cobasisGramMap.insert(
+				std::make_pair(fastGramVec(cob), std::make_pair(cob, dat))
+			);
+		}
 		
 		/* print cobasis, if option set */
 		if ( opts.printBasis && basisOrbits.size() % opts.printBasis == 0 ) {
@@ -293,7 +304,9 @@ namespace basil {
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
 		
+		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();
+		cobasisGramMap = cobasis_gram_map();
 		cobasisQueue = std::deque<index_set>();
 		hitMaxBasis = false;
 		initialCobasis = index_set();
@@ -310,7 +323,7 @@ namespace basil {
 		/* TODO look at adding canonTest, gramMotion from dfs.gap 
 		 * IsNewCobasis() */
 		
-		index_set_list possibleMatches = matchingInvariants(dat);
+		index_set_list possibleMatches = matchingInvariants(cob, dat);
 		
 		/* if no known cobasis has invariants matching this one, it's new */
 		if ( possibleMatches.size() == 0 ) return true;
@@ -399,28 +412,50 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	dfs::index_set_list dfs::matchingInvariants(dfs::vertex_data_ptr dat) {
+	dfs::index_set_list dfs::matchingInvariants(dfs::index_set cob, 
+												dfs::vertex_data_ptr dat) {
 		
 		/* TODO lots of stuff in equivalent Symbal code to add */
 		
 		/* list of cobases with matching invariants */
 		index_set_list matches;
 		
-		/* for each known cobasis */
-		for (cobasis_map::iterator it = basisOrbits.begin();
-				it != basisOrbits.end(); ++it) {
+		if (opts.gramVec) {
 			
-			vertex_data_ptr old = it->second;
+			/* get set of cobases with matching gram vectors */
+			cobasis_gram_range range = 
+				cobasisGramMap.equal_range( fastGramVec(cob) );
 			
-			/* skip if they have non-matching determinants */
-			if ( old->det != dat->det ) continue;
+			/* check invariants for each of these cobases */
+			for (cobasis_gram_map::const_iterator it = range.first; 
+					it != range.second; ++it) {
+				
+				if ( invariantsMatch(*it->second.second, *dat) ) {
+					matches.push_back(it->second.first);
+				}
+				
+			}
 			
-			/* if we reach here, all invariant checks have passed, add the 
-			 * cobasis to the list, then */
-			matches.push_back(it->first);
+		} else {
+			
+			/* check invariants for each known cobasis */
+			for (cobasis_map::const_iterator it = basisOrbits.begin();
+					it != basisOrbits.end(); ++it) {
+				
+				if ( invariantsMatch(*it->second, *dat) ) {
+					matches.push_back(it->first);
+				}
+				
+			}
+			
 		}
 		
 		return matches;
+	}
+	
+	bool dfs::invariantsMatch(dfs::vertex_data const& a, 
+							  dfs::vertex_data const& b) {
+		return a.det == b.det;
 	}
 
 	void dfs::pushNewEdges(dfs::index_set& oldCob) {
