@@ -16,6 +16,7 @@
 #include <gmp.h>
 #include <gmpxx.h>
 
+#include "cobasis.hpp"
 #include "matrix.hpp"
 
 
@@ -28,70 +29,55 @@ namespace lrs {
 	////////////////////////////////////////////////////////////////////////////
 	
 	vector_mpq::vector_mpq ( ind d ) 
-			: v(new mpq_t[d]), d(d), selfAlloc(true) {
-		for (ind i = 0; i < d; i++) mpq_init(v[i]);
-	}
+			: v(new mpq_class[d]), d(d), selfAlloc(true) {}
 	
 	vector_mpq::vector_mpq ( vector_mpq const& that ) 
-			: v(new mpq_t[that.d]), d(that.d), selfAlloc(true) {
-		for (ind i = 0; i < d; i++) {
-			mpq_init(v[i]);
-			/* v[i] = that.v[i]; */
-			mpq_set(v[i], that.v[i]);
-		}
+			: v(new mpq_class[that.d]), d(that.d), selfAlloc(true) {
+		for (ind i = 0; i < d; i++) v[i] = that.v[i]; 
 	}
 	
 	vector_mpq::vector_mpq ( vector_mpz const& that ) 
-			: v(new mpq_t[that.d]), d(that.d), selfAlloc(true) {
+			: v(new mpq_class[that.d]), d(that.d), selfAlloc(true) {
 		for (ind i = 0; i < d; i++) {
-			mpq_init(v[i]);
 			/* v[i] = that.v[i]; */
-			mpq_set_z(v[i], that.v[i]);
+			mpq_set_z(v[i].get_mpq_t(), that.v[i]);
 		}
 	}
 	
-	vector_mpq::vector_mpq( mpq_t* v, size_type d ) 
+	vector_mpq::vector_mpq( mpq_class* v, size_type d ) 
 			: v(v), d(d), selfAlloc(false) {}
 	
 	vector_mpq::~vector_mpq() {
-		if (selfAlloc) {
-			for (ind i = 0; i < d; i++) mpq_clear(v[i]);
-			delete[] v;
-		}
+		if (selfAlloc) delete[] v;
 	}
 	
 	vector_mpq& vector_mpq::operator= ( vector_mpq const& that ) {
+		
 		if (v != that.v) {
-			for (ind i = 0; i < d; i++) mpq_clear(v[i]);
 			
 			if ( d != that.d && selfAlloc ) {
 				delete[] v;
 				d = that.d;
-				v = new mpq_t[d];
+				v = new mpq_class[d];
 			}
 			
-			for (ind i = 0; i < d; i++) {
-				mpq_init(v[i]);
-				/* v[i] = that.v[i]; */
-				mpq_set(v[i], that.v[i]);
-			}
+			for (ind i = 0; i < d; i++) v[i] = that.v[i];
+			
 		}
 		return *this;
 	}
 	
 	vector_mpq& vector_mpq::operator= ( vector_mpz const& that ) {
-		for (ind i = 0; i < d; i++) mpq_clear(v[i]);
 		
 		if ( d != that.d && selfAlloc ) {
 			delete[] v;
 			d = that.d;
-			v = new mpq_t[d];
+			v = new mpq_class[d];
 		}
 		
 		for (ind i = 0; i < d; i++) {
-			mpq_init(v[i]);
 			/* v[i] = that.v[i]; */
-			mpq_set_z(v[i], that.v[i]);
+			mpq_set_z(v[i].get_mpq_t(), that.v[i]);
 		}
 		
 		return *this;
@@ -101,19 +87,19 @@ namespace lrs {
 	// Element access operators
 	////////////////////////////////////////////////////////////////////////////
 	
-	mpq_t* vector_mpq::begin() { return v; }
+	mpq_class* vector_mpq::begin() { return v; }
 	
-	mpq_t const* vector_mpq::begin() const { return v; }
+	mpq_class const* vector_mpq::begin() const { return v; }
 	
-	mpq_t* vector_mpq::end() { return v + d; }
+	mpq_class* vector_mpq::end() { return v + d; }
 	
-	mpq_t const* vector_mpq::end() const { return v + d; }
+	mpq_class const* vector_mpq::end() const { return v + d; }
 	
 	ind vector_mpq::size() const { return d; }
 	
-	mpq_t& vector_mpq::operator[] ( ind i ) { return v[i]; }
+	mpq_class& vector_mpq::operator[] ( ind i ) { return v[i]; }
 	
-	const mpq_t& vector_mpq::operator[] ( ind i ) const { return v[i]; }
+	const mpq_class& vector_mpq::operator[] ( ind i ) const { return v[i]; }
 	
 	////////////////////////////////////////////////////////////////////////////
 	// Output operator
@@ -122,7 +108,7 @@ namespace lrs {
 	std::ostream& operator<< ( std::ostream& o, vector_mpq const& v ) {
 		o << "[";
 		for (ind i = 0; i < v.d; i++) {
-			o << " " << mpq_class(v[i]);
+			o << " " << v.v[i];
 		}
 		o << " ]";
 		return o;
@@ -149,7 +135,7 @@ namespace lrs {
 		mpq_class t; int s = 0;
 		
 		for (ind i = 0; i < d && i < that.d; ++i) {
-			mpq_sub(t.get_mpq_t(), v[i], that.v[i]);	// t = v[i] - that.v[i];
+			t = v[i] - that.v[i];
 			s = sgn(t);
 			if (s != 0) return s;
 		}
@@ -172,7 +158,7 @@ namespace lrs {
 		
 		mpq_class r, t;
 		for (ind i = 0; i < a.d; i++) {
-			mpq_mul(t.get_mpq_t(), a.v[i], b.v[i]); /* t = a[i] * b[i] */
+			t = a.v[i] * b.v[i];
 			r += t;
 		}
 		
@@ -182,7 +168,7 @@ namespace lrs {
 	vector_mpz vector_mpq::num() {
 		vector_mpz r(d);
 		for (ind i = 0; i < d; ++i) {
-			mpz_set( r.v[i], mpq_numref(v[i]) ); /* r[i] = v[i].num() */
+			mpz_set( r.v[i], v[i].get_num_mpz_t() ); /* r[i] = v[i].num() */
 		}
 		return r;
 	}
@@ -190,7 +176,7 @@ namespace lrs {
 	vector_mpz vector_mpq::den() {
 		vector_mpz r(d);
 		for (ind i = 0; i < d; ++i) {
-			mpz_set( r.v[i], mpq_denref(v[i]) ); /* r[i] = v[i].den() */
+			mpz_set( r.v[i], v[i].get_den_mpz_t() ); /* r[i] = v[i].den() */
 		}
 		return r;
 	}
@@ -201,12 +187,11 @@ namespace lrs {
 	
 	std::size_t vector_mpq_hash::operator() (vector_mpq const& v) const {
 		std::size_t seed = 0UL;
-		vector_mpq& v_n = const_cast<vector_mpq&>(v);
-		for (vector_mpq::iterator i = v_n.begin(); i != v_n.end(); ++i) {
+		for (ind i = 0; i < v.d; ++i) {
 			/* combine low-order bits of numerator and denominator into 
 				* hash */
-			boost::hash_combine(seed, mpz_get_si(mpq_numref(*i)) );
-			boost::hash_combine(seed, mpz_get_si(mpq_denref(*i)) );
+			boost::hash_combine(seed, v.v[i].get_num().get_si() );
+			boost::hash_combine(seed, v.v[i].get_den().get_si() );
 		}
 		return seed;
 	}
@@ -320,9 +305,9 @@ namespace lrs {
 			vector_mpq norm(this->d);
 			for (ind i = 0; i < d; i++) {
 				/* norm[i] = v[i] / v[0]; */
-				mpz_set(mpq_numref(norm[i]), v[i]);
-				mpz_set(mpq_denref(norm[i]), v[0]);
-				mpq_canonicalize(norm[i]);
+				mpz_set(norm.v[i].get_num_mpz_t(), v[i]);
+				mpz_set(norm.v[i].get_den_mpz_t(), v[0]);
+				norm.v[i].canonicalize();
 			}
 			return norm;
 		}
@@ -334,10 +319,13 @@ namespace lrs {
 	
 	std::size_t vector_mpz_hash::operator() (vector_mpz const& v) const {
 		std::size_t seed = 0UL;
-		vector_mpz& v_n = const_cast<vector_mpz&>(v);
-		for (vector_mpz::iterator i = v_n.begin(); i != v_n.end(); ++i) {
+		mpz_class one(1);
+		for (ind i = 0; i < v.d; ++i) {
 			/* combine low-order bits of value into hash */
-			boost::hash_combine(seed, mptoi(*i) );
+			boost::hash_combine(seed, mpz_get_si(v.v[i]) );
+			/* combine low-order bits of denominator 1 into hash (for 
+			 * vector_mpq_hash compatibility) */
+			boost::hash_combine(seed, one.get_si() );
 		}
 		return seed;
 	}
@@ -350,41 +338,30 @@ namespace lrs {
 	////////////////////////////////////////////////////////////////////////////
 	
 	matrix_mpq::matrix_mpq( ind n, ind d ) 
-			: m(new mpq_t[n*d]), n(n), d(d) {
-		for (ind i = 0; i < n*d; i++) mpq_init(m[i]);
-	}
+			: m(new mpq_class[n*d]), n(n), d(d) {}
 	
 	matrix_mpq::matrix_mpq( matrix_mpq const& that ) 
-			: m(new mpq_t[that.n*that.d]), n(that.n), d(that.d) {
-		for (ind i = 0; i < n*d; i++) {
-			mpq_init(m[i]);
-			/* m[i] = that.m[i]; */
-			mpq_set(m[i], that.m[i]);
-		}
+			: m(new mpq_class[that.n*that.d]), n(that.n), d(that.d) {
+		for (ind i = 0; i < n*d; i++) m[i] = that.m[i];
 	}
 	
 	matrix_mpq::~matrix_mpq() {
-		for (ind i = 0; i < n*d; i++) mpq_clear(m[i]);
 		delete[] m;
 	}
 	
 	matrix_mpq& matrix_mpq::operator= ( matrix_mpq const& that ) {
+		
 		if (m != that.m) {
-			for (ind i = 0; i < n*d; i++) mpq_clear(m[i]);
-			
 			if ( n*d != that.n*that.d ) {
 				delete[] m;
 				n = that.n;
 				d = that.d;
-				m = new mpq_t[n*d];
+				m = new mpq_class[n*d];
 			}
 			
-			for (ind i = 0; i < n*d; i++) {
-				mpq_init(m[i]);
-				/* m[i] = that.m[i]; */
-				mpq_set(m[i], that.m[i]);
-			}
+			for (ind i = 0; i < n*d; i++) m[i] = that.m[i];
 		}
+		
 		return *this;
 	}
 	
@@ -413,6 +390,17 @@ namespace lrs {
 	
 	vector_mpq const matrix_mpq::operator[] ( ind i ) const
 		{ return vector_mpq(m+(i*d), d); }
+	
+	vector_mpq matrix_mpq::row( ind i )
+		{ return vector_mpq(m+(i*d), d); }
+	
+	vector_mpq const matrix_mpq::row( ind i ) const 
+		{ return vector_mpq(m+(i*d), d); }
+	
+	mpq_class& matrix_mpq::elem( ind i, ind j ) { return m[i*d+j]; }
+	
+	mpq_class const& matrix_mpq::elem( ind i, ind j ) const { return m[i*d+j]; }
+
 	
 	////////////////////////////////////////////////////////////////////////////
 	// Output operator
@@ -453,7 +441,7 @@ namespace lrs {
 		int s = 0;
 		
 		for (ind i = 0; i < n && i < that.n; ++i) {
-			s = operator[](i).compare(that[i]);
+			s = row(i).compare(that.row(i));
 			if (s != 0) return s;
 		}
 		// if it reaches here, the two are lexicographically equal up to the 
@@ -468,17 +456,55 @@ namespace lrs {
 	// Mathematical operators
 	////////////////////////////////////////////////////////////////////////////
 	
+	matrix_mpq matrix_mpq::inner_prod_mat () {
+		matrix_mpq p(n,n);
+		
+		mpq_class t;
+		for (ind i = 0; i < n; ++i) {
+			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
+			for (ind j = 0; j < i; ++j) {
+				t = inner_prod(row(i), row(j));
+				p.elem(i,j) = t; 
+				p.elem(j,i) = t;
+			}
+			/* Handle j = i case here */
+			t = inner_prod(row(i), row(i));
+			p.elem(i,i) = t;
+		}
+		
+		return p;
+	}
+	
+	matrix_mpq matrix_mpq::restriction(index_set s) {
+		matrix_mpq r(s.count(), s.count());
+		
+		ind i = 0;
+		for (index_set_iter iterI = lrs::begin(s); 
+				iterI != lrs::end(s); ++iterI) {
+			ind j = 0;
+			for (index_set_iter iterJ = lrs::begin(s); 
+					iterJ != lrs::end(s); ++iterJ) {
+				r.elem(i,j) = elem(*iterI,*iterJ);
+				++j;
+			}
+			++i;
+		}
+		
+		return r;
+	}
+	
 	////////////////////////////////////////////////////////////////////////////
 	// Iterator implementation
 	////////////////////////////////////////////////////////////////////////////
 	
-	matrix_mpq::iterator::iterator( mpq_t* m, ind i, ind d ) 
+	matrix_mpq::iterator::iterator( mpq_class* m, ind i, ind d ) 
 			: m(m), i(i), d(d) {}
 	
-	matrix_mpq::const_iterator::const_iterator( mpq_t* m, ind i, ind d ) 
+	matrix_mpq::const_iterator::const_iterator( mpq_class* m, ind i, ind d ) 
 			: m(m), i(i), d(d) {}
 	
-	matrix_mpq::const_iterator::const_iterator( matrix_mpq::iterator& that ) 
+	matrix_mpq::const_iterator::const_iterator( 
+			matrix_mpq::iterator const& that ) 
 			: m(that.m), i(that.i), d(that.d) {}
 	
 	vector_mpq matrix_mpq::iterator::dereference() const
@@ -487,17 +513,19 @@ namespace lrs {
 	vector_mpq const matrix_mpq::const_iterator::dereference() const
 		{ return vector_mpq(m+(i*d), d); }
 	
-	bool matrix_mpq::iterator::equal( matrix_mpq::iterator& that ) const
+	bool matrix_mpq::iterator::equal( matrix_mpq::iterator const& that ) const
 		{ return m == that.m && i == that.i; }
 	
-	bool matrix_mpq::iterator::equal( matrix_mpq::const_iterator& that ) const
-		{ return m == that.m && i == that.i; }
-	
-	bool matrix_mpq::const_iterator::equal( matrix_mpq::iterator& that ) const
+	bool matrix_mpq::iterator::equal( 
+			matrix_mpq::const_iterator const& that ) const
 		{ return m == that.m && i == that.i; }
 	
 	bool matrix_mpq::const_iterator::equal( 
-			matrix_mpq::const_iterator& that ) const
+			matrix_mpq::iterator const& that ) const
+		{ return m == that.m && i == that.i; }
+	
+	bool matrix_mpq::const_iterator::equal( 
+			matrix_mpq::const_iterator const& that ) const
 		{ return m == that.m && i == that.i; }
 	
 	void matrix_mpq::iterator::increment() { ++i; }
@@ -512,19 +540,35 @@ namespace lrs {
 	
 	void matrix_mpq::const_iterator::advance( ind n ) { i += n; }
 	
-	ind matrix_mpq::iterator::distance_to( matrix_mpq::iterator& that ) const 
-		{ return that.i = i; }
+	ind matrix_mpq::iterator::distance_to( 
+			matrix_mpq::iterator const& that ) const 
+		{ return that.i - i; }
 	
 	ind matrix_mpq::iterator::distance_to( 
-			matrix_mpq::const_iterator& that ) const 
-		{ return that.i = i; }
+			matrix_mpq::const_iterator const& that ) const 
+		{ return that.i - i; }
 	
 	ind matrix_mpq::const_iterator::distance_to( 
-			matrix_mpq::iterator& that ) const 
-		{ return that.i = i; }
+			matrix_mpq::iterator const& that ) const 
+		{ return that.i - i; }
 	
 	ind matrix_mpq::const_iterator::distance_to( 
-			matrix_mpq::const_iterator& that ) const
-		{ return that.i = i; }
+			matrix_mpq::const_iterator const& that ) const
+		{ return that.i - i; }
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Hasher implementation
+	////////////////////////////////////////////////////////////////////////////
+	
+	std::size_t matrix_mpq_hash::operator() (matrix_mpq const& m) const {
+		std::size_t seed = 0UL;
+		for (ind i = 0; i < m.n*m.d; ++i) {
+			/* combine low-order bits of numerator and denominator into 
+			 * hash */
+			boost::hash_combine(seed, m.m[i].get_num().get_si() );
+			boost::hash_combine(seed, m.m[i].get_den().get_si() );
+		}
+		return seed;
+	}
 	
 } /* namespace lrs */

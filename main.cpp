@@ -77,12 +77,13 @@ namespace basil {
 			
 			/* create new matrix and load data */
 			matrix_ptr m(new matrix(n, d));
-			mpq_class t;
+// 			mpq_class t;
 			for (ind i = 0; i < n; i++) {
-				for (ind j = 0; j < d; j++) {
-					in >> t;
-					mpq_set((*m)[i][j], t.get_mpq_t() ); /* (*m)[i][j] = t */
-				}
+				for (ind j = 0; j < d; j++) in >> m->elem(i,j);
+// 				{
+// 					in >> t;
+// 					mpq_set((*m)[i][j], t.get_mpq_t() ); /* (*m)[i][j] = t */
+// 				}
 			}
 			
 			/* ignore up to end line */
@@ -323,8 +324,11 @@ int main(int argc, char **argv) {
 	//read in & print permutation group
 	out << "Group:\t" << fmt( o.grp() ) << endl;
 	
-	//initialize DFS algorithm NOTE debug mode
+	//initialize DFS algorithm
 	dfs d(o.mat(), o.grp(), o.dfsOpts() );
+	
+	//print inner product matrix (NOTE for debugging)
+	out << "Inner Product Matrix:\t" << d.getInnerProdMat() << endl;
 	
 	//run DFS algorithm
 	if ( d.doDfs() ) {

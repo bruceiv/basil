@@ -303,9 +303,8 @@ namespace basil {
 		 * 					provided)
 		 */
 		dfs(matrix& m, permutation_group& g, dfs_opts o = dfs_opts()) 
-				: l(m, o.lrs_o), g(g), opts(o) { 
-			dim = m.dim();
-			rows = m.size();
+				: l(m, o.lrs_o), g(g), opts(o), dim(m.dim()), rows(m.size()),
+				innerProdMat(m.inner_prod_mat()) { 
 			
 			/* set up algorithm globals */
 			initGlobals();
@@ -330,6 +329,10 @@ namespace basil {
 		
 		/** @return the initial cobasis for the DFS */
 		index_set getInitialCobasis() const;
+		
+		/** @return the inner product matrix used for gram vectors. (This 
+		 *  method is of primary use for debugging the gram vectors.) */
+		matrix const& getInnerProdMat() const;
 		
 		/** @return did the DFS complete (true) or terminate due to too many 
 		 *  	bases (false) */
@@ -431,14 +434,22 @@ namespace basil {
 		 */
 		bool dfsFromRoot(index_set& root);
 		
-		/** Finds the rays in the current dictionary. */
-		void getRays();
+		/** Gets the gram vector for an incidence set.
+		 *  @param inc		The incidence set to take the gram vector for
+		 *  @return the inner product matrix, restricted to this incidence set 
+		 *  		in row and column indices, then sorted (first each row by 
+		 * 			element, then row by row)
+		 */
+		matrix fastGramVec(index_set inc);
 		
 		/** Looks for symmetries between a given cobasis and a list of 
 		 *  candidate cobases.
 		 *  @return true if a symmetry is found, false otherwise
 		 */
 		bool findSymmetry(index_set find, index_set_list list);
+		
+		/** Finds the rays in the current dictionary. */
+		void getRays();
 		
 		/** Initializes algorithm globals */
 		void initGlobals();
@@ -493,16 +504,18 @@ namespace basil {
 		// Initialization-time globals
 		////////////////////////////////////////////////////////////////////////
 		
-		/** Dimension of the problem */
-		ind dim;
 		/** LRS wrapper for this DFS */
 		lrs::lrs l;
 		/** Permutation group used for this DFS */
 		permutation_group& g;
 		/** Options for controlling the DFS algorithm */
 		dfs_opts opts;
+		/** Dimension of the problem */
+		ind dim;
 		/** number of rows in the problem */
 		ind rows;
+		/** matrix of pre-computed inner products, for gram vectors */
+		matrix innerProdMat;
 		
 		////////////////////////////////////////////////////////////////////////
 		// Algorithm data

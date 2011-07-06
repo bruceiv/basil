@@ -20,22 +20,24 @@ namespace lrs {
 	
 	class vector_mpz;
 	class matrix_mpq;
+	class vector_mpq_hash;
 	
 	/** Wraps a multi-precision rational vector. */
 	class vector_mpq {
 	friend class vector_mpz;
 	friend class matrix_mpq;
+	friend class vector_mpq_hash;
 	public:
 		/* typedef's for STL compatibility */
-		typedef mpq_t&			reference;
-		typedef mpq_t const&	const_reference;
-		typedef mpq_t* 			iterator;
-		typedef mpq_t const*	const_iterator;
-		typedef ind				size_type;
-		typedef ind				difference_type;
-		typedef mpq_t			value_type;
-		typedef mpq_t*			pointer;
-		typedef mpq_t const*	const_pointer;
+		typedef mpq_class&			reference;
+		typedef mpq_class const&	const_reference;
+		typedef mpq_class* 			iterator;
+		typedef mpq_class const*	const_iterator;
+		typedef ind					size_type;
+		typedef ind					difference_type;
+		typedef mpq_class			value_type;
+		typedef mpq_class*			pointer;
+		typedef mpq_class const*	const_pointer;
 		
 		/** Constructs a vector with the given dimension. 
 		 *  @param d		The dimension of the vector
@@ -54,12 +56,13 @@ namespace lrs {
 		vector_mpq(vector_mpz const& that);
 		
 		/** Struct constructor; allows creation of a vector_mpq view of 
-		 *  pre-allocated memory. A vector created this way will not deallocate 
-		 *  the shared memory, though it may modify the values contained 
-		 *  therein */
-		vector_mpq(mpq_t* v, size_type d);
+		 *  pre-allocated memory. A vector created this way is not 
+		 *  "self-allocated" and will not deallocate the shared memory, though 
+		 *  it may modify the values contained therein. */
+		vector_mpq(mpq_class* v, size_type d);
 		
-		/** Destructs a vector. */
+		/** Destructor. Only frees the underlying memory if this vector is 
+		 *  self-allocated. */
 		~vector_mpq();
 		
 		/** Assignment operator.
@@ -146,7 +149,7 @@ namespace lrs {
 		int compare(vector_mpq const& that) const;
 		
 		/** Internal storage of vector data */
-		mpq_t* v;
+		mpq_class* v;
 		/** Dimension of the vector. */
 		size_type d;
 		/** Is this vector responsible for its own storage? */
@@ -160,11 +163,14 @@ namespace lrs {
 		std::size_t operator() (vector_mpq const& v) const;
 	};
 	
+	class vector_mpz_hash;
+	
 	/** Wraps an LRS-compatible multi-precision integer vector. */
 	class vector_mpz {
 	//assign these friends so they can get at the v member
 	friend class lrs;
 	friend class vector_mpq;
+	friend class vector_mpz_hash;
 	public:
 		/* typedef's for STL compatibility */
 		typedef val_t&			reference;
@@ -261,15 +267,19 @@ namespace lrs {
 		size_type d;
 	};
 	
-	/** Functional to hash a vector_mpz */
+	/** Functional to hash a vector_mpz. Compatible with vector_mpq_hash (will 
+	 *  hash to the same value for an integer vector_mpq). */
 	class vector_mpz_hash 
 			: public std::unary_function<vector_mpz, std::size_t> {
 	public:
 		std::size_t operator() (vector_mpz const& v) const ;
 	};
 	
+	class matrix_mpq_hash;
+	
 	/** Wraps a multi-precision rational matrix. */
 	class matrix_mpq {
+	friend class matrix_mpq_hash;
 	public:
 		/* typedef's for STL compatibility */
 		typedef vector_mpq			reference;
@@ -295,7 +305,7 @@ namespace lrs {
 			friend class boost::iterator_core_access;
 			
 			/** Constructor */
-			iterator(mpq_t* m, matrix_mpq::size_type i, 
+			iterator(mpq_class* m, matrix_mpq::size_type i, 
 					matrix_mpq::size_type d);
 			
 			/** Returns the referenced vector. In compliance with 
@@ -304,11 +314,11 @@ namespace lrs {
 			
 			/** Tests the equality of two iterators. In compliance with 
 			 *  boost::iterator_facade */
-			bool equal(iterator& that) const;
+			bool equal(iterator const& that) const;
 			
 			/** Tests the equality of two iterators. In compliance with 
 			 *  boost::iterator_facade */
-			bool equal(const_iterator& that) const;
+			bool equal(const_iterator const& that) const;
 			
 			/** Moves to the next row. In compliance with 
 			 *  boost::iterator_facade */
@@ -325,15 +335,16 @@ namespace lrs {
 			/** Returns number of rows that is ahead of this (may be negative). 
 			 *  Undefined if iterators are not over the same matrix. In 
 			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(iterator& that) const;
+			matrix_mpq::difference_type distance_to(iterator const& that) const;
 			
 			/** Returns number of rows that is ahead of this (may be negative). 
 			 *  Undefined if iterators are not over the same matrix. In 
 			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(const_iterator& that) const;
+			matrix_mpq::difference_type distance_to(
+					const_iterator const& that) const;
 			
 			/** Pointer to the underlying matrix */
-			mpq_t* m;
+			mpq_class* m;
 			/** Row index of this iterator in the matrix */
 			matrix_mpq::size_type i;
 			/** Dimension of the matrix rows. */
@@ -348,15 +359,16 @@ namespace lrs {
 						matrix_mpq::difference_type> {
 		private:
 			friend class matrix_mpq;
+			friend class matrix_mpq::iterator;
 			/* required for boost::iterator_facade */
 			friend class boost::iterator_core_access;
 			
 			/** Constructor */
-			const_iterator(mpq_t* m, matrix_mpq::size_type i, 
+			const_iterator(mpq_class* m, matrix_mpq::size_type i, 
 					matrix_mpq::size_type d);
 			
 			/** Constifying copy constructor */
-			const_iterator(iterator& that);
+			const_iterator(iterator const& that);
 			
 			/** Returns the referenced vector. In compliance with 
 			 *  boost::iterator_facade */
@@ -364,11 +376,11 @@ namespace lrs {
 			
 			/** Tests the equality of two iterators. In compliance with 
 			 *  boost::iterator_facade */
-			bool equal(iterator& that) const;
+			bool equal(iterator const& that) const;
 			
 			/** Tests the equality of two iterators. In compliance with 
 			 *  boost::iterator_facade */
-			bool equal(const_iterator& that) const;
+			bool equal(const_iterator const& that) const;
 			
 			/** Moves to the next row. In compliance with 
 			 *  boost::iterator_facade */
@@ -385,15 +397,16 @@ namespace lrs {
 			/** Returns number of rows that is ahead of this (may be negative). 
 			 *  Undefined if iterators are not over the same matrix. In 
 			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(iterator& that) const;
+			matrix_mpq::difference_type distance_to(iterator const& that) const;
 			
 			/** Returns number of rows that is ahead of this (may be negative). 
 			 *  Undefined if iterators are not over the same matrix. In 
 			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(const_iterator& that) const;
+			matrix_mpq::difference_type distance_to(
+					const_iterator const& that) const;
 			
 			/** Pointer to the underlying matrix */
-			mpq_t* m;
+			mpq_class* m;
 			/** Row index of this iterator in the matrix */
 			matrix_mpq::size_type i;
 			/** Dimension of the matrix rows. */
@@ -466,6 +479,18 @@ namespace lrs {
 		 */
 		const_reference operator[] (size_type i) const;
 		
+		/** Gets the i'th row of this matrix. Synonym for operator[] */
+		reference row(size_type i);
+		
+		/** Gets the i'th row of this matrix. Synonym for operator[] */
+		const_reference row(size_type i) const;
+		
+		/** Gets the (i,j)th element of this matrix */
+		mpq_class& elem(size_type i, size_type j);
+		
+		/** Gets the (i,j)th element of this matrix */
+		mpq_class const& elem(size_type i, size_type j) const;
+		
 		/** Prints the matrix with space-separated rows inside square brackets.
 		 *  @param o		The output stream to print on
 		 *  @param m		The matrix to print
@@ -485,6 +510,18 @@ namespace lrs {
 		friend bool operator!= (matrix_mpq const& a, matrix_mpq const& b);
 		/** Greater than or equal. Equivalent to a.compare(b) >= 0 */
 		friend bool operator>= (matrix_mpq const& a, matrix_mpq const& b);
+		
+		/** Computes the inner product matrix of this matrix.
+		 *  @return a matrix P such that P[i][j] = inner_prod(this[i], this[j])
+		 */
+		matrix_mpq inner_prod_mat();
+		
+		/** Computes the restriction of the matrix to a given set of row and 
+		 *  column indices.
+		 *  @param s		The set of indices to restrict the matrix to
+		 *  @return a matrix R such that R[i][j] = this[s[i],s[j]]
+		 */
+		matrix_mpq restriction(index_set s);
 	
 	private:
 		/** Compares this matrix to another, lexicographically by rows.
@@ -495,11 +532,20 @@ namespace lrs {
 		int compare(matrix_mpq const& that) const;
 		
 		/** Matrix data storage */
-		mpq_t* m;
+		mpq_class* m;
 		/** Number of rows in the matrix */
 		size_type n;
 		/** Dimension of the matrix rows */
 		size_type d;
+	};
+	
+	/** Functional to hash a matrix_mpq. Compatible with vector_mpq_hash (will 
+	 *  hash to the same value as the concatenation of all the rows of the 
+	 *  matrix as a vector_mpq). */
+	class matrix_mpq_hash 
+			: public std::unary_function<matrix_mpq, std::size_t> {
+	public:
+		std::size_t operator() (matrix_mpq const& m) const;
 	};
 	
 } /* namespace lrs */

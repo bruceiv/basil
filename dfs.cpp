@@ -52,26 +52,22 @@ namespace basil {
 	// Query methods for after completion of doDfs()
 	////////////////////////////////////////////////////////////////////////////
 	
-	dfs::cobasis_map const& dfs::getBasisOrbits() const 
-		{ return basisOrbits; }
+	dfs::cobasis_map const& dfs::getBasisOrbits() const { return basisOrbits; }
 	
-	ind dfs::getDimension() const 
-		{ return dim - 1; }
+	ind dfs::getDimension() const { return dim - 1; }
 	
-	dfs::index_set dfs::getInitialCobasis() const 
-		{ return initialCobasis; }
+	dfs::index_set dfs::getInitialCobasis() const { return initialCobasis; }
 	
-	bool dfs::isFinished() const 
-		{ return !hitMaxBasis; }
+	basil::matrix const& dfs::getInnerProdMat() const { return innerProdMat; }
 	
-	dfs::coordinates_map const& dfs::getRayOrbits() const 
-		{ return rayOrbits; }
+	bool dfs::isFinished() const { return !hitMaxBasis; }
+	
+	dfs::coordinates_map const& dfs::getRayOrbits() const { return rayOrbits; }
 	
 	std::clock_t dfs::getRunningTime() const 
 		{ return diff_time / clocks_per_ms; }
 	
-	permutation_group const& dfs::getSymmetryGroup() const 
-		{ return g; }
+	permutation_group const& dfs::getSymmetryGroup() const { return g; }
 	
 	dfs::coordinates_map const& dfs::getVertexOrbits() const 
 		{ return vertexOrbits; }
@@ -220,6 +216,21 @@ namespace basil {
 				}
 			}
 		}
+	}
+	
+	matrix dfs::fastGramVec(dfs::index_set inc) {
+		/* restrict the inner product matrix to the incidence set */
+		matrix gram(innerProdMat.restriction(inc));
+		
+		/* sort each row */
+		for (matrix::iterator row = gram.begin(); row != gram.end(); ++row) {
+			std::sort(row->begin(), row->end());
+		}
+		
+		/* sort the rows */
+		std::sort(gram.begin(), gram.end());
+		
+		return gram;
 	}
 	
 	bool dfs::findSymmetry(dfs::index_set find, dfs::index_set_list list) {
