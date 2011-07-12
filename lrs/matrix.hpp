@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <functional>
 #include <istream>
+#include <iterator>
 #include <new>
 #include <ostream>
 
@@ -18,14 +19,15 @@
 
 namespace lrs {
 	
+	class vector_mpq;
+	class matrix_row_mpq;
 	class vector_mpz;
-	class matrix_mpq;
 	class vector_mpq_hash;
 	
 	/** Wraps a multi-precision rational vector. */
-	class vector_mpq {
-	friend class vector_mpz;
-	friend class matrix_mpq;
+	class vector_mpq_base {
+	friend class vector_mpq;
+	friend class matrix_row_mpq;
 	friend class vector_mpq_hash;
 	public:
 		/* typedef's for STL compatibility */
@@ -38,47 +40,6 @@ namespace lrs {
 		typedef mpq_class			value_type;
 		typedef mpq_class*			pointer;
 		typedef mpq_class const*	const_pointer;
-		
-		/** Constructs a vector with the given dimension. 
-		 *  @param d		The dimension of the vector
-		 */
-		vector_mpq(size_type d);
-		
-		/** Copy constructor.
-		 *  @param that		The vector to copy
-		 */
-		vector_mpq(vector_mpq const& that);
-		
-		/** Copy constructor.
-		 *  @param that		The integer vector to copy. Will initialize all 
-		 * 					denominators to 1
-		 */
-		vector_mpq(vector_mpz const& that);
-		
-		/** Struct constructor; allows creation of a vector_mpq view of 
-		 *  pre-allocated memory. A vector created this way is not 
-		 *  "self-allocated" and will not deallocate the shared memory, though 
-		 *  it may modify the values contained therein. */
-		vector_mpq(mpq_class* v, size_type d);
-		
-		/** Destructor. Only frees the underlying memory if this vector is 
-		 *  self-allocated. */
-		~vector_mpq();
-		
-		/** Assignment operator.
-		 *  @param that		The vector to copy into this one. Undefined results 
-		 * 					if this vector is not self-allocated and that.d 
-		 * 					differs from this->d.
-		 */
-		vector_mpq& operator= (vector_mpq const& that);
-		
-		/** Assignment operator.
-		 *  @param that		The integer vector to copy into this one. Will 
-		 * 					initialize all denominators to 1. Undefined results 
-		 * 					if this vector is not self-allocated and that.d 
-		 * 					differs from this->d.
-		 */
-		vector_mpq& operator= (vector_mpz const& that);
 		
 		/** Gets an iterator at the first element of the vector. */
 		iterator begin();
@@ -111,20 +72,35 @@ namespace lrs {
 		 *  @param v		The vector to print
 		 *  @return the same output stream
 		 */
-		friend std::ostream& operator<< (std::ostream& o, vector_mpq const& v);
+		friend std::ostream& operator<< (std::ostream& o, 
+										 vector_mpq_base const& v);
 		
 		/** Less than. Equivalent to a.compare(b) < 0 */
-		friend bool operator<  (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator<  (vector_mpq_base const& a, 
+								vector_mpq_base const& b);
 		/** Equal. Equivalent to a.compare(b) == 0 */
-		friend bool operator== (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator== (vector_mpq_base const& a, 
+								vector_mpq_base const& b);
 		/** Greater than. Equivalent to a.compare(b) > 0 */
-		friend bool operator>  (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator>  (vector_mpq_base const& a, 
+								vector_mpq_base const& b);
 		/** Less than or equal. Equivalent to a.compare(b) <= 0 */
-		friend bool operator<= (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator<= (vector_mpq_base const& a, 
+								vector_mpq_base const& b);
 		/** Not equal. Equivalent to a.compare(b) != 0 */
-		friend bool operator!= (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator!= (vector_mpq_base const& a, 
+								vector_mpq_base const& b);
 		/** Greater than or equal. Equivalent to a.compare(b) >= 0 */
-		friend bool operator>= (vector_mpq const& a, vector_mpq const& b);
+		friend bool operator>= (vector_mpq_base const& a, 
+								vector_mpq_base const& b);
+		
+		/** Compares two vectors lexicographically.
+		 *  @param a		the first vector
+		 *  @param b		the second vector
+		 *  @return -1 for a less than b, 0 for a equal to b, or 1 for a 
+		 *  		greater than b.
+		 */
+		friend int compare(vector_mpq_base const& a, vector_mpq_base const& b);
 		
 		/** Computes the inner product of two vectors.
 		 *  @param a		A vector of length d
@@ -132,35 +108,116 @@ namespace lrs {
 		 *  @return \f$\sum_{i=0}^{d} a_i * b_i\f$
 		 *  @throws std::runtime_error on a.d != b.d
 		 */
-		friend mpq_class inner_prod (vector_mpq const& a, vector_mpq const& b);
+		friend mpq_class inner_prod (vector_mpq_base const& a, 
+									 vector_mpq_base const& b);
 		
 		/** Gets the vector of numerators of this vector */
 		vector_mpz num();
 		/** Gets the vector of denominators of this vector */
 		vector_mpz den();
 		
-	private:
+	protected:
 		
-		/** Compares this vector to another, lexicographically.
-		 *  @param that		The vector to compare to
-		 *  @return -1 for this vector less than that, 0 for this vector equal 
-		 *  		to that, or 1 for this vector greater than that.
+		/** Protected constructor. Must be called from subclass.
+		 *  @param v		The data storage array
+		 *  @param d		The length of the data
 		 */
-		int compare(vector_mpq const& that) const;
+		vector_mpq_base(mpq_class* v, size_type d);
 		
 		/** Internal storage of vector data */
 		mpq_class* v;
 		/** Dimension of the vector. */
 		size_type d;
-		/** Is this vector responsible for its own storage? */
-		bool selfAlloc;
+	};
+	
+	class vector_mpz;
+	
+	/** Wraps a self-allocated multi-precision rational vector. */
+	class vector_mpq : public vector_mpq_base {
+	friend class vector_mpz;
+	public:
+		
+		/** Constructs a vector with the given dimension, with all elements 
+		 *  initialized to zero. If called as the default constructor, creates 
+		 *  an empty vector.
+		 *  @param d		The dimension of the vector (default 0)
+		 */
+		vector_mpq(size_type d = 0);
+		
+		/** Copy constructor.
+		 *  @param that		The vector to copy
+		 */
+		vector_mpq(vector_mpq const& that);
+		
+		/** Copy constructor.
+		 *  @param that		The vector to copy
+		 */
+		vector_mpq(matrix_row_mpq const& that);
+		
+		/** Copy constructor.
+		 *  @param that		The integer vector to copy. Will initialize all 
+		 * 					denominators to 1
+		 */
+		vector_mpq(vector_mpz const& that);
+		
+		/** Destructor. */
+		~vector_mpq();
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one.
+		 */
+		vector_mpq& operator= (vector_mpq const& that);
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one.
+		 */
+		vector_mpq& operator= (matrix_row_mpq const& that);
+		
+		/** Assignment operator.
+		 *  @param that		The integer vector to copy into this one. Will 
+		 * 					initialize all denominators to 1.
+		 */
+		vector_mpq& operator= (vector_mpz const& that);
+		
+	};
+	
+	class matrix_mpq;
+	
+	/** Multi-precision rational vector that is a view of a matrix row */
+	class matrix_row_mpq : public vector_mpq_base {
+	friend class matrix_mpq;
+	public:
+		
+		/** Creates a vector that is a view of a given matrix row, rather than 
+		 *  having its own memory. */
+		matrix_row_mpq(mpq_class* v, size_type d);
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one. Undefined results 
+		 * 					if that.d differs from this->d.
+		 */
+		matrix_row_mpq& operator= (vector_mpq const& that);
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one. Undefined results 
+		 * 					if that.d differs from this->d.
+		 */
+		matrix_row_mpq& operator= (matrix_row_mpq const& that);
+		
+		/** Assignment operator.
+		 *  @param that		The integer vector to copy into this one. Will 
+		 * 					initialize all denominators to 1. Undefined results 
+		 * 					if that.d differs from this->d.
+		 */
+		matrix_row_mpq& operator= (vector_mpz const& that);
+		
 	};
 	
 	/** Functional to hash a vector_mpq.  */
 	class vector_mpq_hash 
-			: public std::unary_function<vector_mpq, std::size_t> {
+			: public std::unary_function<vector_mpq_base, std::size_t> {
 	public:
-		std::size_t operator() (vector_mpq const& v) const;
+		std::size_t operator() (vector_mpq_base const& v) const;
 	};
 	
 	class vector_mpz_hash;
@@ -169,7 +226,9 @@ namespace lrs {
 	class vector_mpz {
 	//assign these friends so they can get at the v member
 	friend class lrs;
+	friend class vector_mpq_base;
 	friend class vector_mpq;
+	friend class matrix_row_mpq;
 	friend class vector_mpz_hash;
 	public:
 		/* typedef's for STL compatibility */
@@ -183,10 +242,12 @@ namespace lrs {
 		typedef val_t*			pointer;
 		typedef val_t const*	const_pointer;
 		
-		/** Constructs a vector with the given dimension. 
-		 *  @param d		The dimension of the vector
+		/** Constructs a vector with the given dimension, with all elements 
+		 *  initialized to zero. If called as the default constructor, creates 
+		 *  an empty vector.
+		 *  @param d		The dimension of the vector (default 0)
 		 */
-		vector_mpz(size_type d);
+		vector_mpz(size_type d = 0);
 		
 		/** Copy constructor.
 		 *  @param that		The vector to copy
@@ -247,6 +308,14 @@ namespace lrs {
 		/** Greater than or equal. Equivalent to a.compare(b) >= 0 */
 		friend bool operator>= (vector_mpz const& a, vector_mpz const& b);
 		
+		/** Compares two vectors lexicographically.
+		 *  @param a		the first vector
+		 *  @param b		the second vector
+		 *  @return -1 for a less than b, 0 for a equal to b, or 1 for a 
+		 *  		greater than b.
+		 */
+		friend int compare(vector_mpz const& a, vector_mpz const& b);
+		
 		/** Returns the rationalization of the given vector. The 
 		 *  rationalization is defined to be the vector divided by its first 
 		 *  coordinate (if non-zero), or the vector otherwise.
@@ -254,13 +323,6 @@ namespace lrs {
 		vector_mpq rationalization() const;
 		
 	private:
-		/** Compares this vector to another lexicographically.
-		 *  @param that		The vector to compare to
-		 *  @return -1 for this vector less than that, 0 for this vector equal 
-		 *  		to that, or 1 for this vector greater than that.
-		 */
-		int compare(vector_mpz const& that) const;
-		
 		/** Internal storage of vector data */
 		vector_t v;
 		/** Dimension of the vector. */
@@ -282,142 +344,253 @@ namespace lrs {
 	friend class matrix_mpq_hash;
 	public:
 		/* typedef's for STL compatibility */
-		typedef vector_mpq			reference;
-		typedef vector_mpq const	const_reference;
-		typedef ind					size_type;
-		typedef ind					difference_type;
-		typedef vector_mpq			value_type;
-		typedef vector_mpq*			pointer;
-		typedef vector_mpq const*	const_pointer;
+		typedef matrix_row_mpq			reference;
+		typedef matrix_row_mpq const	const_reference;
+		typedef ind						size_type;
+		typedef ind						difference_type;
+		typedef vector_mpq				value_type;
+		typedef vector_mpq*				pointer;
+		typedef vector_mpq* const		const_pointer;
 		
 		class const_iterator;
 		/** Row iterator */
 		class iterator 
-				: public boost::iterator_facade<iterator, 
+				: public std::iterator<std::random_access_iterator_tag, 
 						matrix_mpq::value_type, 
-						std::random_access_iterator_tag,
-						matrix_mpq::reference,
-						matrix_mpq::difference_type> {
+						matrix_mpq::difference_type,
+						matrix_mpq::pointer,
+						matrix_mpq::reference> {
+		friend class matrix_mpq;
+		friend class matrix_mpq::const_iterator;
+		public:
+			
+			/** Returns the referenced vector. */
+			reference operator* ();
+			
+			/** Pre-increment operator. */
+			iterator& operator++ ();
+			/** Post-increment operator. */
+			iterator operator++ (int);
+			/** Pre-decrement operator. */
+			iterator& operator-- ();
+			/** Post-decrement operator. */
+			iterator operator-- (int);
+			/** Addition-assignment operator. */
+			iterator& operator+= (difference_type n);
+			/** Addition operator. */
+			iterator operator+ (difference_type n) const;
+			/** Subtraction-assignment operator. */
+			iterator& operator-= (difference_type n);
+			/** Subtraction operator. */
+			iterator operator- (difference_type n) const;
+			
+			/** Gets the distance between two iterators. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend difference_type operator- (iterator const& a, 
+											  iterator const& b);
+			/** Gets the distance between two iterators. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend difference_type operator- (iterator const& a, 
+											  const_iterator const& b);
+			/** Gets the distance between two iterators. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend difference_type operator- (const_iterator const& a, 
+											  iterator const& b);
+			
+			/** Checks if two iterators point to the same row. */
+			friend bool operator== (iterator const& a, iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator== (iterator const& a, const_iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator== (const_iterator const& a, iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator!= (iterator const& a, iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator!= (iterator const& a, const_iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator!= (const_iterator const& a, iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<  (iterator const& a, iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<  (iterator const& a, const_iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<  (const_iterator const& a, iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>  (iterator const& a, iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>  (iterator const& a, const_iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>  (const_iterator const& a, iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<= (iterator const& a, iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<= (iterator const& a, const_iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<= (const_iterator const& a, iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>= (iterator const& a, iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>= (iterator const& a, const_iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>= (const_iterator const& a, iterator const& b);
+			
 		private:
-			friend class matrix_mpq;
-			friend class matrix_mpq::const_iterator;
-			/* required for boost::iterator_facade */
-			friend class boost::iterator_core_access;
 			
 			/** Constructor */
-			iterator(mpq_class* m, matrix_mpq::size_type i, 
-					matrix_mpq::size_type d);
+			iterator(mpq_class* v, matrix_mpq::size_type d);
 			
-			/** Returns the referenced vector. In compliance with 
-			 *  boost::iterator_facade */
-			matrix_mpq::value_type dereference() const;
-			
-			/** Tests the equality of two iterators. In compliance with 
-			 *  boost::iterator_facade */
-			bool equal(iterator const& that) const;
-			
-			/** Tests the equality of two iterators. In compliance with 
-			 *  boost::iterator_facade */
-			bool equal(const_iterator const& that) const;
-			
-			/** Moves to the next row. In compliance with 
-			 *  boost::iterator_facade */
-			void increment();
-			
-			/** Moves to the previous row. In compliance with 
-			 *  boost::iterator_facade */
-			void decrement();
-			
-			/** Moves n rows (n may be negative). In compliance with 
-			 *  boost::iterator_facade */
-			void advance(matrix_mpq::difference_type n);
-			
-			/** Returns number of rows that is ahead of this (may be negative). 
-			 *  Undefined if iterators are not over the same matrix. In 
-			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(iterator const& that) const;
-			
-			/** Returns number of rows that is ahead of this (may be negative). 
-			 *  Undefined if iterators are not over the same matrix. In 
-			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(
-					const_iterator const& that) const;
-			
-			/** Pointer to the underlying matrix */
-			mpq_class* m;
-			/** Row index of this iterator in the matrix */
-			matrix_mpq::size_type i;
-			/** Dimension of the matrix rows. */
-			matrix_mpq::size_type d;
-		};
-		/** Constant row iterator */
-		class const_iterator 
-				: public boost::iterator_facade<const_iterator, 
-						matrix_mpq::value_type const, 
-						std::random_access_iterator_tag,
-						matrix_mpq::const_reference,
-						matrix_mpq::difference_type> {
-		private:
-			friend class matrix_mpq;
-			friend class matrix_mpq::iterator;
-			/* required for boost::iterator_facade */
-			friend class boost::iterator_core_access;
-			
-			/** Constructor */
-			const_iterator(mpq_class* m, matrix_mpq::size_type i, 
-					matrix_mpq::size_type d);
-			
-			/** Constifying copy constructor */
-			const_iterator(iterator const& that);
-			
-			/** Returns the referenced vector. In compliance with 
-			 *  boost::iterator_facade */
-			matrix_mpq::value_type const dereference() const;
-			
-			/** Tests the equality of two iterators. In compliance with 
-			 *  boost::iterator_facade */
-			bool equal(iterator const& that) const;
-			
-			/** Tests the equality of two iterators. In compliance with 
-			 *  boost::iterator_facade */
-			bool equal(const_iterator const& that) const;
-			
-			/** Moves to the next row. In compliance with 
-			 *  boost::iterator_facade */
-			void increment();
-			
-			/** Moves to the previous row. In compliance with 
-			 *  boost::iterator_facade */
-			void decrement();
-			
-			/** Moves n rows (n may be negative). In compliance with 
-			 *  boost::iterator_facade */
-			void advance(matrix_mpq::difference_type n);
-			
-			/** Returns number of rows that is ahead of this (may be negative). 
-			 *  Undefined if iterators are not over the same matrix. In 
-			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(iterator const& that) const;
-			
-			/** Returns number of rows that is ahead of this (may be negative). 
-			 *  Undefined if iterators are not over the same matrix. In 
-			 *  compliance with boost::iterator_facade */
-			matrix_mpq::difference_type distance_to(
-					const_iterator const& that) const;
-			
-			/** Pointer to the underlying matrix */
-			mpq_class* m;
-			/** Row index of this iterator in the matrix */
-			matrix_mpq::size_type i;
+			/** Pointer to the underlying matrix row */
+			mpq_class* v;
 			/** Dimension of the matrix rows. */
 			matrix_mpq::size_type d;
 		};
 		
-		/** Constructor.
-		 *  @param n			the number of rows in the matrix
-		 *  @param d			the number of columns in the matrix
+		/** Constant row iterator */
+		class const_iterator 
+				: public std::iterator<std::random_access_iterator_tag, 
+						matrix_mpq::value_type const, 
+						matrix_mpq::difference_type,
+						matrix_mpq::const_pointer,
+						matrix_mpq::const_reference> {
+		friend class matrix_mpq;
+		friend class matrix_mpq::iterator;
+		public:
+			
+			/** Constifying copy constructor. */
+			const_iterator(matrix_mpq::iterator const& that);
+			/** Constifying assignment operator. */
+			const_iterator& operator= (matrix_mpq::iterator const& that);
+			
+			/** Returns the referenced vector. */
+			reference operator* ();
+			
+			/** Pre-increment operator. */
+			const_iterator& operator++ ();
+			/** Post-increment operator. */
+			const_iterator operator++ (int);
+			/** Pre-decrement operator. */
+			const_iterator& operator-- ();
+			/** Post-decrement operator. */
+			const_iterator operator-- (int);
+			/** Addition-assignment operator. */
+			const_iterator& operator+= (difference_type n);
+			/** Addition operator. */
+			const_iterator operator+ (difference_type n) const;
+			/** Subtraction-assignment operator. */
+			const_iterator& operator-= (difference_type n);
+			/** Subtraction operator. */
+			const_iterator operator- (difference_type n) const;
+			
+			/** Gets the distance between two iterators. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend difference_type operator- (const_iterator const& a, 
+											  const_iterator const& b);
+			/** Gets the distance between two iterators. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend difference_type operator- (const_iterator const& a, 
+											  matrix_mpq::iterator const& b);
+			/** Gets the distance between two iterators. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend difference_type operator- (matrix_mpq::iterator const& a, 
+											  const_iterator const& b);
+			
+			/** Checks if two iterators point to the same row. */
+			friend bool operator== (const_iterator const& a, 
+									const_iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator== (matrix_mpq::iterator const& a, 
+									const_iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator== (const_iterator const& a, 
+									matrix_mpq::iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator!= (const_iterator const& a, 
+									const_iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator!= (matrix_mpq::iterator const& a, 
+									const_iterator const& b);
+			/** Checks if two iterators point to the same row. */
+			friend bool operator!= (const_iterator const& a, 
+									matrix_mpq::iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<  (const_iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<  (matrix_mpq::iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<  (const_iterator const& a, 
+									matrix_mpq::iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>  (const_iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>  (matrix_mpq::iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>  (const_iterator const& a, 
+									matrix_mpq::iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<= (const_iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<= (matrix_mpq::iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator precedes another. Undefined behaviour 
+			 *  for iterators not derived from the same matrix. */
+			friend bool operator<= (const_iterator const& a, 
+									matrix_mpq::iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>= (const_iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>= (matrix_mpq::iterator const& a, 
+									const_iterator const& b);
+			/** Checks if one iterator follows another. Undefined behaviour for 
+			 *  iterators not derived from the same matrix. */
+			friend bool operator>= (const_iterator const& a, 
+									matrix_mpq::iterator const& b);
+			
+		private:
+			
+			/** Constructor */
+			const_iterator(mpq_class* v, matrix_mpq::size_type d);
+			
+			/** Pointer to the underlying matrix row */
+			mpq_class* v;
+			/** Dimension of the matrix rows. */
+			matrix_mpq::size_type d;
+		};
+		
+		/** Constructs a matrix with the given number of rows and columns, with 
+		 *  all elements initialized to zero. If called as the default 
+		 *  constructor, constructs an empty matrix.
+		 *  @param n			the number of rows in the matrix (default 0)
+		 *  @param d			the number of columns in the matrix (default 0)
 		 */
-		matrix_mpq(size_type n, size_type d);
+		matrix_mpq(size_type n = 0, size_type d = 0);
 		
 		/** Copy constructor. 
 		 *  @param that			matrix to copy
@@ -511,6 +684,14 @@ namespace lrs {
 		/** Greater than or equal. Equivalent to a.compare(b) >= 0 */
 		friend bool operator>= (matrix_mpq const& a, matrix_mpq const& b);
 		
+		/** Compares two matrices, lexicographically by rows.
+		 *  @param a		The first matrix
+		 *  @param b		The second matrix
+		 *  @return -1 for a less than b, 0 for a equal to b, or 1 for a 
+		 *  		greater than b.
+		 */
+		friend int compare(matrix_mpq const& a, matrix_mpq const& b);
+		
 		/** Computes the inner product matrix of this matrix.
 		 *  @return a matrix P such that P[i][j] = inner_prod(this[i], this[j])
 		 */
@@ -524,13 +705,6 @@ namespace lrs {
 		matrix_mpq restriction(index_set s);
 	
 	private:
-		/** Compares this matrix to another, lexicographically by rows.
-		 *  @param that		The matrix to compare to
-		 *  @return -1 for this matrix less than that, 0 for this matrix 
-		 *  		equal to that, or 1 for this matrix greater than that.
-		 */
-		int compare(matrix_mpq const& that) const;
-		
 		/** Matrix data storage */
 		mpq_class* m;
 		/** Number of rows in the matrix */

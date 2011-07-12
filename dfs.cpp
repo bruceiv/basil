@@ -235,7 +235,7 @@ namespace basil {
 		
 		/* sort each row */
 		for (matrix::iterator row = gram.begin(); row != gram.end(); ++row) {
-			std::sort(row->begin(), row->end());
+			std::sort( (*row).begin(), (*row).end() );
 		}
 		
 		/* sort the rows */

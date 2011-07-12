@@ -297,8 +297,9 @@ namespace lrs {
 		matrix_mpq& m_nc = const_cast<matrix_mpq &>(mat);
 		for (ind i = 0; i < m; i++) {
 			/* TODO allow for linearities */
+			vector_mpq_base row = m_nc[i];
 			lrs_set_row_mp(
-				P, Q, i+1, m_nc[i].num().v, m_nc[i].den().v, ge);
+				P, Q, i+1, row.num().v, row.den().v, ge);
 		}
 		
 	}

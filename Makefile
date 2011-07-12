@@ -1,6 +1,6 @@
 CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
-CXXFLAGS = -ggdb -O2 -Wall -Wno-unused
-LDFLAGS = -Llrs -llrs -lgmpxx -lgmp
+CXXFLAGS = -ggdb -O0 -Wall -Wno-unused
+LDFLAGS = -lboost_program_options -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable
 OBJS = dfs.o
@@ -14,7 +14,7 @@ OBJS = dfs.o
 
 # generate main program
 basil:  lrs $(OBJS) main.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) -lboost_program_options $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) $(LDFLAGS)
 
 # generate lrs library
 lrs:  
