@@ -154,7 +154,12 @@ namespace basil {
 				("no-gram-vec", 
 					bool_switch(&dfsOpts_.gramVec)
 						->default_value(true)->implicit_value(false),
-					"Deactivate gram vector hashing")
+					"Deactivate gram vector hashing (not reccommended, gram "
+					"vectors are a cheap optimization)")
+				("stab-search", 
+					bool_switch(&dfsOpts_.stabSearch),
+					"Activate cobasis stabilizer search (not reccommended, "
+					"stabilizer computation costs more than it saves)")
 				("print-basis",
 					value<long>(&dfsOpts_.printBasis),
 					"Print the number of cobases found and running time every "

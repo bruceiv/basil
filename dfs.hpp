@@ -115,7 +115,7 @@ namespace basil {
 				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
 				gramVec(true), lexOnly(false), lrs_o(), out(&std::cout), 
 				printBasis(0), printNew(false), printRay(0), printVertex(0), 
-				showsAllDicts(false) {}
+				showsAllDicts(false), stabSearch(false) {}
 		
 		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
@@ -179,6 +179,10 @@ namespace basil {
 		dfs_opts& showAllDicts(bool opt = true) 
 			{ showsAllDicts = opt; return *this; }
 		
+		/** Activates (or deactivates) the stabSearch option */
+		dfs_opts& useStabSearch(bool opt = true)
+			{ stabSearch = opt; return *this; }
+		
 		/** Sets (or unsets) the V-representation flag  */
 		dfs_opts& inVRepresentation(bool opt = true)
 			{ lrs_o.inVRepresentation(opt); return *this; }
@@ -219,6 +223,10 @@ namespace basil {
 		long printVertex;
 		/** show all dictionaries as they are generated [false] */
 		bool showsAllDicts;
+		/** search for cobasis symmetries using set stabilizers rather than the 
+		 *  full symmetry group [false]. Not reccommended, stabilizer 
+		 *  computation costs more than it saves */
+		bool stabSearch;
 	}; /* struct dfs_opts */
 	
 	/** Stateful wrapper class for DFS algorithm. */
