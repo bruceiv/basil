@@ -75,6 +75,9 @@ namespace basil {
 	
 	dfs::cobasis_gram_map const& dfs::getCobasisGramMap() const 
 		{ return cobasisGramMap; }
+	
+	dfs::vertex_gram_map const& dfs::getVertexGramMap() const 
+		{ return vertexGramMap; }
 
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -99,6 +102,7 @@ namespace basil {
 		rayOrbits = coordinates_map();
 		realDim = 0;
 		vertexOrbits = coordinates_map();
+		vertexGramMap = vertex_gram_map();
 		workStack = std::deque<pivot>();
 	}
 	
@@ -295,19 +299,25 @@ namespace basil {
 		/* if we assume no symmetry, it must be new */
 		if ( opts.assumesNoSymmetry ) return vertex_data_ptr();
 		
+		/* List of vertices with matching invariants */
+		vertex_data_list possibleMatches = matchingInvariants(rep);
+		
+		/* New by invariants */
+		if ( possibleMatches.size() == 0 ) return vertex_data_ptr();
+		
 		/* incedence set to find */
 		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
-		for (coordinates_map::iterator it = vertexOrbits.begin(); 
-				it != vertexOrbits.end(); ++it) {
+		for (vertex_data_list::const_iterator it = possibleMatches.begin(); 
+				it != possibleMatches.end(); ++it) {
 			
 			/* incidence set to check */
-			index_set& old = it->second->inc;
+			index_set& old = (*it)->inc;
 			
-			/* PermLib throws an assertion failure on setImage of differently 
-			 * sized sets, so I check this very cheap invariant here. */
-			if ( find.count() != old.count() ) continue;
+			/* NOTE PermLib throws an assertion failure on setImage of 
+			 * differently sized sets, but the incidence set size is checked by 
+			 * matchingInvariants(). */
 			
 			/* look for a permutation in the global group that maps the 
 			 * incidence set of the vertex we are trying to find to the 
@@ -316,7 +326,7 @@ namespace basil {
 					g, plBegin(find), plEnd(find), plBegin(old), plEnd(old));
 			
 			/* if such a permuation is found, return the known vertex */
-			if (act) return it->second;
+			if (act) return *it;
 		}
 		
 		/* no known vertex that is equivalent up to symmetry */
@@ -328,7 +338,7 @@ namespace basil {
 		/* TODO look at adding canonTest, gramMotion from dfs.gap 
 		 * IsNewCobasis() */
 		
-		index_set_list possibleMatches = matchingInvariants(cob, dat);
+		index_set_list possibleMatches = matchingCobasisInvariants(cob, dat);
 		
 		/* if no known cobasis has invariants matching this one, it's new */
 		if ( possibleMatches.size() == 0 ) return true;
@@ -376,8 +386,8 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	dfs::index_set_list dfs::matchingInvariants(dfs::index_set cob, 
-												dfs::vertex_data_ptr dat) {
+	dfs::index_set_list dfs::matchingCobasisInvariants(dfs::index_set cob, 
+			dfs::vertex_data_ptr dat) {
 		
 		/* TODO add cobasis stabilizer invariant from Symbal (?) */
 		
@@ -394,7 +404,7 @@ namespace basil {
 			for (cobasis_gram_map::const_iterator it = range.first; 
 					it != range.second; ++it) {
 				
-				if ( invariantsMatch(*it->second.second, *dat) ) {
+				if ( invariantsMatch(*it->second.second, *dat, CHECK_GRAM) ) {
 					matches.push_back(it->second.first);
 				}
 				
@@ -408,6 +418,44 @@ namespace basil {
 				
 				if ( invariantsMatch(*it->second, *dat) ) {
 					matches.push_back(it->first);
+				}
+				
+			}
+			
+		}
+		
+		return matches;
+	}
+	
+	dfs::vertex_data_list dfs::matchingInvariants(dfs::vertex_data_ptr rep) {
+		
+		/* list of vertices with matching invariants */
+		vertex_data_list matches;
+		
+		if (opts.gramVec) {
+			
+			/* get set of cobases with matching gram vectors */
+			vertex_gram_range range = 
+				vertexGramMap.equal_range( rep->gram );
+			
+			/* check invariants for each of these cobases */
+			for (vertex_gram_map::const_iterator it = range.first; 
+					it != range.second; ++it) {
+				
+				if ( invariantsMatch(*it->second, *rep) ) {
+					matches.push_back(it->second);
+				}
+				
+			}
+			
+		} else {
+			
+			/* check invariants for each known cobasis */
+			for (coordinates_map::const_iterator it = vertexOrbits.begin();
+					it != vertexOrbits.end(); ++it) {
+				
+				if ( invariantsMatch(*it->second, *rep) ) {
+					matches.push_back(it->second);
 				}
 				
 			}
@@ -515,8 +563,13 @@ namespace basil {
 	}
 	
 	bool dfs::invariantsMatch(dfs::vertex_data const& a, 
-							  dfs::vertex_data const& b) {
-		return a.det == b.det;
+							  dfs::vertex_data const& b, 
+							  bool checkedGram) {
+		return true
+// 				&& a.det == b.det						/* determinant */
+				&& a.inc.count() == b.inc.count()		/* # incident facets */
+				&& (checkedGram || a.gram == b.gram);	/* gram matrix */
+				;
 	}
 	
 	dfs::vertex_data_ptr dfs::rayData(dfs::cobasis_ptr cob, 
@@ -527,9 +580,11 @@ namespace basil {
 		index_set inc = cob->cob | cob->extraInc;
 		/* less the ray index */
 		inc.set(cob->ray, false);
+		/* ignore gram vector for the moment */
+		matrix gram = matrix(0,0);
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				coordinates(*coords), inc, cob->cob, cob->det);
+				coordinates(*coords), inc, cob->cob, cob->det, gram);
 		
 		return dat;
 	}
@@ -564,6 +619,11 @@ namespace basil {
 		/* map the rationalization of the coordinates to the vertex data */
 		vertexOrbits.insert(std::make_pair(dat->coords, dat));
 		
+		/* add gram vector, if option set */
+		if (opts.gramVec) {
+			vertexGramMap.insert(std::make_pair(fastGramVec(dat->inc), dat));
+		}
+		
 		/* for each defined cobasis, map it to the vertex data */
 		for (std::set<index_set>::iterator it = dat->cobs.begin();
 				it != dat->cobs.end(); ++it) {
@@ -582,14 +642,15 @@ namespace basil {
 	
 	dfs::vertex_data_ptr dfs::vertexData(dfs::cobasis_ptr cob, 
 			dfs::vector_mpz_ptr coords) {
-		/* TODO look at including gramVec, stabilizerOrbits from dfs.gap 
-		 * VertexRep() */
+		/* TODO look at including stabilizerOrbits from dfs.gap VertexRep() */
 		
 		/* union of the cobasis and extra incidence of the cobasis data */
 		index_set inc = cob->cob | cob->extraInc;
+		/* gram matrix, or empty if option off */
+		matrix gram = ( opts.gramVec ) ? fastGramVec(inc) : matrix(0,0);
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				coords->rationalization(), inc, cob->cob, cob->det);
+				coords->rationalization(), inc, cob->cob, cob->det, gram);
 		
 		return dat;
 	}

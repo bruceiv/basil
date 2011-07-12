@@ -201,7 +201,8 @@ namespace basil {
 		/** cobasis to start the search from [null]. If this is not set, the 
 		 *  DFS algorithm will find the first cobasis itself */
 		shared_ptr<lrs::index_set> firstCobasis;
-		/** Use gram vector hashing to shrink the cobasis search space [true] */
+		/** Use gram vector hashing to shrink the symmetry search space [true] 
+		 */
 		bool gramVec;
 		/** lexically based pivots only [false]. This is bad and breaks the 
 		 *  algorithm, don't use it */
@@ -270,16 +271,17 @@ namespace basil {
 			 *  only cob. 
 			 */
 			vertex_data(coordinates coords, index_set inc, index_set cob, 
-					mpz_class det) : coords(coords), inc(inc), cobs(), 
-					det(det) {
+					mpz_class det, matrix gram) : coords(coords), inc(inc), 
+					cobs(), det(det), gram(gram) {
 				cobs.insert(cob);
 			}
 			
 			/** Multiple-cobasis constructor. Initializes all fields to the 
 			 *  given values */
 			vertex_data(coordinates coords, index_set inc, 
-					std::set<index_set> cobs, mpz_class det) : coords(coords), 
-					inc(inc), cobs(cobs), det(det) { }
+					std::set<index_set> cobs, mpz_class det, matrix gram) 
+					: coords(coords), inc(inc), cobs(cobs), det(det), 
+					gram(gram) { }
 			
 			/* Key data */
 			/** Coordinates of the vertex */
@@ -292,8 +294,11 @@ namespace basil {
 			/* Invariants */
 			/** determinant TODO (?) */
 			mpz_class det;
+			/** gram matrix */
+			matrix gram;
 		};
 		typedef shared_ptr<vertex_data> vertex_data_ptr;
+		typedef std::vector<vertex_data_ptr> vertex_data_list;
 		
 		/** map of vertex coordinates to a vertex data pointer */
 		typedef 
@@ -309,6 +314,10 @@ namespace basil {
 			boost::unordered_multimap<
 				matrix, std::pair<index_set, vertex_data_ptr>, matrix_hash>
 			cobasis_gram_map;
+		/** map of a gram vector to its vertices */
+		typedef
+			boost::unordered_multimap<matrix, vertex_data_ptr, matrix_hash>
+			vertex_gram_map;
 		
 		
 		/** Set up a DFS on the given matrix, with the given permuation group.
@@ -369,6 +378,10 @@ namespace basil {
 		 *  primary use for debugging the gram vectors.) */
 		cobasis_gram_map const& getCobasisGramMap() const;
 		
+		/** @return the map of gram vectors to vertices. (This method is of 
+		 *  primary use for debugging the gram vectors.) */
+		vertex_gram_map const& getVertexGramMap() const;
+		
 	private:
 		
 		////////////////////////////////////////////////////////////////////////
@@ -394,6 +407,11 @@ namespace basil {
 			std::pair<cobasis_gram_map::const_iterator, 
 				cobasis_gram_map::const_iterator> 
 			cobasis_gram_range;
+		
+		typedef
+			std::pair<vertex_gram_map::const_iterator, 
+				vertex_gram_map::const_iterator>
+			vertex_gram_range;
 		
 		/** Transformation of index_set_iter to provide input to PermLib 
 		 *  properly. The public interfaces to PermLib are zero-indexed, 
@@ -502,10 +520,25 @@ namespace basil {
 		 *  @param dat		The invariant data to match
 		 *  @return a list of cobases with matching invariants.
 		 */
-		index_set_list matchingInvariants(index_set cob, vertex_data_ptr dat);
+		index_set_list matchingCobasisInvariants(index_set cob, 
+												 vertex_data_ptr dat);
 		
-		/** @return true if the invariants of the two vertex data match. */
-		bool invariantsMatch(vertex_data const& a, vertex_data const& b);
+		/** Gets the vertices whose invariants match the given one.
+		 *  @param rep		The vertex data to match
+		 *  @return a list of vertices with matching invariants.
+		 */
+		vertex_data_list matchingInvariants(vertex_data_ptr rep);
+		
+		/** check the gram vector in invariantsMatch() */
+		static const bool CHECK_GRAM = false;
+		/** Check the invariants of two vertex data
+		 *  @param a			The first vertex to check
+		 *  @param b			The second vertex to check
+		 *  @param checkedGram	Have we already checked the gram vector?
+		 *  @return true if the invariants of the two vertex data match. 
+		 */
+		bool invariantsMatch(vertex_data const& a, vertex_data const& b, 
+				bool checkedGram = true);
 		
 		/** Add new edges to the search stack.
 		 *  @param oldCob	The cobasis to search for adjacent edges
@@ -574,6 +607,8 @@ namespace basil {
 		std::clock_t start_time;
 		/** representatives of each orbit (of vertices) */
 		coordinates_map vertexOrbits;
+		/** Lookup vertices by gram vector */
+		vertex_gram_map vertexGramMap;
 		/** Pivots in the working stack */
 		std::deque<pivot> workStack;
 		
