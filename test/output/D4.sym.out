@@ -1,0 +1,53 @@
+true
+#I  Starting pass 1
+#I  Found  0 Linearities
+#I  adding vertex[ 1, 0, 0, 1, 0 ]
+#I  starting from [ 17, 22, 23, 24 ]
+rec( dimension := 4, 
+  vertex_orbits := [ rec( incidence := [ 2, 7, 17, 22, 23, 24 ], 
+          coordinates := [ 1, 0, 0, 1, 0 ], det := 2, 
+          gramVec := [ [ 1, 2, 2, 2, 2, 3 ], [ 1, 2, 2, 2, 2, 3 ], 
+              [ 1, 2, 2, 2, 2, 3 ], [ 1, 2, 2, 2, 2, 3 ], 
+              [ 1, 2, 2, 2, 2, 3 ], [ 1, 2, 2, 2, 2, 3 ] ], 
+          stabilizerOrbits := fail ) ], 
+  basis_orbits := [ rec( cobasis := [ 17, 22, 23, 24 ], 
+          extraincidence := [ 2, 7 ], coordinates := [ 1, 0, 0, 1, 0 ], 
+          det := 2, pseudoCanon := fail, stabilizer := fail, 
+          gramVec := [ [ 1, 2, 2, 3 ], [ 1, 2, 2, 3 ], [ 2, 2, 2, 3 ], 
+              [ 2, 2, 2, 3 ] ], index := 1 ) ], pseudoCanons := [  ], 
+  profile := rec( InvariantCheck := 2, InvariantMatches := 2, OldCobasis := 2,
+      OldCobasisTime := 36 ), ray_orbits := [  ], 
+  symmetry_generators := [ (4,22)(5,21)(6,24)(9,17)(10,16)(12,18), 
+      (3,4)(8,9)(11,12)(15,16)(20,21)(23,24), (2,3)(4,5)(7,8)(9,10)(11,23)(14,
+        15)(16,17)(19,20)(21,22), (1,5,6,2)(7,22,19,10)(8,24,21,11)(9,23,20,
+        12)(13,17,18,14) ], finished := true, 
+  initial_cobasis := [ 17, 22, 23, 24 ], 
+  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 37804 )
+    , 
+  gap_time := rec( user_time := 2228, system_time := 80, user_time_children :=\
+ 0, system_time_children := 4 ) )
+
+#STARTRESULTS
+{
+key => 'dimension',
+dimension => 4,
+gap_time => { 
+user_time => 2228,
+system_time => 80,
+user_time_children => 0,
+system_time_children => 4,
+},
+nauty_total_time => { 
+user_time => 0,
+system_time => 0,
+memory => 37804,
+},
+initial_cobasis => [ 17, 22, 23, 24 ],
+group_order =>1152,
+basis_orbits => 1,
+vertex_orbits => 1,
+ray_orbits => 0,
+symmetry_generators => 4,
+}
+
+#ENDRESULTS

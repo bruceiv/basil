@@ -292,7 +292,7 @@ namespace basil {
 			std::set<index_set> cobs;
 			
 			/* Invariants */
-			/** determinant TODO (?) */
+			/** determinant */
 			mpz_class det;
 			/** gram matrix */
 			matrix gram;
@@ -529,16 +529,19 @@ namespace basil {
 		 */
 		vertex_data_list matchingInvariants(vertex_data_ptr rep);
 		
-		/** check the gram vector in invariantsMatch() */
-		static const bool CHECK_GRAM = false;
-		/** Check the invariants of two vertex data
+		/** Check the invariants of two vertex data for cobasis symmetry
 		 *  @param a			The first vertex to check
 		 *  @param b			The second vertex to check
-		 *  @param checkedGram	Have we already checked the gram vector?
 		 *  @return true if the invariants of the two vertex data match. 
 		 */
-		bool invariantsMatch(vertex_data const& a, vertex_data const& b, 
-				bool checkedGram = true);
+		bool cobasisInvariantsMatch(vertex_data const& a, vertex_data const& b);
+		
+		/** Check the invariants of two vertex data for vertex symmetry
+		 *  @param a			The first vertex to check
+		 *  @param b			The second vertex to check
+		 *  @return true if the invariants of the two vertex data match. 
+		 */
+		bool invariantsMatch(vertex_data const& a, vertex_data const& b);
 		
 		/** Add new edges to the search stack.
 		 *  @param oldCob	The cobasis to search for adjacent edges

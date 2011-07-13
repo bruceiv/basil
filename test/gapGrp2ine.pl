@@ -12,7 +12,7 @@ while (<>) {
 }
 
 $line =~ s{^\[ \(}{};		# remove initial list bracket
-$line =~ s{\), \(}{\n}g;	# substitute group element delimiters for newlines
+$line =~ s{\),\s*\(}{\n}g;	# substitute group element delimiters for newlines
 $line =~ s{\) \]$}{\n};		# remove final list bracket
 
 $line =~ s{,}{ }g;			# change element delimeter from comma to space

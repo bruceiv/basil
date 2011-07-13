@@ -7,6 +7,7 @@
 #include <boost/functional.hpp>
 
 #include "dfs.hpp"
+#include "lrs/cobasis.hpp"
 
 namespace basil {
 	
@@ -28,19 +29,21 @@ namespace basil {
 	
 	/** Prints a set.
 	 *  The set will be surrounded by '{' and '}', and have elements separated 
-	 *  by ", ".
+	 *  by delim.
 	 *  @param Iter		A type that has pre-increment defined, as well as a 
 	 * 					stream output operator for its dereferenced type
 	 *  @param o		The output stream to print to
 	 *  @param begin	The beginning iterator of the set
 	 *  @param end		the ending iterator of the set
+	 *  @param delim	the set element delimiter [", "]
 	 */
 	template <typename Iter>
-	static void printSet(std::ostream& o, Iter begin, Iter end) {
+	static void printSet(std::ostream& o, Iter begin, Iter end, 
+						 string delim = ", ") {
 		bool isFirst = true;
 		o << "{";
 		while (begin != end) {
-			if (isFirst) isFirst = false; else o << ", ";
+			if (isFirst) isFirst = false; else o << delim;
 			o << *begin;
 			++begin;
 		}
@@ -49,20 +52,25 @@ namespace basil {
 	
 	/** Prints a set.
 	 *  The set will be surrounded by '{' and '}', and have elements separated 
-	 *  by ", ".
+	 *  by delim.
 	 *  @param Iter		A type that has pre-increment defined, as well as a 
-	 * 					stream output operator for its dereferenced type
-	 *  @param Func		A function to be applied to the dereferenced iterator
+	 * 					stream output operator for its value type
+	 *  @param Func		A unary function taking an argument of the iterator's 
+	 * 					value type, and returning an object with a standard 
+	 * 					output operator defined
 	 *  @param o		The output stream to print to
 	 *  @param begin	The beginning iterator of the set
 	 *  @param end		the ending iterator of the set
+	 *  @param f		A function of type Func
+	 *  @param delim	The set element delimeter [", "]
 	 */
 	template <typename Iter, typename Func>
-	static void printSet(std::ostream& o, Iter begin, Iter end, Func f) {
+	static void printSet(std::ostream& o, Iter begin, Iter end, Func f, 
+						 string delim = ", ") {
 		bool isFirst = true;
 		o << "{";
 		while (begin != end) {
-			if (isFirst) isFirst = false; else o << ", ";
+			if (isFirst) isFirst = false; else o << delim;
 			o << f(*begin);
 			++begin;
 		}
@@ -85,8 +93,13 @@ namespace basil {
 
 	/** Prints a list of cobases. */
 	static string fmt(dfs::cobasis_map const& m) {
+		typedef
+			bool (*index_set_comparator)(dfs::index_set const&, 
+										 dfs::index_set const&);
+		
 		std::stringstream o;
-		std::set<dfs::index_set> s;
+		std::set<dfs::index_set, index_set_comparator> 
+			s(&lrs::lexicographical_compare);
 		/* sort the set of cobases */
 		insertKeys(m.begin(), m.end(), std::inserter(s, s.begin()));
 		printSet(o, s.begin(), s.end(), fmt<dfs::index_set>() );
@@ -94,15 +107,10 @@ namespace basil {
 	}
 
 	/** prints a representation of a list of permutations */
-	static std::ostream& operator<< (std::ostream& o, permutation_list const& l) {
-		bool isFirst = true;
-		o << "{";
-		for (permutation_list::const_iterator it = l.begin();
-				it != l.end(); ++it) {
-			if (isFirst) isFirst = false; else o << ", ";
-			o << **it;
-		}
-		o << "}";
+	static std::ostream& operator<< (std::ostream& o, 
+									 permutation_list const& l) {
+		printSet(o, l.begin(), l.end(), 
+				 boost::mem_fun_ref(&permlib::Permutation::ptr::operator*) );
 		return o;
 	}
 

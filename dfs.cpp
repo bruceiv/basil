@@ -404,7 +404,7 @@ namespace basil {
 			for (cobasis_gram_map::const_iterator it = range.first; 
 					it != range.second; ++it) {
 				
-				if ( invariantsMatch(*it->second.second, *dat, CHECK_GRAM) ) {
+				if ( cobasisInvariantsMatch(*it->second.second, *dat) ) {
 					matches.push_back(it->second.first);
 				}
 				
@@ -562,13 +562,22 @@ namespace basil {
 		return gram;
 	}
 	
-	bool dfs::invariantsMatch(dfs::vertex_data const& a, 
-							  dfs::vertex_data const& b, 
-							  bool checkedGram) {
+	bool dfs::cobasisInvariantsMatch(dfs::vertex_data const& a, 
+			dfs::vertex_data const& b) {
 		return true
 // 				&& a.det == b.det						/* determinant */
 				&& a.inc.count() == b.inc.count()		/* # incident facets */
-				&& (checkedGram || a.gram == b.gram);	/* gram matrix */
+				&& a.gram == b.gram						/* gram matrix */
+				;
+	}
+	
+	bool dfs::invariantsMatch(dfs::vertex_data const& a, 
+			dfs::vertex_data const& b) {
+		return true
+// 				&& a.det == b.det						/* determinant */
+				&& a.inc.count() == b.inc.count()		/* # incident facets */
+				/* NOTE gram checked by gram matrix lookup for vertices */
+				// && a.gram == b.gram					/* gram matrix */
 				;
 	}
 	
@@ -584,7 +593,7 @@ namespace basil {
 		matrix gram = matrix(0,0);
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				coordinates(*coords), inc, cob->cob, cob->det, gram);
+				coordinates(*coords), inc, cob->cob, abs(cob->det), gram);
 		
 		return dat;
 	}
@@ -650,7 +659,7 @@ namespace basil {
 		matrix gram = ( opts.gramVec ) ? fastGramVec(inc) : matrix(0,0);
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
-				coords->rationalization(), inc, cob->cob, cob->det, gram);
+				coords->rationalization(), inc, cob->cob, abs(cob->det), gram);
 		
 		return dat;
 	}

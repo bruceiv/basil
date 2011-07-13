@@ -13,6 +13,7 @@
 #include <gmpxx.h>
 
 #include "clrs.hpp"
+#include <string.h>
 
 namespace lrs {
 	
@@ -141,6 +142,26 @@ namespace lrs {
 		return ind(randInd);
 	}
 	
+	/** Lexicographically compares two index sets. This comparison views the 
+	 *  sets as sets of indices, rather than boost::dynamic_bitset's usual 
+	 *  comparison, which acts on them as integers)
+	 *  @return a < b */
+	static bool lexicographical_compare(index_set const& a, 
+										index_set const& b) {
+		ind t;
+		
+		for (index_set_iter iterA = lrs::begin(a), iterB = lrs::begin(b); 
+				iterA != lrs::end(a), iterB != lrs::end(b); ++iterA, ++iterB) {
+			t = *iterA - *iterB;
+			if (t < 0) return true; else if (t > 0) return false;
+		}
+		
+		// if it reaches here, the two are lexicographically equal up to the 
+		// end of the shorter vector
+		
+		return a.count() < b.count();
+	}
+	
 	
 	/** Stores a cobasis and related information.
 	 */
@@ -150,10 +171,15 @@ namespace lrs {
 				index_set& extraInc) : det(det), ray(ray), cob(cob), 
 				totalInc(totalInc), extraInc(extraInc) {}
 		
+		/** matrix determinant */
 		mpz_class det;
+		/** ray index */
 		ind ray;
+		/** cobasis */
 		index_set cob;
+		/** total number of incident facets */
 		ind totalInc;
+		/** extra incident facet indexes */
 		index_set extraInc;
 	};
 	

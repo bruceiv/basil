@@ -136,12 +136,12 @@ namespace basil {
 		 */
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), m(), g(), 
-				splitInput(false) {
+				splitInput(false), verbose(true) {
 			
 			using namespace boost::program_options;
 			
 			string matFileName = "", grpFileName = "", outFileName = "";
-			long printInterval = 0; bool verbose = false;
+			long printInterval = 0;
 			
 			options_description o("Basil options");
 			o.add_options()
@@ -255,6 +255,9 @@ namespace basil {
 		/** true if input is split over two files, false otherwise */
 		bool isSplitInput() { return splitInput; }
 		
+		/** true if input is split over two files, false otherwise */
+		bool isVerbose() { return verbose; }
+		
 		/** get the input stream for the matrix */
 		std::istream& matIn() 
 			{ return matFile.is_open() ? matFile : std::cin; }
@@ -306,11 +309,14 @@ namespace basil {
 		/** true if the input is split across two files [false]. Can be made 
 		 *  true by specifying group file, or explicitly specifying group */
 		bool splitInput;
+		
+		/** verbose output printing [false]. */
+		bool verbose;
 	}; /* class opts */
 } /* namespace basil */
 
 
-/** Simple test driver for basil.
+/** Test driver for basil.
  *  Accepts a matrix and permutation_group on standard input, generating them 
  *  using genMatrixFromStream() and genPermutationGroupFromStream().
  */
@@ -323,24 +329,28 @@ int main(int argc, char **argv) {
 	std::ostream& out = o.out();
 	std::ostream& (*endl)(std::ostream&) = std::endl;
 	
-	//read in & print matrix
-	out << "Matrix:\t" <<  o.mat() << endl;
-	
-	//read in & print permutation group
-	out << "Group:\t" << fmt( o.grp() ) << endl;
+	if ( o.isVerbose() ) {
+		//read in & print matrix
+		out << "Matrix:\t" <<  o.mat() << endl;
+		
+		//read in & print permutation group
+		out << "Group:\t" << fmt( o.grp() ) << endl;
+	}
 	
 	//initialize DFS algorithm
 	dfs d(o.mat(), o.grp(), o.dfsOpts() );
 	
-	//print inner product matrix (NOTE for debugging)
-	out << "Inner Product Matrix:\t" << d.getInnerProdMat() << endl;
+	if ( o.isVerbose() ) {
+		//print inner product matrix (NOTE for debugging)
+		out << "Inner Product Matrix:\t" << d.getInnerProdMat() << endl;
+	}
 	
 	//run DFS algorithm
 	if ( d.doDfs() ) {
 		
-		out 	<< "\nBEGIN RESULTS" 
+		out 	<< "\nresults: " 
 				<< "\n{"
-				<< "\n\tdimension:" << d.getDimension()
+				<< "\n\tdimension: " << d.getDimension()
 				<< "\n\tinitial cobasis: " << fmt( d.getInitialCobasis() )
 				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup() )
 				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits() )
@@ -348,7 +358,6 @@ int main(int argc, char **argv) {
 				<< "\n\tray orbits: " << fmt( d.getRayOrbits() )
 				<< "\n}"
 				<< "\ntotal running time: " << d.getRunningTime() << " ms"
-				<< "\nEND RESULTS" 
 				<< endl;
 		
 	} else {
