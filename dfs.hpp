@@ -322,13 +322,14 @@ namespace basil {
 		
 		/** Set up a DFS on the given matrix, with the given permuation group.
 		 *  @param m		The matrix to DFS on
+		 *  @param lin		The set of indices that are linearities
 		 *  @param g		The permutation group of the matrix
 		 *  @param opts		The options for this DFS (default values if not 
 		 * 					provided)
 		 */
-		dfs(matrix& m, permutation_group& g, dfs_opts o = dfs_opts()) 
-				: l(m, o.lrs_o), g(g), opts(o), dim(m.dim()), rows(m.size()),
-				innerProdMat(m.inner_prod_mat()) { 
+		dfs(matrix& m, index_set& lin, permutation_group& g, 
+				dfs_opts o = dfs_opts()) : l(m, lin, o.lrs_o), g(g), opts(o), 
+				dim(m.dim()), rows(m.size()), innerProdMat(m.inner_prod_mat()) { 
 			
 			/* set up algorithm globals */
 			initGlobals();

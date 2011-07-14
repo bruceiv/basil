@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 
+#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <gmp.h>
@@ -35,7 +36,22 @@ namespace basil {
 			return in;
 		}
 		
-		/** Allocates new matrix on heap and returns it.
+		/** Checks if a string begins with a given prefix
+		 *  @param s		the string to search
+		 *  @param pre		the prefix to match
+		 *  @return true if the prefix matches, false otherwise
+		 */
+		bool prefixMatch(std::string const& s, char const* pre) {
+			for (unsigned int i = 0; pre[i]; ++i) {
+				if ( 
+					i >= s.length() 	/* s is shorter than prefix */
+					|| s[i] != pre[i]	/* mismatch with prefix */
+				) return false;
+			}
+			return true;				/* match with prefix in all locations */
+		}
+		
+		/** Allocates new matrix on heap.
 		 *  Expects input in the following format (to match lrs):
 		 *  
 		 *  [name]
@@ -49,17 +65,29 @@ namespace basil {
 		 *  where [] denotes an optional value, \<\> denotes a variable, and any 
 		 *  line beginning with '#' or '*' is ignored as a comment line.
 		 */
-		matrix_ptr genMatrixFromStream(std::istream& in) {
+		void genMatrixFromStream(std::istream& in) {
 			
 			string s = "";
+			/* temporary linearity vector */
+			std::vector<ind> linV(0);
 			
 			/* parse options up to begin line */
-			while ( s != string("begin") ) {
+			while ( ! prefixMatch(s, "begin") ) {
 				
-				if ( s == string("V-representation") ) {
+				if ( prefixMatch(s, "V-representation") ) {
 					/* Set vertex representation flag */
 					dfsOpts_.inVRepresentation();
-					out() << "**V-representation**" << std::endl;
+					if (verbose) out() << "**V-representation**" << std::endl;
+				}
+				
+				if ( prefixMatch(s, "linearity") ) {
+					/* parse linearities */
+					std::istringstream read(s);
+					ind k, t;
+					read >> k; /* linearity count */
+					linV.resize(k);
+					/* read linearities */
+					for (ind i = 0; i < k; ++i) { read >> linV[i]; }
 				}
 				
 				/* get next line */
@@ -68,32 +96,31 @@ namespace basil {
 			
 			/* get dimension line */
 			getContentLine(in, s);
-			std::istringstream lin(s);
+			std::istringstream read(s);
 			
 			/* read dimensions */
 			ind n, d;
-			lin >> n;
-			lin >> d;
+			read >> n;
+			read >> d;
 			
 			/* create new matrix and load data */
-			matrix_ptr m(new matrix(n, d));
-// 			mpq_class t;
+			m = boost::make_shared<matrix>(n, d);
 			for (ind i = 0; i < n; i++) {
 				for (ind j = 0; j < d; j++) in >> m->elem(i,j);
-// 				{
-// 					in >> t;
-// 					mpq_set((*m)[i][j], t.get_mpq_t() ); /* (*m)[i][j] = t */
-// 				}
 			}
 			
 			/* ignore up to end line */
 			getContentLine(in, s);
 			while ( s != string("end") ) getContentLine(in, s);
 			
+			/* read linearities into index set */
+			l = dfs::index_set(n+1);
+			for (std::vector<ind>::iterator iter = linV.begin(); 
+					iter != linV.end(); ++iter) l.set(*iter);
+			
 			/* NOTE if not split input, could consume the rest of it here to 
 			 * parse options. */
 			
-			return m;
 		}
 	
 		/** Allocates new permutation group on heap and returns it.
@@ -103,10 +130,9 @@ namespace basil {
 		 *  cycles, and a cycle is a whitespace-delimited list of elements from 
 		 *  the range [1..n].
 		 */
-		permutation_group_ptr genPermutationGroupFromStream(std::istream& in, 
-															const matrix& m) {
+		void genPermutationGroupFromStream(std::istream& in) {
 			
-			ind n = m.size();
+			ind n = m->size();
 			
 			std::vector<permutation_ptr> generators;
 			
@@ -123,8 +149,7 @@ namespace basil {
 				std::getline(in, s);
 			}
 			
-			return permlib::construct(n, generators.begin(), generators.end());
-			
+			g = permlib::construct(n, generators.begin(), generators.end());
 		}
 		
 	public:
@@ -135,8 +160,8 @@ namespace basil {
 		 *  @param argv		The list of arguments
 		 */
 		opts(int argc, char** argv) 
-				: dfsOpts_(), matFile(), grpFile(), outFile(), m(), g(), 
-				splitInput(false), verbose(true) {
+				: dfsOpts_(), matFile(), grpFile(), outFile(), 
+				splitInput(false), m(), g(), l(), verbose(true) {
 			
 			using namespace boost::program_options;
 			
@@ -243,6 +268,9 @@ namespace basil {
 				if (v.count("print-vertex")) 
 					dfsOpts_.printVertexAt(v["print-vertex"].as<long>());
 			}
+			
+			genMatrixFromStream(matIn());
+			genPermutationGroupFromStream(grpIn());
 		}
 		
 		/** Destructor. */
@@ -250,24 +278,6 @@ namespace basil {
 			if ( outFile.is_open() ) outFile.close();
 			if ( grpFile.is_open() ) grpFile.close();
 			if ( matFile.is_open() ) matFile.close();
-		}
-		
-		/** true if input is split over two files, false otherwise */
-		bool isSplitInput() { return splitInput; }
-		
-		/** true if input is split over two files, false otherwise */
-		bool isVerbose() { return verbose; }
-		
-		/** get the input stream for the matrix */
-		std::istream& matIn() 
-			{ return matFile.is_open() ? matFile : std::cin; }
-		
-		/** get the input stream for the permuation group */
-		std::istream& grpIn() {
-			return grpFile.is_open() ? 
-					grpFile : 
-					splitInput ? std::cin : matIn()
-			;
 		}
 		
 		/** get the output stream */
@@ -280,18 +290,35 @@ namespace basil {
 		/** get the problem matrix. Will read it from the matrix input stream 
 		 *  the first time, caching it for later use */
 		matrix& mat() {
-			if (!m) m = genMatrixFromStream(matIn());
 			return *m;
 		}
 		
 		/** get the problem permutation group. Will read it from the group 
 		 *  input stream the first time, caching it for later use */
 		permutation_group& grp() {
-			if (!g) g = genPermutationGroupFromStream(grpIn(), mat());
 			return *g;
 		}
 		
+		dfs::index_set& lin() {
+			return l;
+		}
+		
+		/** true if input is split over two files, false otherwise */
+		bool isVerbose() { return verbose; }
+		
 	private:
+		/** get the input stream for the matrix */
+		std::istream& matIn() 
+			{ return matFile.is_open() ? matFile : std::cin; }
+		
+		/** get the input stream for the permuation group */
+		std::istream& grpIn() {
+			return grpFile.is_open() ? 
+					grpFile : 
+					splitInput ? std::cin : matIn()
+			;
+		}
+		
 		/** options to provide to the DFS */
 		dfs_opts dfsOpts_;
 		/** Matrix input stream */
@@ -300,15 +327,16 @@ namespace basil {
 		std::ifstream grpFile;
 		/** Output stream */
 		std::ofstream outFile;
+		/** true if the input is split across two files [false]. Can be made 
+		 *  true by specifying group file, or explicitly specifying group */
+		bool splitInput;
 		
 		/** Pointer to the matrix for the problem */
 		matrix_ptr m;
 		/** Pointer to the permutation group for the problem */
 		permutation_group_ptr g;
-		
-		/** true if the input is split across two files [false]. Can be made 
-		 *  true by specifying group file, or explicitly specifying group */
-		bool splitInput;
+		/** linearity indices */
+		dfs::index_set l;
 		
 		/** verbose output printing [false]. */
 		bool verbose;
@@ -338,7 +366,7 @@ int main(int argc, char **argv) {
 	}
 	
 	//initialize DFS algorithm
-	dfs d(o.mat(), o.grp(), o.dfsOpts() );
+	dfs d(o.mat(), o.lin(), o.grp(), o.dfsOpts() );
 	
 	if ( o.isVerbose() ) {
 		//print inner product matrix (NOTE for debugging)

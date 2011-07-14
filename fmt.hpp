@@ -1,6 +1,7 @@
 #ifndef _FMT_HPP_
 #define _FMT_HPP_
 
+#include <functional>
 #include <iterator>
 #include <sstream>
 
@@ -110,7 +111,7 @@ namespace basil {
 
 	/** Prints a representation of its cobasis (as a set of indices). */
 	static string fmt(dfs::index_set const& s, int tabs = single_line) {
-		std::stringstream o;
+		std::ostringstream o;
 		printSet(o, lrs::begin(s), lrs::end(s), tabs);
 		return o.str();
 	}
@@ -121,7 +122,7 @@ namespace basil {
 			bool (*index_set_comparator)(dfs::index_set const&, 
 										 dfs::index_set const&);
 		
-		std::stringstream o;
+		std::ostringstream o;
 		std::set<dfs::index_set, index_set_comparator> 
 			s(&lrs::lexicographical_compare);
 		/* sort the set of cobases */
@@ -133,7 +134,7 @@ namespace basil {
 
 	/** prints a representation of a list of permutations */
 	static string fmt(permutation_group const& g, int tabs = single_line) {
-		std::stringstream o;
+		std::ostringstream o;
 		o << g.S.size() << lineSpace(tabs);
 		printSet(o, g.S.begin(), g.S.end(),
 				 boost::mem_fun_ref(&permlib::Permutation::ptr::operator*), 
@@ -143,7 +144,7 @@ namespace basil {
 
 	/** prints a representation of a list of vertices */
 	static string fmt(dfs::coordinates_map const& m, int tabs = single_line) {
-		std::stringstream o;
+		std::ostringstream o;
 		std::set<dfs::coordinates> s;
 		/* sort the set of coordinates */
 		insertKeys(m.begin(), m.end(), std::inserter(s, s.begin()));
@@ -154,7 +155,7 @@ namespace basil {
 	
 	/** prints a matrix */
 	static string fmt(matrix const& m, int tabs = single_line) {
-		std::stringstream o;
+		std::ostringstream o;
 		string row_space = (tabs < 0) ? " " : (lineSpace(tabs) + "  ");
 		o << "(" << m.size() << "," << m.dim() << ")" << lineSpace(tabs);
 		

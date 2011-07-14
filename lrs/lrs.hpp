@@ -60,11 +60,12 @@ namespace lrs {
 	public:
 		/** Constructor / initializer.
 		 *  @param m 			the matrix to load into LRS
+		 *  @param lin			the linearity indices of this matrix
 		 *  @param o			LRS options (if unsupplied, will use default)
 		 *  @throw bad_alloc	if the LRS process or matrix data structures 
 		 * 						cannot be properly initialized.
 		 */
-		lrs(matrix_mpq const& m, lrs_opts o = lrs_opts()) throw(std::bad_alloc);
+		lrs(matrix_mpq const& m, index_set const& lin, lrs_opts o = lrs_opts());
 		
 		/** destructor */
 		~lrs();
@@ -153,8 +154,10 @@ namespace lrs {
 		 *  @param Q		The problem data (should be initialized)
 		 *  @param P		The dictionary to initialize (should be allocated)
 		 *  @param mat		The matrix to read in
+		 *  @param lin		The linearity rows in the matrix
 		 */
-		void initDic(lrs_dat* Q, lrs_dic* P, matrix_mpq const& mat);
+		void initDic(lrs_dat* Q, lrs_dic* P, matrix_mpq const& mat, 
+					 index_set const& lin);
 		
 		/** Prints the parameter to a string. Non-negative values will be 
 		 *  padded with a single space. */
