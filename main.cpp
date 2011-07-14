@@ -331,10 +331,10 @@ int main(int argc, char **argv) {
 	
 	if ( o.isVerbose() ) {
 		//read in & print matrix
-		out << "Matrix:\t" <<  o.mat() << endl;
+		out << "Matrix:\t" <<  fmt( o.mat(), 0 ) << endl;
 		
 		//read in & print permutation group
-		out << "Group:\t" << fmt( o.grp() ) << endl;
+		out << "Group:\t" << fmt( o.grp(), 0 ) << endl;
 	}
 	
 	//initialize DFS algorithm
@@ -342,7 +342,8 @@ int main(int argc, char **argv) {
 	
 	if ( o.isVerbose() ) {
 		//print inner product matrix (NOTE for debugging)
-		out << "Inner Product Matrix:\t" << d.getInnerProdMat() << endl;
+		out << "Inner Product Matrix:\t" << fmt( d.getInnerProdMat(), 0 ) 
+				<< endl;
 	}
 	
 	//run DFS algorithm
@@ -352,10 +353,10 @@ int main(int argc, char **argv) {
 				<< "\n{"
 				<< "\n\tdimension: " << d.getDimension()
 				<< "\n\tinitial cobasis: " << fmt( d.getInitialCobasis() )
-				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup() )
-				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits() )
-				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits() )
-				<< "\n\tray orbits: " << fmt( d.getRayOrbits() )
+				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup(), 1 )
+				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits(), 1 )
+				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits(), 1 )
+				<< "\n\tray orbits: " << fmt( d.getRayOrbits(), 1 )
 				<< "\n}"
 				<< "\ntotal running time: " << d.getRunningTime() << " ms"
 				<< endl;
