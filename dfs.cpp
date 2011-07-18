@@ -156,7 +156,8 @@ namespace basil {
 				index_pair btPivot = pathStack.back(); pathStack.pop_back();
 				/* reverse the pivot */
 				l.pivot(btPivot.second, btPivot.first);
-				/* reset the current cobasis */
+				if ( opts.showsAllDicts ) l.printDict();
+				/* dict = l.getCobasis(0) */
 				dict.reset(l.getCobasis(0));
 			}
 			
@@ -215,6 +216,10 @@ namespace basil {
 				l.pivot(leave, enter);
 				cobasis_ptr cob(l.getCobasis(0));
 				vector_mpz_ptr sol(l.getVertex());
+				if ( opts.showsAllDicts ) {
+					opts.output() << "\nPivot: " << leave << "=>" << enter;
+					l.printDict();
+				}
 				/* pivot back */
 				l.pivot(enter, leave);
 				

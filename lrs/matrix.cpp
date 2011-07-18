@@ -171,6 +171,16 @@ namespace lrs {
 		}
 	}
 	
+	vector_mpq::vector_mpq ( vector_mpz const& nums, mpz_class den ) 
+			: vector_mpq_base(new mpq_class[nums.d], nums.d) {
+		for (ind i = 0; i < d; i++) {
+			/* v[i] = nums[i] / den; */
+			mpz_set(v[i].get_num_mpz_t(), nums.v[i]);
+			mpz_set(v[i].get_den_mpz_t(), den.get_mpz_t());
+			v[i].canonicalize();
+		}
+	}
+	
 	vector_mpq::~vector_mpq() { delete[] v; }
 	
 	vector_mpq& vector_mpq::operator= ( vector_mpq const& that ) {

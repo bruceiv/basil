@@ -6,11 +6,10 @@ undef $/;
 
 $in=<>;
 
-$in=~s/\s+//g;
+$in=~s|\s+||g;
 
-$in=~ s/^\s*(\w+):=//;
+$in=~ s|^\s*(\w+):=||;
 $in=~s|(-?[0-9]+\s*/\s*[0-9]*)|'\1'|g;
-#print STDERR $in;
 
 $aref=eval($in);
 

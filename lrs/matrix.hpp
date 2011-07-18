@@ -160,6 +160,13 @@ namespace lrs {
 		 */
 		vector_mpq(vector_mpz const& that);
 		
+		/** Rationalization constructor. Will reduce all values to canonical 
+		 *  form.
+		 *  @param nums		The integer vector of numerators
+		 *  @param den		The denominator of each value
+		 */
+		vector_mpq(vector_mpz const& nums, mpz_class den);
+		
 		/** Destructor. */
 		~vector_mpq();
 		

@@ -39,6 +39,19 @@ namespace lrs {
 		lrs_close_quiet();
 	}
 	
+// 	index_set myRatio(ind leave) {
+// 		
+// 		ind m = P->m;
+// 		
+// 		index_set entering(m+1);
+// 		
+// 		for (;;) {
+// 			
+// 		}
+// 		
+// 		return entering;
+// 	}
+	
 	index_set lrs::allRatio(ind leave) {
 		
 		/* assign local variable to structures */
@@ -63,8 +76,9 @@ namespace lrs {
 		ind degencount = 0;
 		
 		for (ind j = lastdv + 1; j <= m; j++) {
-			/* search rows with negative coefficient in dictionary;
-			 * minratio contains indices of min ratio cols */
+			/* search slack rows with negative coefficient in dictionary for 
+			 * leaving columns; minratio is a temp for indices of min ratio 
+			 * cols */
 			if ( negative(A[Row[j]][col]) ) minratio[degencount++] = j;
 		}
 		
@@ -80,7 +94,6 @@ namespace lrs {
 								 * false */
 		
 		ind nstart = 0, ndegencount = 0;
-		
 		
 		if ( B[bindex] == basicindex ) { 
 			/* identity col in basis inverse */
@@ -354,7 +367,7 @@ namespace lrs {
 		
 		out << "\n Co-Basis "; for (i = 0; i <= d; i++) out << C[i] << " ";
 		out << " Column "; for (i = 0; i <= d; i++) out << Col[i] << " ";
-		out << " det= " << toString(P->det) << " \n";
+		out << " det=" << toString(P->det) << "\n";
 		
 		for (i = 0; i <= m; i++) {
 			out << "A[" << B[i] << "]";
