@@ -10,5 +10,5 @@ do
 	./basilCobasisRip.pl < "${ARG}.bas.out" > "isomorphTest.bas.cob"
 	./symbalCobasisRip.pl < "${ARG}.sym.out" > "isomorphTest.sym.cob"
 	cp "${ARG}-grp.gap" "isomorphTest-grp.gap"
-	./gap.sh IsomorphicDiff.gap
+	./gap.sh IsomorphicDiff.gap | ./catName.pl ":${ARG}:"
 done;
