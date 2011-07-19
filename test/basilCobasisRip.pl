@@ -1,12 +1,24 @@
 #!/usr/bin/env perl
 
-# grabs the cobasis lines from Basil output, to compare with Symbal
+# grabs the cobasis lines from Basil output, to compare with Symbal (reformats 
+# to GAP output to compare with symbalCobasisRip.pl)
+
+my @cobases = ();
+my $norbits = 0;
 
 my $doPrint = 0;
 while (<>) {
-	# start printing at header
-	$doPrint = 1 if m/^\tbasis orbits/;
-	print $_ if $doPrint;
-	#stop printing at closing bracket
-	$doPrint = 0 if $doPrint and ( m/^\t\}/ or m/^\t\{\}/ );
+	if ( $doPrint ) {
+		if ( m|\{(.+)\}| ) { push(@cobases, "[".$1."]"); }
+		elsif ( m|\}| ) { $doPrint = 0; }
+	} elsif ( m/^\tbasis orbits: (\d+)/ ) {
+		# start printing at header
+		$doPrint = 1;
+		$norbits = $1;
+	}
 }
+
+print "Cobs:=[\n\t";
+print join(",\n\t", @cobases);
+print "\n];;\n";
+print "NOrbits:=${norbits};;\n";

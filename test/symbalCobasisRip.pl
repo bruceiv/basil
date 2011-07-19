@@ -1,12 +1,13 @@
 #!/usr/bin/env perl
 
 # grabs the cobasis lines from Symbal output, returning them in sorted order, 
-# with the total number of basis orbits printed at the beginning (to be 
-# compatible with Basil output)
+# with the total number of basis orbits printed at the end. This is also 
+# usable GAP code, for ease of automated comparison
 
 my @cobases = ();
 my $linebuf = "";
 my $line = "";
+my $norbits = 0;
 
 while (<>) {
 	# get all cobases
@@ -20,10 +21,11 @@ while (<>) {
 			$linebuf = $linebuf.$line;
 		}
 		$linebuf =~ m|\s+cobasis := \[(.*?)\],|;
-		push(@cobases, "{".$1."}");
+		push(@cobases, "[".$1."]");
 	}
 	# print basis orbits header
-	print "\tbasis orbits: ", $1, "\n" if ( m/^basis_orbits => (\d+),$/ );
+# 	print "\tbasis orbits: ", $1, "\n" if ( m/^basis_orbits => (\d+),$/ );
+	$norbits = $1 if ( m/^basis_orbits => (\d+),$/ );
 }
 
 # sort cobases (uses a lexicographical sort, but doesn't have to account for 
@@ -42,6 +44,7 @@ while (<>) {
 	$cv;
 } @cobases;
 
-print "\t{\n\t\t";
-print join(",\n\t\t", @cobases);
-print "\n\t}\n";
+print "Cobs:=[\n\t";
+print join(",\n\t", @cobases);
+print "\n];;\n";
+print "NOrbits:=${norbits};;\n";

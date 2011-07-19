@@ -21,5 +21,5 @@ else
 	# convert this Basil input file to a Symbal file
 	./ine2gap.pl < ${1}".txt" > ${1}".gap"
 	# remove intermediate files
-	rm ${1}"-grp.gap" ${1}"-grp.txt" ${1}".ine"
+	rm ${1}"-grp.txt" ${1}".ine"
 fi;

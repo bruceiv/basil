@@ -16,4 +16,4 @@ G:=groupViaGram3(M,DefaultInnerProduct,N);;
 
 CloseStream(N);
 
-GeneratorsOfGroup(G);
+Print("G:=Group(",GeneratorsOfGroup(G),");;\n");

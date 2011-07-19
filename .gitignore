@@ -12,3 +12,7 @@ basil
 
 # documentation
 doc/
+
+# testing temps
+test/prof
+test/tmp
