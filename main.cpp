@@ -80,6 +80,12 @@ namespace basil {
 					if (verbose) out() << "**V-representation**" << std::endl;
 				}
 				
+				if ( prefixMatch(s, "A-representation") ) {
+					/* Set vertex representation flag */
+					dfsOpts_.inARepresentation();
+					if (verbose) out() << "**A-representation**" << std::endl;
+				}
+				
 				if ( prefixMatch(s, "linearity") ) {
 					/* parse linearities */
 					std::istringstream read(s);
@@ -170,6 +176,9 @@ namespace basil {
 			
 			options_description o("Basil options");
 			o.add_options()
+				("arrangement-pivot", 
+					bool_switch(&dfsOpts_.aRepresentation),
+					"Makes Basil pivot as if the input was an arrangement.")
 				("assume-no-symmetry", 
 					bool_switch(&dfsOpts_.assumesNoSymmetry),
 					"Forces Basil to assume there is no symmetry in the input.")

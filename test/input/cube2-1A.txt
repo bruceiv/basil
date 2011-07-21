@@ -1,0 +1,14 @@
+Split 2-cube
+A-representation
+begin
+5 3 rational
+ 1 -1  0
+ 1  0 -1
+ 1  0  1
+ 1  1  0
+ 0 -2 -1
+end
+geometric
+symmetry begin
+1 4 , 2 3
+symmetry end

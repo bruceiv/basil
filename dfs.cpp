@@ -197,7 +197,10 @@ namespace basil {
 			/* the entering index */
 			ind enter;
 			
-			if (opts.lexOnly) {
+			if ( opts.aRepresentation ) {
+				/* use arrangement pivot selection */
+				entering = l.arrangementRatio(leave);
+			} else if ( opts.lexOnly ) {
 				/* calculate entering index lexicographically (BAD) */
 				enter = l.lexRatio(leave);
 				if (enter >= 0) entering.set(enter); else continue;

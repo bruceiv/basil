@@ -172,13 +172,13 @@ namespace lrs {
 		
 		col = Col[cob];
 		
-		/* Indices of next possible negative/positive entering variables */
-		ind nEnter = 0, pEnter = m+1;
+		/* Indices of next possible negative/positive/zero entering variables */
+		ind nEnter = 0, pEnter = m+1, zEnter = 0;
 		/* minimum negative/positive numerators/denominators */
 		mpz_t nNmin, nDmin, pNmin, pDmin;
 		mpz_init(nNmin); mpz_init(nDmin); mpz_init(pNmin); mpz_init(pDmin);
 		/* First negative/positive/zero value found */
-		bool nFirst = true, pFirst = true, zFirst = true;
+		bool nFirst = true, pFirst = true;
 		
 		for (ind j = lastdv + 1; j <= m; j++) {
 			/* search slack rows with non-zero coefficient in dictionary for 
@@ -195,13 +195,11 @@ namespace lrs {
 			 * normalize the minimum values such that the denominator is 
 			 * positive, so that the cross-multiplying trick for comparing 
 			 * rationals works (a/b <=> c/d == ad <=> bc if b, d > 0) (Note 
-			 * also that a/b <=> c/d == -(ad <=> bc) if b < 0, d > 0). Also, 
-			 * this algorithm will take all the zeros (degenerate pivots) if 
-			 * one is found in the first reasonable position, but ignore them 
-			 * otherwise.
+			 * also that a/b <=> c/d == -(ad <=> bc) if b < 0, d > 0). This 
+			 * algorithm will also take all zero ratios (degenerate pivots).
 			 */
 			
-			if ( zFirst && positive( A[i][col] ) ) {
+			if ( positive( A[i][col] ) ) {
 				
 				if ( positive( A[i][0] ) ) {
 					/* positive ratio */
@@ -213,7 +211,7 @@ namespace lrs {
 						/* comp = pmin <=> tmp */
 						comp = comprod(pNmin, A[i][col], A[i][0], pDmin);
 					}
-				} else if ( zFirst && negative( A[i][0] ) ) {
+				} else if ( negative( A[i][0] ) ) {
 					/* negative ratio */
 					signFound = -1;
 					if ( nFirst ) {
@@ -222,21 +220,9 @@ namespace lrs {
 						/* comp = tmp <=> nmin */
 						comp = comprod(A[i][0], nDmin, nNmin, A[i][col]);
 					}
-				}  else /* if ( zero( A[Row[j]][0] ) ) */ {
+				}  else /* if ( zero( A[i][0] ) ) */ {
 					/* zero ratio */
-					/* NOTE ask Dr. B about handling */
-					if ( pFirst && nFirst ) {
-						/* zero found in first position, will return all zero 
-						 * ratios, and no non-zero ratios. */
-						pFirst = false; nFirst = false; zFirst = false;
-					} else if (zFirst) {
-						/* If zero is not the first position, will ignore all 
-						 * zeros */
-						comp -1;
-					} else {
-						/* repeated zero */
-						comp = 0;
-					}
+					comp = 0;
 				}
 				
 			} else if ( negative( A[i][col] ) ) {
@@ -261,24 +247,13 @@ namespace lrs {
 						/* comp = tmp <=> nmin */
 						comp = comprod(nNmin, A[i][col], A[i][0], nDmin);
 					}
-				}  else /* if ( zero( A[Row[j]][0] ) ) */ {
+				} else /* if ( zero( A[i][0] ) ) */ {
 					/* zero ratio */
-					/* NOTE ask Dr. B about handling */
-					if ( pFirst && nFirst ) {
-						/* zero found in first position, will return all zero 
-						 * ratios, and no non-zero ratios. */
-						pFirst = false; nFirst = false; zFirst = false;
-					} else if (zFirst) {
-						/* If zero is not the first position, will ignore all 
-						 * zeros */
-						comp -1;
-					} else {
-						/* repeated zero, keep */
-						comp = 0;
-					}
+					comp = 0;
 				}
 				
-			}
+			} /* otherwise this is an invalid pivot, with a zero in the 
+			   * denominator column */
 			
 			ind tmp;
 			if ( comp == 1 ) { /* new minimum */
@@ -292,8 +267,6 @@ namespace lrs {
 							mpz_set(pNmin, A[i][0]);
 							mpz_set(pDmin, A[i][0]);
 						}
-						/* fallthrough */
-					case 0:
 						/* store value at the end of the array */
 						minratio[m] = j; pEnter = m-1;
 						break;
@@ -306,19 +279,23 @@ namespace lrs {
 							mpz_set(nNmin, A[i][0]);
 							mpz_set(nDmin, A[i][0]);
 						}
-						/* store value at beginning of array */
-						minratio[0] = j; nEnter = 1;
+						/* store value at array start (after zeros) */
+						minratio[zEnter] = j; nEnter = zEnter + 1;
 						break;
 				}
 			} else if ( comp == 0 ) { /* repeated minimum */
 				switch ( signFound ) {
 					case 1:
-					case 0:
-						/* store value at the end of the array */
+						/* store value at array end */
 						minratio[pEnter--] = j;
 						break;
+					case 0:
+						/* push negative start forward */
+						minratio[nEnter++] = minratio[zEnter];
+						/* store value at array start (before negatives) */
+						minratio[zEnter++] = j;
 					case -1:
-						/* store value at beginning of the array */
+						/* store value at array start (after zeros) */
 						minratio[nEnter++] = j;
 						break;
 				}
@@ -330,9 +307,11 @@ namespace lrs {
 		/* prepare return set */
 		index_set rval(m+1);
 		for (ind i = 0; i < nEnter; i++) {
+			/* read in zeros and min negatives */
 			rval.set( inequality[ B[minratio[i] ] - lastdv ] );
 		}
-		for (ind i = pEnter; i <= m; i++) {
+		for (ind i = pEnter+1; i <= m; i++) {
+			/* read in positive values */
 			rval.set( inequality[ B[minratio[i] ] - lastdv ] );
 		}
 		

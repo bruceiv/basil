@@ -118,6 +118,10 @@ namespace basil {
 				showsAllDicts(false), stabSearch(false) {}
 		
 		
+		/** Sets (or unsets) the aRepresentation option */
+		dfs_opts& inARepresentation(bool opt = true)
+			{ aRepresentation = opt; return *this; }
+		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
 		dfs_opts& assumeNoSymmetry(bool opt = true)
 			{ assumesNoSymmetry = opt; return *this; }
@@ -188,6 +192,9 @@ namespace basil {
 			{ lrs_o.inVRepresentation(opt); return *this; }
 		
 		
+		/** Specify the input is an arrangement, and should use the arrangement 
+		 *  pivoting rule */
+		bool aRepresentation;
 		/** assumes the given polytope is asymmetric [false]. This is primarily 
 		 *  a debugging option */
 		bool assumesNoSymmetry;

@@ -1,0 +1,13 @@
+Trapezoid arrangement
+A-representation
+begin
+4 3 rational
+ 1 -1 -1
+ 1  1 -1
+ 1  0  1
+ 0  0 -1
+end
+geometric
+symmetry begin
+ 1 2
+symmetry end
