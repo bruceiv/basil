@@ -138,7 +138,7 @@ typedef struct lrs_dat		/* global problem data   */
     long *facet;		/* cobasic indices for restart in needed        */
     long *redundcol;		/* holds columns which are redundant            */
     long *linearity;		/* holds cobasic indices of input linearities   */
-    long *minratio;		/* used for lexicographic ratio test            */
+    long *minratio;			/* temp used for lexicographic ratio test       */
     long *temparray;		/* for sorting indices, dimensioned to d        */
     long *isave, *jsave;	/* arrays for estimator, malloc'ed at start     */
     long inputd;		/* input dimension: n-1 for H-rep, n for V-rep  */

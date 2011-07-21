@@ -70,21 +70,34 @@ namespace lrs {
 		/** destructor */
 		~lrs();
 		
-		/** finds all candidate entering indices for a given leaving index
-		 *  @param leave		The index to leave the dictionary
-		 *  @return the set of indices that may enter the dictionary
+		/** Finds all candidate entering indices for a given leaving index. 
+		 *  This will not find all valid pivots, but rather the nearest 
+		 *  neighbours.
+		 *  @param leave		The index to leave the cobasis
+		 *  @return the set of indices that may enter the cobasis
 		 */
 		index_set allRatio(ind leave);
 		
-		/** finds the basis for a given entering index.
+		/** Finds all candidate entering indices for a given leaving index in 
+		 *  an arrangment. This will not find all valid pivots, but rather the 
+		 *  nearest neighbours - it is implemented with a modified ratio test 
+		 *  which finds the minimum positive and negative ratios.
+		 *  @param leave		The index to leave the cobasis
+		 *  @return the set of indices that may enter the cobasis
+		 */
+		index_set arrangementRatio(ind leave);
+		
+		/** finds the index in the basis array for a given entering index from 
+		 *  the original list of constraints.
 		 *  @param enter		The index to enter the active dictionary
-		 *  @return the basis for that index, -1 for none such found
+		 *  @return the basis index for enter, -1 for none such found
 		 */
 		ind findBas(ind enter);
 		
-		/** finds the cobasis for a given leaving index.
+		/** finds the index in the cobasis array for a given leaving index from 
+		 *  the original list of constraints.
 		 *  @param leave		The index to leave the active dictionary
-		 *  @return the cobasis for that index, -1 for none such found
+		 *  @return the cobasis index for leave, -1 for none such found
 		 */
 		ind findCob(ind leave);
 		

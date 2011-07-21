@@ -39,19 +39,6 @@ namespace lrs {
 		lrs_close_quiet();
 	}
 	
-// 	index_set myRatio(ind leave) {
-// 		
-// 		ind m = P->m;
-// 		
-// 		index_set entering(m+1);
-// 		
-// 		for (;;) {
-// 			
-// 		}
-// 		
-// 		return entering;
-// 	}
-	
 	index_set lrs::allRatio(ind leave) {
 		
 		/* assign local variable to structures */
@@ -69,7 +56,8 @@ namespace lrs {
 		
 		
 		if ( (cob = findCob(leave)) < 0 ) 
-			throw lrs_error("Failed to find cobasis for leaving index" + leave);
+			throw lrs_error(
+				"Failed to find cobasis index for leaving index" + leave);
 		
 		col = Col[cob];
 		
@@ -84,7 +72,6 @@ namespace lrs {
 		
 		mpz_class Nmin, Dmin;
 		
-		ind ratiocol = 0;		/* column being checked, initially rhs */
 		ind start = 0;			/* starting location in minratio array */
 		ind bindex = d + 1;		/* index of next basic variable to consider */
 		ind cindex = 0;			/* index of next cobasic variable to consider */
@@ -95,7 +82,7 @@ namespace lrs {
 		
 		ind nstart = 0, ndegencount = 0;
 		
-		if ( B[bindex] == basicindex ) { 
+		if ( B[bindex] == basicindex ) { /* VOODOO todo check safe removal */
 			/* identity col in basis inverse */
 			
 			if ( minratio[start] == bindex ) {
@@ -116,23 +103,34 @@ namespace lrs {
 				
 				if (firstTime) {
 					firstTime = false; /* force new min ratio on first time */
-				} else {
-					if ( sgn(Nmin) > 0 || negative( A[i][ratiocol] ) ) {
-						comp = ( sgn(Nmin) < 0 || positive( A[i][ratiocol] ) ) ?
+				} else { 
+					/* compare test = A[i][0]/A[i][col] vs. min = Nmin/Dmin */
+					
+					/* keep in mind here that A[i][col] < 0 (by construction), 
+					 * therefore Dmin < 0 as well. */
+					
+					/* min < 0 or test > 0 */
+					if ( sgn(Nmin) > 0 || negative( A[i][0] ) ) {
+						comp = 
+							/* min > 0 or test < 0 i.e. sgn(min) == sgn(test) */
+							( sgn(Nmin) < 0 || positive( A[i][0] ) ) ?
+							/* compare(A[i][0]/A[i][col],Nmin/Dmin) */
 							comprod( Nmin.get_mpz_t(), A[i][col], 
-									 A[i][ratiocol], Dmin.get_mpz_t() )
+									 A[i][0], Dmin.get_mpz_t() )
+							/* min < 0 and test > 0 */
 							: -1;
-					} else if ( sgn(Nmin) == 0 && zero( A[i][ratiocol] ) ) {
+					/* min == 0 and test == 0 */
+					} else if ( sgn(Nmin) == 0 && zero( A[i][0] ) ) {
 						comp = 0;
 					}
 					
 					/* all signs reversed for rhs */
-					if ( ratiocol == 0L ) comp = -comp;
+					comp = -comp;
 				}
 				
 				if ( comp == 1 ) { /* new minimum ratio */
 					nstart = j;
-					Nmin = mpz_class( A[i][ratiocol] );
+					Nmin = mpz_class( A[i][0] );
 					Dmin = mpz_class( A[i][col] );
 					ndegencount = 1;
 				} else if ( comp == 0 ) { /* repeated minimum */
@@ -148,6 +146,194 @@ namespace lrs {
 		index_set rval(m+1);
 		for (ind i = start; i < start + degencount; i++) {
 			rval.set( inequality[ B[minratio[i]] - lastdv ] );
+		}
+		
+		return rval;
+	}
+	
+	index_set lrs::arrangementRatio(ind leave) {
+		
+		/* assign local variable to structures */
+		matrix_t& A = P->A;
+		ind* B = P->B;
+		ind* Row = P->Row;
+		ind* Col = P->Col;
+		ind* minratio = Q->minratio;
+		ind* inequality = Q->inequality;
+		ind m = P->m;
+		ind d = P->d;
+		ind lastdv = Q->lastdv;
+		
+		ind cob, col;
+		
+		if ( (cob = findCob(leave)) < 0 ) 
+			throw lrs_error(
+				"Failed to find cobasis index for leaving index" + leave);
+		
+		col = Col[cob];
+		
+		/* Indices of next possible negative/positive entering variables */
+		ind nEnter = 0, pEnter = m+1;
+		/* minimum negative/positive numerators/denominators */
+		mpz_t nNmin, nDmin, pNmin, pDmin;
+		mpz_init(nNmin); mpz_init(nDmin); mpz_init(pNmin); mpz_init(pDmin);
+		/* First negative/positive/zero value found */
+		bool nFirst = true, pFirst = true, zFirst = true;
+		
+		for (ind j = lastdv + 1; j <= m; j++) {
+			/* search slack rows with non-zero coefficient in dictionary for 
+			 * leaving columns */
+			ind i = Row[j];
+			int comp = 1; /* 1: new min, 0: repeated min, -1: not min */
+			int signFound = 0; /* 1: positive, -1: negative, 0: zero */
+			bool negDen = false; /* true for A[i][col] < 0 */
+			
+			/* These, in general, compare tmp = A[i][0]/A[i][col] vs. 
+			 * nmin = nNmin/nDmin or pmin = pNmin/pDmin. I use the pseudocode 
+			 * operator a <=> b to denote a comparison operation that returns 
+			 * 1 for a > b, 0 for a == b, or -1 for a < b. Also, throughout, I 
+			 * normalize the minimum values such that the denominator is 
+			 * positive, so that the cross-multiplying trick for comparing 
+			 * rationals works (a/b <=> c/d == ad <=> bc if b, d > 0) (Note 
+			 * also that a/b <=> c/d == -(ad <=> bc) if b < 0, d > 0). Also, 
+			 * this algorithm will take all the zeros (degenerate pivots) if 
+			 * one is found in the first reasonable position, but ignore them 
+			 * otherwise.
+			 */
+			
+			if ( zFirst && positive( A[i][col] ) ) {
+				
+				if ( positive( A[i][0] ) ) {
+					/* positive ratio */
+					signFound = 1;
+					if ( pFirst ) { 
+						/* new minimum */
+						pFirst = false; 
+					} else {
+						/* comp = pmin <=> tmp */
+						comp = comprod(pNmin, A[i][col], A[i][0], pDmin);
+					}
+				} else if ( zFirst && negative( A[i][0] ) ) {
+					/* negative ratio */
+					signFound = -1;
+					if ( nFirst ) {
+						/* new minimum */
+					} else {
+						/* comp = tmp <=> nmin */
+						comp = comprod(A[i][0], nDmin, nNmin, A[i][col]);
+					}
+				}  else /* if ( zero( A[Row[j]][0] ) ) */ {
+					/* zero ratio */
+					/* NOTE ask Dr. B about handling */
+					if ( pFirst && nFirst ) {
+						/* zero found in first position, will return all zero 
+						 * ratios, and no non-zero ratios. */
+						pFirst = false; nFirst = false; zFirst = false;
+					} else if (zFirst) {
+						/* If zero is not the first position, will ignore all 
+						 * zeros */
+						comp -1;
+					} else {
+						/* repeated zero */
+						comp = 0;
+					}
+				}
+				
+			} else if ( negative( A[i][col] ) ) {
+				negDen = true;
+				
+				if ( negative( A[i][0] ) ) {
+					/* positive ratio */
+					signFound = 1;
+					if ( pFirst ) { 
+						/* new minimum */
+						pFirst = false; 
+					} else {
+						/* comp = pmin <=> tmp */
+						comp = comprod(A[i][0], pDmin, pNmin, A[i][col]);
+					}
+				} else if ( positive( A[i][0] ) ) {
+					/* negative ratio */
+					signFound = -1;
+					if ( nFirst ) {
+						/* new minimum */
+					} else {
+						/* comp = tmp <=> nmin */
+						comp = comprod(nNmin, A[i][col], A[i][0], nDmin);
+					}
+				}  else /* if ( zero( A[Row[j]][0] ) ) */ {
+					/* zero ratio */
+					/* NOTE ask Dr. B about handling */
+					if ( pFirst && nFirst ) {
+						/* zero found in first position, will return all zero 
+						 * ratios, and no non-zero ratios. */
+						pFirst = false; nFirst = false; zFirst = false;
+					} else if (zFirst) {
+						/* If zero is not the first position, will ignore all 
+						 * zeros */
+						comp -1;
+					} else {
+						/* repeated zero, keep */
+						comp = 0;
+					}
+				}
+				
+			}
+			
+			ind tmp;
+			if ( comp == 1 ) { /* new minimum */
+				switch ( signFound ) {
+					case 1:
+						/* set new minratio, ensuring positive denominator */
+						if ( negDen ) {
+							mpz_neg(pNmin, A[i][0]);
+							mpz_neg(pDmin, A[i][col]);
+						} else {
+							mpz_set(pNmin, A[i][0]);
+							mpz_set(pDmin, A[i][0]);
+						}
+						/* fallthrough */
+					case 0:
+						/* store value at the end of the array */
+						minratio[m] = j; pEnter = m-1;
+						break;
+					case -1:
+						/* set new minratio, ensuring positive denominator */
+						if ( negDen ) {
+							mpz_neg(nNmin, A[i][0]);
+							mpz_neg(nDmin, A[i][col]);
+						} else {
+							mpz_set(nNmin, A[i][0]);
+							mpz_set(nDmin, A[i][0]);
+						}
+						/* store value at beginning of array */
+						minratio[0] = j; nEnter = 1;
+						break;
+				}
+			} else if ( comp == 0 ) { /* repeated minimum */
+				switch ( signFound ) {
+					case 1:
+					case 0:
+						/* store value at the end of the array */
+						minratio[pEnter--] = j;
+						break;
+					case -1:
+						/* store value at beginning of the array */
+						minratio[nEnter++] = j;
+						break;
+				}
+			}
+		}
+		
+		mpz_clear(nNmin); mpz_clear(nDmin); mpz_clear(pNmin); mpz_clear(pDmin);
+		
+		/* prepare return set */
+		index_set rval(m+1);
+		for (ind i = 0; i < nEnter; i++) {
+			rval.set( inequality[ B[minratio[i] ] - lastdv ] );
+		}
+		for (ind i = pEnter; i <= m; i++) {
+			rval.set( inequality[ B[minratio[i] ] - lastdv ] );
 		}
 		
 		return rval;

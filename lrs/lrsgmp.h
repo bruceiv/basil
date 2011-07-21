@@ -189,7 +189,7 @@ void storesign(lrs_mp Na, long sa);     /* change sign of Na to sa=POS/NEG      
 
 void atoaa (const char in[], char num[], char den[]);	/* convert rational string in to num/den strings  */
 long atos (char s[]);		/* convert s to integer                           */
-long comprod (lrs_mp Na, lrs_mp Nb, lrs_mp Nc, lrs_mp Nd);	/* +1 if Na*Nb > Nc*Nd,-1 if Na*Nb > Nc*Nd else 0 */
+long comprod (lrs_mp Na, lrs_mp Nb, lrs_mp Nc, lrs_mp Nd);	/* +1 if Na*Nb > Nc*Nd,-1 if Na*Nb < Nc*Nd else 0 */
 void divrat (lrs_mp Na, lrs_mp Da, lrs_mp Nb, lrs_mp Db, lrs_mp Nc, lrs_mp Dc);
 						       /* computes Nc/Dc = (Na/Da) /( Nb/Db ) and reduce */
 void linrat (lrs_mp Na, lrs_mp Da, long ka, lrs_mp Nb, lrs_mp Db, long kb, lrs_mp Nc, lrs_mp Dc);
