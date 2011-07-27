@@ -99,13 +99,25 @@ namespace lrs {
 	// Mathematical operators
 	////////////////////////////////////////////////////////////////////////////
 	
+	vector_mpq_base operator*= ( vector_mpq_base& v, mpq_class c ) {
+		for (ind i = 0; i < v.d; ++i) v.v[i] *= c;
+		
+		return v;
+	}
+	
+	vector_mpq_base operator* ( vector_mpq_base& v, mpq_class c ) 
+		{ vector_mpq t(v); t *= c; return t; }
+	
+	vector_mpq_base operator* ( mpq_class c, vector_mpq_base& v ) 
+		{ vector_mpq t(v); t *= c; return t; }
+	
 	mpq_class inner_prod( vector_mpq_base const& a, vector_mpq_base const& b ) {
 		
 		if (a.d != b.d) throw std::runtime_error(
 			"Cannot take inner product of vectors of unequal size");
 		
 		mpq_class r, t;
-		for (ind i = 0; i < a.d; i++) {
+		for (ind i = 0; i < a.d; ++i) {
 			t = a.v[i] * b.v[i];
 			r += t;
 		}
@@ -153,6 +165,11 @@ namespace lrs {
 	
 	vector_mpq::vector_mpq ( ind d ) : vector_mpq_base(new mpq_class[d], d) {}
 	
+	vector_mpq::vector_mpq ( vector_mpq_base const& that ) 
+			: vector_mpq_base(new mpq_class[that.d], that.d) {
+		for (ind i = 0; i < d; i++) v[i] = that.v[i]; 
+	}
+	
 	vector_mpq::vector_mpq ( vector_mpq const& that ) 
 			: vector_mpq_base(new mpq_class[that.d], that.d) {
 		for (ind i = 0; i < d; i++) v[i] = that.v[i]; 
@@ -182,6 +199,21 @@ namespace lrs {
 	}
 	
 	vector_mpq::~vector_mpq() { delete[] v; }
+	
+	vector_mpq& vector_mpq::operator= ( vector_mpq_base const& that ) {
+		
+		if (v != that.v) {
+			if ( d != that.d ) {
+				delete[] v;
+				d = that.d;
+				v = new mpq_class[d];
+			}
+			
+			for (ind i = 0; i < d; i++) v[i] = that.v[i];
+		}
+		
+		return *this;
+	}
 	
 	vector_mpq& vector_mpq::operator= ( vector_mpq const& that ) {
 		
@@ -238,6 +270,13 @@ namespace lrs {
 	
 	matrix_row_mpq::matrix_row_mpq ( mpq_class* v, size_type d ) 
 			: vector_mpq_base(v, d) {}
+	
+	matrix_row_mpq& matrix_row_mpq::operator= ( vector_mpq_base const& that ) {
+		
+		if (v != that.v) for (ind i = 0; i < d; i++) v[i] = that.v[i];
+		
+		return *this;
+	}
 	
 	matrix_row_mpq& matrix_row_mpq::operator= ( vector_mpq const& that ) {
 		
@@ -522,6 +561,14 @@ namespace lrs {
 	////////////////////////////////////////////////////////////////////////////
 	// Mathematical operators
 	////////////////////////////////////////////////////////////////////////////
+	
+	matrix_mpq abs(matrix_mpq const& m) {
+		matrix_mpq r(m.n, m.d);
+		
+		for (ind i = 0; i < m.n*m.d; ++i) r.m[i] = abs(m.m[i]);
+		
+		return r;
+	}
 	
 	matrix_mpq matrix_mpq::inner_prod_mat () {
 		matrix_mpq p(n,n);

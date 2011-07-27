@@ -102,6 +102,21 @@ namespace lrs {
 		 */
 		friend int compare(vector_mpq_base const& a, vector_mpq_base const& b);
 		
+		/** Multiplies v by c
+		 *  @param v		the vector to multiply
+		 *  @param c		the scalar to multiply v by
+		 *  @return v, having been multiplied by c
+		 */
+		friend vector_mpq_base operator*= (vector_mpq_base& v, mpq_class c);
+		
+		/** Scalar multiplication of c and v
+		 *  @param v		the vector to multiply
+		 *  @param c		the scalar to multiply v by
+		 *  @return the scalar multiplication of c and v.
+		 */
+		friend vector_mpq_base operator* (vector_mpq_base& v, mpq_class c);
+		friend vector_mpq_base operator* (mpq_class c, vector_mpq_base& v);
+		
 		/** Computes the inner product of two vectors.
 		 *  @param a		A vector of length d
 		 *  @param b		A vector of length d
@@ -130,6 +145,9 @@ namespace lrs {
 		size_type d;
 	};
 	
+	int compare(vector_mpq_base const& a, vector_mpq_base const& b);
+	mpq_class inner_prod (vector_mpq_base const& a, vector_mpq_base const& b);
+	
 	class vector_mpz;
 	
 	/** Wraps a self-allocated multi-precision rational vector. */
@@ -143,6 +161,11 @@ namespace lrs {
 		 *  @param d		The dimension of the vector (default 0)
 		 */
 		vector_mpq(size_type d = 0);
+		
+		/** Copy constructor.
+		 *  @param that		The vector to copy
+		 */
+		vector_mpq(vector_mpq_base const& that);
 		
 		/** Copy constructor.
 		 *  @param that		The vector to copy
@@ -173,6 +196,11 @@ namespace lrs {
 		/** Assignment operator.
 		 *  @param that		The vector to copy into this one.
 		 */
+		vector_mpq& operator= (vector_mpq_base const& that);
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one.
+		 */
 		vector_mpq& operator= (vector_mpq const& that);
 		
 		/** Assignment operator.
@@ -198,6 +226,12 @@ namespace lrs {
 		/** Creates a vector that is a view of a given matrix row, rather than 
 		 *  having its own memory. */
 		matrix_row_mpq(mpq_class* v, size_type d);
+		
+		/** Assignment operator.
+		 *  @param that		The vector to copy into this one. Undefined results 
+		 * 					if that.d differs from this->d.
+		 */
+		matrix_row_mpq& operator= (vector_mpq_base const& that);
 		
 		/** Assignment operator.
 		 *  @param that		The vector to copy into this one. Undefined results 
@@ -335,6 +369,8 @@ namespace lrs {
 		/** Dimension of the vector. */
 		size_type d;
 	};
+	
+	int compare(vector_mpz const& a, vector_mpz const& b);
 	
 	/** Functional to hash a vector_mpz. Compatible with vector_mpq_hash (will 
 	 *  hash to the same value for an integer vector_mpq). */
@@ -699,6 +735,13 @@ namespace lrs {
 		 */
 		friend int compare(matrix_mpq const& a, matrix_mpq const& b);
 		
+		/** Computes the matrix where each entry is the absolute value of the 
+		 *  entries of the given matrix.
+		 *  @param m		the matrix to take the absolute value of
+		 *  @return a matrix R such that R[i][j] = abs(m[i][j])
+		 */
+		friend matrix_mpq abs(matrix_mpq const& m);
+		
 		/** Computes the inner product matrix of this matrix.
 		 *  @return a matrix P such that P[i][j] = inner_prod(this[i], this[j])
 		 */
@@ -706,7 +749,9 @@ namespace lrs {
 		
 		/** Computes the restriction of the matrix to a given set of row and 
 		 *  column indices.
-		 *  @param s		The set of indices to restrict the matrix to
+		 *  @param s		The set of indices to restrict the matrix to. The 
+		 *  				maximum index in s should be less than or equal to 
+		 *  				the smaller of n and d.
 		 *  @return a matrix R such that R[i][j] = this[s[i],s[j]]
 		 */
 		matrix_mpq restriction(index_set s);
@@ -727,7 +772,10 @@ namespace lrs {
 			: public std::unary_function<matrix_mpq, std::size_t> {
 	public:
 		std::size_t operator() (matrix_mpq const& m) const;
-	};
+	}; /* class matrix_mpq */
+	
+	int compare(matrix_mpq const& a, matrix_mpq const& b);
+	matrix_mpq abs(matrix_mpq const& m);
 	
 } /* namespace lrs */
 

@@ -25,6 +25,8 @@
 #include <permlib/permutation.h>
 #include <permlib/transversal/schreier_tree_transversal.h>
 
+#include "gram.hpp"
+
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
 #include "lrs/matrix.hpp"
@@ -335,12 +337,7 @@ namespace basil {
 		 * 					provided)
 		 */
 		dfs(matrix& m, index_set& lin, permutation_group& g, 
-				dfs_opts o = dfs_opts()) : l(m, lin, o.lrs_o), g(g), opts(o), 
-				dim(m.dim()), rows(m.size()), innerProdMat(m.inner_prod_mat()) { 
-			
-			/* set up algorithm globals */
-			initGlobals();
-		}
+				dfs_opts o = dfs_opts());
 		
 		
 		/** Perform the DFS.

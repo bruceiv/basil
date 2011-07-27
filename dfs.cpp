@@ -8,6 +8,9 @@
 
 #include <boost/make_shared.hpp>
 
+#include <gmp.h>
+#include <gmpxx.h>
+
 #include <permlib/permlib_api.h>
 #include <permlib/permutation.h>
 
@@ -24,9 +27,63 @@ namespace basil {
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
+	//  Utility Methods
+	//
+	////////////////////////////////////////////////////////////////////////////
+	
+// 	/** Utility method that rescales the rows of a matrix such that the squares 
+// 	 *  of their norm vectors are all pairwise equal.
+// 	 *  @param m		The matrix to rescale
+// 	 *  @return a matrix R such that for each row i, R[i] = k*m[i] for some 
+// 	 *  		positive integer k, and R[i]*R[i] == R[j]*R[j] for all rows i 
+// 	 *  		and j (where * is the standard inner product operation)
+// 	 */
+// 	matrix& equalize_norms(matrix& m) {
+// 		using lrs::vector_mpq;
+// 		using lrs::inner_prod;
+// 		
+// 		vector_mpq norms(m.size()); /* norm of each row */
+// 		mpz_class lcm = 1;			/* initialize lcm to 1 */
+// 		
+// 		/* calculate norm of each row, keeping running LCM */
+// 		for (ind i = 0; i < m.size(); ++i) {
+// 			norms[i] = inner_prod(m[i], m[i]);
+// 			/* lcm = lcm(lcm, norms[i].num()) */
+// 			mpz_lcm(lcm.get_mpz_t(), lcm.get_mpz_t(), norms[i].get_num_mpz_t());
+// 		}
+// 		
+// 		/* rescale rows to LCM */
+// 		for (ind i = 0; i < m.size(); ++i) {
+// 			
+// 			if ( lcm != norms[i].get_num() || norms[i].get_den() > 1) {
+// 				/* need to rescale norm to lcm, because the norm is smaller 
+// 				 * than the lcm */
+// 				m[i] *= ( lcm / norms[i] );
+// 			}
+// 		}
+// 		
+// 		mpz_clear(lcm);
+// 		return m;
+// 	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
 	//  Public Members
 	//
 	////////////////////////////////////////////////////////////////////////////
+	
+	dfs::dfs(matrix& m, index_set& lin, permutation_group& g, dfs_opts o) 
+			: l(m, lin, o.lrs_o), g(g), opts(o), dim(m.dim()), rows(m.size()), 
+			innerProdMat(m.inner_prod_mat()) { 
+			
+		/* take absolute value of inner product matrix in arrangement case 
+		 * (simplex tableaux have signed slacks defining halfspaces, while the 
+		 * hyperplanes of an arrangement can be replaced by their negations 
+		 * without changing the hyperplane they define) */
+		if ( opts.aRepresentation ) innerProdMat = abs(innerProdMat);
+		/* set up algorithm globals */
+		initGlobals();
+	}
 	
 	bool dfs::doDfs() {
 		

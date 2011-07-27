@@ -112,7 +112,10 @@ namespace basil {
 			/* create new matrix and load data */
 			m = boost::make_shared<matrix>(n, d);
 			for (ind i = 0; i < n; i++) {
-				for (ind j = 0; j < d; j++) in >> m->elem(i,j);
+				for (ind j = 0; j < d; j++) {
+					in >> m->elem(i,j);
+					m->elem(i,j).canonicalize();
+				}
 			}
 			
 			/* ignore up to end line */

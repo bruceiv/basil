@@ -3,7 +3,7 @@ CXXFLAGS = -ggdb -O2 -Wall -Wno-unused
 LDFLAGS = -lboost_program_options -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable
-OBJS = dfs.o
+OBJS = gram.o dfs.o
 
 # rules for constructions of objects from sources
 .cpp.o:  
