@@ -115,9 +115,9 @@ namespace basil {
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<unsigned long>::max()), 
 				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
-				gramVec(true), lexOnly(false), lrs_o(), out(&std::cout), 
-				printBasis(0), printNew(false), printRay(0), printVertex(0), 
-				showsAllDicts(false), stabSearch(false) {}
+				gramVec(true), debugGram(false), lexOnly(false), lrs_o(), 
+				out(&std::cout), printBasis(0), printNew(false), printRay(0), 
+				printVertex(0), showsAllDicts(false), stabSearch(false) {}
 		
 		
 		/** Sets (or unsets) the aRepresentation option */
@@ -147,6 +147,10 @@ namespace basil {
 		/** Deactivates (or activates) the gramVec option */
 		dfs_opts& noGramVec(bool opt = true) 
 			{ gramVec = !opt; return *this; }
+		
+		/** Activates (or deactivates) the debugGram option */
+		dfs_opts& doDebugGram(bool opt = true) 
+			{ debugGram = opt; return *this; }
 		
 		/** Activates (or deactivates) the lexOnly option */
 		dfs_opts& withLexOnly(bool opt = true)
@@ -213,6 +217,9 @@ namespace basil {
 		/** Use gram vector hashing to shrink the symmetry search space [true] 
 		 */
 		bool gramVec;
+		/** Print gram vectors for new cobases/vertices that are printed 
+		 *  [false] */
+		bool debugGram;
 		/** lexically based pivots only [false]. This is bad and breaks the 
 		 *  algorithm, don't use it */
 		bool lexOnly;
@@ -280,15 +287,15 @@ namespace basil {
 			 *  only cob. 
 			 */
 			vertex_data(coordinates coords, index_set inc, index_set cob, 
-					mpz_class det, matrix gram) : coords(coords), inc(inc), 
-					cobs(), det(det), gram(gram) {
+					mpz_class det, gram_matrix gram) : coords(coords), 
+					inc(inc), cobs(), det(det), gram(gram) {
 				cobs.insert(cob);
 			}
 			
 			/** Multiple-cobasis constructor. Initializes all fields to the 
 			 *  given values */
 			vertex_data(coordinates coords, index_set inc, 
-					std::set<index_set> cobs, mpz_class det, matrix gram) 
+					std::set<index_set> cobs, mpz_class det, gram_matrix gram) 
 					: coords(coords), inc(inc), cobs(cobs), det(det), 
 					gram(gram) { }
 			
@@ -304,7 +311,7 @@ namespace basil {
 			/** determinant */
 			mpz_class det;
 			/** gram matrix */
-			matrix gram;
+			gram_matrix gram;
 		};
 		typedef shared_ptr<vertex_data> vertex_data_ptr;
 		typedef std::vector<vertex_data_ptr> vertex_data_list;
@@ -321,11 +328,14 @@ namespace basil {
 		 *  data */
 		typedef
 			boost::unordered_multimap<
-				matrix, std::pair<index_set, vertex_data_ptr>, matrix_hash>
+				gram_matrix, 
+				std::pair<index_set, vertex_data_ptr>, 
+				gram_matrix_hash>
 			cobasis_gram_map;
 		/** map of a gram vector to its vertices */
 		typedef
-			boost::unordered_multimap<matrix, vertex_data_ptr, matrix_hash>
+			boost::unordered_multimap<
+				gram_matrix, vertex_data_ptr, gram_matrix_hash>
 			vertex_gram_map;
 		
 		
@@ -375,9 +385,9 @@ namespace basil {
 		/** @return representatives of each of the orbits of the vertices */
 		coordinates_map const& getVertexOrbits() const;
 		
-		/** @return the inner product matrix used for gram vectors. (This 
-		 *  method is of primary use for debugging the gram vectors.) */
-		matrix const& getInnerProdMat() const;
+		/** @return the gram matrix. (This method is of primary use for 
+		 *  debugging the gram vectors.) */
+		gram_matrix const& getGramMat() const;
 		
 		/** @return the map of gram vectors to cobases. (This method is of 
 		 *  primary use for debugging the gram vectors.) */
@@ -481,11 +491,10 @@ namespace basil {
 		
 		/** Gets the gram vector for an incidence set.
 		 *  @param inc		The incidence set to take the gram vector for
-		 *  @return the inner product matrix, restricted to this incidence set 
-		 *  		in row and column indices, then sorted (first each row by 
-		 * 			element, then row by row)
+		 *  @return the gram matrix, restricted to this incidence set in row 
+		 *  		and column indices, then sorted
 		 */
-		matrix fastGramVec(index_set inc);
+		gram_matrix fastGramVec(index_set inc);
 		
 		/** Looks for symmetries between a given cobasis and a list of 
 		 *  candidate cobases.
@@ -581,8 +590,9 @@ namespace basil {
 		ind dim;
 		/** number of rows in the problem */
 		ind rows;
-		/** matrix of pre-computed inner products, for gram vectors */
-		matrix innerProdMat;
+		/** matrix of pre-computed inner product representatives, for gram 
+		 *  vectors */
+		gram_matrix gramMat;
 		
 		////////////////////////////////////////////////////////////////////////
 		// Algorithm data

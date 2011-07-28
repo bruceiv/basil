@@ -193,6 +193,10 @@ namespace basil {
 						->default_value(true)->implicit_value(false),
 					"Deactivate gram vector hashing (not reccommended, gram "
 					"vectors are a cheap optimization)")
+				("debug-gram",
+					bool_switch(&dfsOpts_.debugGram),
+					"Print gram vectors for vertices/rays/cobases that are "
+					"printed")
 				("stab-search", 
 					bool_switch(&dfsOpts_.stabSearch),
 					"Activate cobasis stabilizer search (not reccommended, "
@@ -381,9 +385,8 @@ int main(int argc, char **argv) {
 	dfs d(o.mat(), o.lin(), o.grp(), o.dfsOpts() );
 	
 	if ( o.isVerbose() ) {
-		//print inner product matrix (NOTE for debugging)
-		out << "Inner Product Matrix:\t" << fmt( d.getInnerProdMat(), 0 ) 
-				<< endl;
+		//print gram matrix (NOTE for debugging)
+		out << "Gram Matrix:\t" << d.getGramMat() << endl;
 	}
 	
 	//run DFS algorithm

@@ -46,6 +46,9 @@ namespace basil {
 		 */
 		gram_matrix& abs();
 		
+		/** @return the dimension of the gram matrix */
+		long dim() const;
+		
 		/** Computes the restriction of the matrix to a given set of row and 
 		 *  column indices.
 		 *  @param s		The set of indices to restrict the matrix to. The 

@@ -9,6 +9,7 @@ basil
 *.o
 */*.a
 */*.o
+*/*.out
 
 # documentation
 doc/

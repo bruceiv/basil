@@ -20,6 +20,8 @@
 #include "lrs/cobasis.hpp"
 #include "lrs/matrix.hpp"
 
+#include <iostream>
+
 namespace basil {
 	
 	gram_matrix::gram_matrix(long n) : n(n), m(new int*[n]), m_(new int[n*n]) { 
@@ -29,7 +31,8 @@ namespace basil {
 	
 	gram_matrix::gram_matrix(gram_matrix const& that) 
 			: n(that.n), m(new int*[that.n]), m_(new int[that.n*that.n]) { 
-		std::copy(that.m, that.m+n, m); /* copy row indices */
+		for (long i = 0; i < n; ++i) /* copy row indices */
+			m[i] = m_+(that.m[i]-that.m_);
 		std::copy(that.m_, that.m_+(n*n), m_); /* copy matrix */
 	}
 		
@@ -48,7 +51,8 @@ namespace basil {
 				m_ = new int[n*n];
 			}
 			
-			std::copy(that.m, that.m+n, m); /* copy row indices */
+			for (long i = 0; i < n; ++i) /* copy row indices */
+				m[i] = m_+(that.m[i]-that.m_);
 			std::copy(that.m_, that.m_+(n*n), m_); /* copy matrix */
 		}
 		
@@ -60,54 +64,19 @@ namespace basil {
 	struct mpr {
 		
 		/** Constructor; initializes the mpr to canonical form [0*sqrt(1)/1] */
-		mpr() {
-			mpz_init_set_si(n, 0); 
-			mpz_init_set_si(r, 1); 
-			mpz_init_set_si(d, 1);
-		}
-		
-		/** Copy constructor; initializes the mpr to the value of that.
-		 *  @param that			The argument to copy
-		 */
-		mpr(mpr const& that) {
-			mpz_init_set(n, that.n); 
-			mpz_init_set(r, that.r); 
-			mpz_init_set(d, that.d);
-		}
-		
-		/** Assignment operator; copies the value of that into this.
-		 *  @param that			The argument to copy
-		 *  @return a reference to this
-		 */
-		mpr& operator= (mpr const& that) {
-			mpz_set(n, that.n);
-			mpz_set(r, that.r);
-			mpz_set(d, that.d);
-			
-			return *this;
-		}
-		
-		/** Destructor */
-		~mpr() {
-			mpz_clear(n);
-			mpz_clear(n);
-			mpz_clear(n);
-		}
+		mpr() : n(0), r(1), d(1) {}
 		
 		/** Numerator */
-		mpz_t n;
+		mpz_class n;
 		/** Radical */
-		mpz_t r;
+		mpz_class r;
 		/** Denominator */
-		mpz_t d;
+		mpz_class d;
 	};
 	
 	/** Equality operator for mpr type */
-	bool operator== (mpr const& a, mpr const& b) {
-		return ( mpz_cmp(a.n, b.n) == 0 ) 
-				&& ( mpz_cmp(a.r, b.r) == 0 )
-				&& ( mpz_cmp(a.d, b.d) == 0 );
-	}
+	bool operator== (mpr const& a, mpr const& b) 
+		{ return a.n == b.n && a.r == b.r && a.d == b.d; }
 	
 	/** Functional to hash an mpr. */
 	class mpr_hash : public std::unary_function<mpr, std::size_t> {
@@ -115,9 +84,9 @@ namespace basil {
 		std::size_t operator() (mpr const& x) const {
 			std::size_t seed = 0UL;
 			/* combine low-order bits of values into hash */
-			boost::hash_combine(seed, mpz_get_si(x.n));
-			boost::hash_combine(seed, mpz_get_si(x.r));
-			boost::hash_combine(seed, mpz_get_si(x.d));
+			boost::hash_combine(seed, x.n.get_si());
+			boost::hash_combine(seed, x.r.get_si());
+			boost::hash_combine(seed, x.d.get_si());
 			return seed;
 		}
 	}; /* class mpr_hash */
@@ -144,7 +113,14 @@ namespace basil {
 		for (long i = 0; i < m.size(); ++i) {
 			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
 			for (long j = 0; j <= i; ++j) {
+				
+// 				if ( i == 0 && j == 0 ) std::cout << "\nGRAM CONSTRUCTION";
+// 				if ( j == 0 ) std::cout << std::endl;
+// 				std::cout << " (" << i << "," << j << ")";
+// 				std::cout << " " << m[i] << "." << m[j];
+				
 				t = lrs::inner_prod(m[i], m[j]);
+				
 				/* inner product, representing angle between m[i] and m[j], 
 				 * normalized to account for rescaling of input vectors. Note 
 				 * that this view of it is normalized to be positive, while the 
@@ -152,9 +128,9 @@ namespace basil {
 				 * representatives for complementary angles are negations of 
 				 * each other */
 				/* TODO actually do that normalization */
-				mpr ip;
-				mpz_abs(ip.n, t.get_num_mpz_t());
-				mpz_set(ip.d, t.get_den_mpz_t());
+				mpr ip; 
+				ip.n = abs(t.get_num()); 
+				ip.d = t.get_den();
 				
 				/* look for representative for this mpr, create new if not 
 				 * found */
@@ -170,6 +146,9 @@ namespace basil {
 				}
 				rep *= sgn(t); /* sign rep to match the inner product */
 				
+// 				std::cout << " n" << ip.n << " r" << ip.r << " d" << ip.d 
+// 						  << " -> " << rep;
+				
 				/* place representative in gram matrix */
 				g.m[i][j] = rep; g.m[j][i] = rep;
 			}
@@ -184,6 +163,8 @@ namespace basil {
 		
 		return *this;
 	}
+	
+	long gram_matrix::dim() const { return n; }
 	
 	gram_matrix gram_matrix::restriction(lrs::index_set s) const {
 		gram_matrix r(s.count());
