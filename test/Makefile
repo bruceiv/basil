@@ -3,12 +3,9 @@ CPPFLAGS = -DTIMES -DSIGNALS -DGMP -DLRS_QUIET
 CXXFLAGS = -O0 -ggdb -Wall -Wno-unused
 LDFLAGS = -L../lrs -llrs -lboost_unit_test_framework -lgmpxx -lgmp
 
-# object files to include in this executable
-OBJS = ../gram.o
-
 # rules for constructions of objects from sources
 .cpp.out:  
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(OBJS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
 .PHONY:  test clean
 
