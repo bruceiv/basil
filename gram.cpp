@@ -309,10 +309,10 @@ namespace basil {
 			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
 			for (long j = 0; j < i; ++j) {
 				
-				if ( i == 0 && j == 0 ) std::cout << "\nGRAM CONSTRUCTION";
-				if ( j == 0 ) std::cout << std::endl;
-				std::cout << " (" << i << "," << j << ")";
-				std::cout << " " << m[i] << "." << m[j];
+// 				if ( i == 0 && j == 0 ) std::cout << "\nGRAM CONSTRUCTION";
+// 				if ( j == 0 ) std::cout << std::endl;
+// 				std::cout << " (" << i << "," << j << ")";
+// 				std::cout << " " << m[i] << "." << m[j];
 				
 				t = lrs::inner_prod(m[i], m[j]);
 				
@@ -341,13 +341,16 @@ namespace basil {
 				}
 				rep *= sgn(t); /* sign rep to match the inner product */
 				
-				std::cout << " n" << ip.n << " r" << ip.r << " d" << ip.d 
-						  << " -> " << rep;
+// 				std::cout << " " << ip.n;
+// 				if ( ip.r != 1 ) std::cout << "r" << ip.r; 
+// 				if ( ip.d != 1 ) std::cout << "/" << ip.d;
+// 				std::cout << " -> " << rep;
 				
 				/* place representative in gram matrix */
 				g.m[i][j] = rep; g.m[j][i] = rep;
 			}
 		}
+// 		std::cout << std::endl;
 		
 		return g;
 	}
