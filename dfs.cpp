@@ -16,6 +16,7 @@
 
 #include "dfs.hpp"
 #include "fmt.hpp"
+#include "gram.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
@@ -31,15 +32,10 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////////////
 	
-	dfs::dfs(matrix& m, index_set& lin, permutation_group& g, dfs_opts o) 
-			: l(m, lin, o.lrs_o), g(g), opts(o), dim(m.dim()), rows(m.size()), 
-			gramMat(constructGram(m)) { 
-			
-		/* take absolute value of inner product matrix in arrangement case 
-		 * (simplex tableaux have signed slacks defining halfspaces, while the 
-		 * hyperplanes of an arrangement can be replaced by their negations 
-		 * without changing the hyperplane they define) */
-		if ( opts.aRepresentation ) gramMat.abs();
+	dfs::dfs(matrix& m, index_set& lin, permutation_group& g, 
+			gram_matrix& gram, dfs_opts o) : l(m, lin, o.lrs_o), g(g), 
+			opts(o), dim(m.dim()), rows(m.size()), gramMat(gram) { 
+		
 		/* set up algorithm globals */
 		initGlobals();
 	}
@@ -107,6 +103,8 @@ namespace basil {
 		allIndices = index_set(rows+1).set().set(0, false);
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
+		/* complementary angles are equivalent in arrangements */
+		if ( opts.aRepresentation ) gramMat.abs();
 		
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();

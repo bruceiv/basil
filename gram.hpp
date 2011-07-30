@@ -32,11 +32,19 @@ namespace basil {
 		/** Assignment operator */
 		gram_matrix& operator= (gram_matrix const& that);
 		
-		/** Constructs the gram matrix for a given input matrix.
-		 *  @param m		The input matrix
-		 *  @return a gram matrix for the given input matrix
+		/** Indexing operator.
+		 *  @param i		The row index to retrieve
+		 *  @param j		the column index to retrieve
+		 *  @return a reference to the element at (i,j)
 		 */
-		friend gram_matrix constructGram(lrs::matrix_mpq const& m);
+		int& operator() (long i, long j);
+		
+		/** Indexing operator.
+		 *  @param i		The row index to retrieve
+		 *  @param j		the column index to retrieve
+		 *  @return The element at (i,j)
+		 */
+		int operator() (long i, long j) const;
 		
 		/** Takes the absolute value of every value in this matrix. This is 
 		 *  equivalent to asserting that for each m_i in the generating matrix, 
@@ -81,7 +89,16 @@ namespace basil {
 		int *m_;
 	}; /* class gram_matrix */
 	
-	gram_matrix constructGram(lrs::matrix_mpq const& m);
+	/** Constructs the gram matrix for a given input matrix.
+	 *  @param m			The input matrix, which must have no rows which are 
+	 *  					the zero vector. If a zero vector is supplied, 
+	 *  					undefined results ensue.
+	 *  @param factorize	Perform prime factorization for an exact answer. 
+	 *  					This can be set to false for quicker gram matrix 
+	 *  					generation, but may give incorrect answers [true].
+	 *  @return a gram matrix for the given input matrix
+	 */
+	gram_matrix constructGram(lrs::matrix_mpq const& m, bool factorize = true);
 	
 	/** Functional to hash a gram_matrix. */
 	class gram_matrix_hash 

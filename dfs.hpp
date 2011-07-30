@@ -343,10 +343,12 @@ namespace basil {
 		 *  @param m		The matrix to DFS on
 		 *  @param lin		The set of indices that are linearities
 		 *  @param g		The permutation group of the matrix
+		 *  @param gram		The gram matrix for the constraints (may be empty 
+		 *  				if o.gramVec == false)
 		 *  @param opts		The options for this DFS (default values if not 
 		 * 					provided)
 		 */
-		dfs(matrix& m, index_set& lin, permutation_group& g, 
+		dfs(matrix& m, index_set& lin, permutation_group& g, gram_matrix& gram, 
 				dfs_opts o = dfs_opts());
 		
 		
