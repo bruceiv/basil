@@ -20,11 +20,7 @@
 
 #include <gmpxx.h>
 
-#include <permlib/common.h> //because the PermLib author didn't ...
-#include <permlib/bsgs.h>
-#include <permlib/permutation.h>
-#include <permlib/transversal/schreier_tree_transversal.h>
-
+#include "basil.hpp"
 #include "gram.hpp"
 
 #include "lrs/cobasis.hpp"
@@ -35,65 +31,6 @@
 
 
 namespace basil {
-	
-	////////////////////////////////////////////////////////////////////////////
-	//
-	//  Imports and typedefs for use in Basil
-	//
-	////////////////////////////////////////////////////////////////////////////
-	
-	/** import STL string into this namespace */
-	using std::string;
-	
-	/** import boost shared pointer into this namespace */
-	using boost::shared_ptr;
-	
-
-	/** matrix type */
-	typedef 
-		lrs::matrix_mpq
-		matrix;
-	typedef
-		shared_ptr<matrix>
-		matrix_ptr;
-	
-	/** typesafe index into matrix */
-	typedef 
-		lrs::ind
-		ind;
-	/** unsigned version of ind */
-	typedef
-		lrs::uind
-		uind;
-	
-	/** permutation type */
-	typedef 
-		permlib::Permutation 
-		permutation;
-	typedef
-		shared_ptr<permutation>
-		permutation_ptr;
-		
-	/** permutation tree traversal type */
-	typedef 
-		permlib::SchreierTreeTransversal<permutation>
-		permutation_transversal;
-	typedef
-		shared_ptr<permutation_transversal>
-		permutation_transversal_ptr;
-	
-	/** permutation group type */
-	typedef 
-		permlib::BSGS<permutation, permutation_transversal> 
-		permutation_group;
-	typedef
-		shared_ptr<permutation_group>
-		permutation_group_ptr;
-	
-	/** list of permutation type */
-	typedef
-		typename permutation_group::PERMlist
-		permutation_list;
 	
 	/** Exception thrown for unexpected circumstances in the DFS algorithm.
 	 *  The what string will describe the error.
@@ -275,8 +212,6 @@ namespace basil {
 		
 		typedef lrs::vector_mpq coordinates;
 		
-		typedef lrs::index_set index_set;
-		typedef shared_ptr<index_set> index_set_ptr;
 		typedef std::vector<index_set> index_set_list;
 		
 		/** Joint vertex-cobasis storage */

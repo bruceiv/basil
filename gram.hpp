@@ -4,6 +4,8 @@
 #include <functional>
 #include <ostream>
 
+#include <boost/shared_ptr.hpp>
+
 #include "lrs/cobasis.hpp"
 #include "lrs/matrix.hpp"
 
@@ -88,6 +90,8 @@ namespace basil {
 		/** Backing storage for the matrix (to save allocations) */
 		int *m_;
 	}; /* class gram_matrix */
+	
+	typedef boost::shared_ptr<gram_matrix> gram_matrix_ptr;
 	
 	/** Constructs the gram matrix for a given input matrix.
 	 *  @param m			The input matrix, which must have no rows which are 

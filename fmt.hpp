@@ -110,7 +110,7 @@ namespace basil {
 	boost::binder2nd<string (*)(Arg const&, int)> fmt(int tabs = single_line);
 
 	/** Prints a representation of its cobasis (as a set of indices). */
-	static string fmt(dfs::index_set const& s, int tabs = single_line) {
+	static string fmt(index_set const& s, int tabs = single_line) {
 		std::ostringstream o;
 		printSet(o, lrs::begin(s), lrs::end(s), tabs);
 		return o.str();
@@ -119,16 +119,15 @@ namespace basil {
 	/** Prints a list of cobases. */
 	static string fmt(dfs::cobasis_map const& m, int tabs = single_line) {
 		typedef
-			bool (*index_set_comparator)(dfs::index_set const&, 
-										 dfs::index_set const&);
+			bool (*index_set_comparator)(index_set const&, index_set const&);
 		
 		std::ostringstream o;
-		std::set<dfs::index_set, index_set_comparator> 
-			s(&lrs::lexicographical_compare);
+		std::set<index_set, index_set_comparator> 
+				s(&lrs::lexicographical_compare);
 		/* sort the set of cobases */
 		insertKeys(m.begin(), m.end(), std::inserter(s, s.begin()));
 		o << s.size() << lineSpace(tabs);
-		printSet(o, s.begin(), s.end(), fmt<dfs::index_set>(), tabs);
+		printSet(o, s.begin(), s.end(), fmt<index_set>(), tabs);
 		return o.str();
 	}
 

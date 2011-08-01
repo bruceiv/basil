@@ -12,211 +12,17 @@
 
 #include <permlib/permlib_api.h>
 
+#include "basil.hpp"
 #include "dfs.hpp"
 #include "fmt.hpp"
 #include "gram.hpp"
+#include "parse.hpp"
 
 namespace basil {
 
 	/** Contains runtime custimizations for basil
 	 */
 	class opts {
-	private:
-		/* utility methods */
-		
-		/** Gets a line that isn't a comment (begins with '*' or '#').
-		 *  @param in		the input stream to read the line from
-		 *  @param s		the string to store the line in
-		 *  @return the input stream
-		 */
-		std::istream& getContentLine(std::istream& in, string& s) {
-			do {
-				std::getline(in, s);
-			} while ( in && (s.empty() || s[0] == '*' || s[0] == '#') );
-			if ( ! in ) s = "";
-			
-			return in;
-		}
-		
-		/** Checks if a string begins with a given prefix
-		 *  @param s		the string to search
-		 *  @param pre		the prefix to match
-		 *  @return true if the prefix matches, false otherwise
-		 */
-		bool prefixMatch(std::string const& s, char const* pre) {
-			for (unsigned int i = 0; pre[i]; ++i) {
-				if ( 
-					i >= s.length() 	/* s is shorter than prefix */
-					|| s[i] != pre[i]	/* mismatch with prefix */
-				) return false;
-			}
-			return true;				/* match with prefix in all locations */
-		}
-		
-		/** Takes an input stream that has just consumed the "symmetry begin" 
-		 *  line of the input file, and reads it into the internal group, 
-		 *  consuming up to the "symmetry end" tag. Pre-assumes the matrix m 
-		 *  has been generated
-		 *  @see genPermutationGroupFromStream(std::istream& in) 
-		 */
-		void parsePermutationGroup(std::istream& in) {
-			ind n = m->size();
-			
-			std::vector<permutation_ptr> generators;
-			
-			//read in generators
-			string s = "";
-			permutation_ptr p;
-			
-			std::getline(in, s);
-			while ( s != string("symmetry end") ) {
-				p.reset(new permutation(n, s));
-				generators.push_back(p);
-				
-				std::getline(in, s);
-			}
-			
-			g = permlib::construct(n, generators.begin(), generators.end());
-		}
-		
-		/** Reads a gram matrix into internal storage. Pre-assumes the matrix m 
-		 *  has been generated. The input stream should have just had 
-		 *  "gram begin" consumed, and will be consumed up to "gram end". 
-		 */
-		void parseGramMatrix(std::istream& in) {
-			
-			/* create new matrix and load data */
-			gm = boost::make_shared<gram_matrix>(m->size());
-			for (ind i = 0; i < m->size(); i++) {
-				for (ind j = 0; j < m->size(); j++) {
-					in >> (*gm)(i,j);
-				}
-			}
-			
-			/* ignore up to end line */
-			string s;
-			getContentLine(in, s);
-			while ( s != string("gram end") ) getContentLine(in, s);
-		}
-		
-		/** Allocates new permutation group on heap and returns it.
-		 *  creates permutation groups on n elements, where n is m.size1()
-		 *  expects input on the stream in to be a newline-delimited list of 
-		 *  permuataions, where a permutation is a comma-delimited lists of 
-		 *  cycles, and a cycle is a whitespace-delimited list of elements from 
-		 *  the range [1..n].
-		 */
-		void genPermutationGroupFromStream(std::istream& in) {
-			/* read up to "symmetry begin" tag */
-			string s = "";
-			while ( s != string("symmetry begin") ) getContentLine(in, s);
-			parsePermutationGroup(in);
-		}
-		
-		/** Allocates new matrix on heap.
-		 *  Expects input in the following format (to match lrs):
-		 *  
-		 *  [name]
-		 *  [V-representation]
-		 *  [\<lrs options\>]
-		 *  begin
-		 *  \<n\> \<d\> rational
-		 *  \< n * d whitespace-delimited data values \>
-		 *  end
-		 *  
-		 *  where [] denotes an optional value, \<\> denotes a variable, and any 
-		 *  line beginning with '#' or '*' is ignored as a comment line.
-		 */
-		void genMatrixFromStream(std::istream& in) {
-			
-			string s = "";
-			/* temporary linearity vector */
-			std::vector<ind> linV(0);
-			
-			/* parse options up to begin line */
-			while ( ! prefixMatch(s, "begin") ) {
-				
-				if ( prefixMatch(s, "V-representation") ) {
-					/* Set vertex representation flag */
-					dfsOpts_.inVRepresentation();
-					if (verbose) out() << "**V-representation**" << std::endl;
-				}
-				
-				if ( prefixMatch(s, "A-representation") ) {
-					/* Set vertex representation flag */
-					dfsOpts_.inARepresentation();
-					if (verbose) out() << "**A-representation**" << std::endl;
-				}
-				
-				if ( prefixMatch(s, "linearity") ) {
-					/* parse linearities */
-					std::istringstream read(s);
-					ind k, t;
-					read >> k; /* linearity count */
-					linV.resize(k);
-					/* read linearities */
-					for (ind i = 0; i < k; ++i) { read >> linV[i]; }
-				}
-				
-				/* get next line */
-				getContentLine(in, s);
-			}
-			
-			/* get dimension line */
-			getContentLine(in, s);
-			std::istringstream read(s);
-			
-			/* read dimensions */
-			ind n, d;
-			read >> n;
-			read >> d;
-			
-			/* create new matrix and load data */
-			m = boost::make_shared<matrix>(n, d);
-			for (ind i = 0; i < n; i++) {
-				for (ind j = 0; j < d; j++) {
-					in >> m->elem(i,j);
-					m->elem(i,j).canonicalize();
-				}
-			}
-			
-			/* ignore up to end line */
-			getContentLine(in, s);
-			while ( s != string("end") ) getContentLine(in, s);
-			
-			/* read linearities into index set */
-			l = dfs::index_set(n+1);
-			for (std::vector<ind>::iterator iter = linV.begin(); 
-					iter != linV.end(); ++iter) l.set(*iter);
-			
-			/* continue parsing */
-			while ( in ) {
-				getContentLine(in, s);
-				
-				if ( prefixMatch(s, "symmetry begin") ) {
-					if ( groupOverride ) {
-						/* consume symmetry group, but ignore */
-						do getContentLine(in, s);
-						while ( ! prefixMatch(s, "symmetry end") );
-					} else {
-						/* parse permutation group, starting here */
-						parsePermutationGroup(in);
-					}
-				} else if ( prefixMatch(s, "gram") ) {
-					if ( prefixMatch(s, "gram auto") ) {
-						if ( dfsOpts_.gramVec ) {
-							gm = boost::make_shared<gram_matrix>(
-									constructGram(*m, doFactorize));
-						} else {
-							gm = boost::make_shared<gram_matrix>();
-						}
-					} else if ( prefixMatch(s, "gram begin") ) {
-						parseGramMatrix(in);
-					}
-				}
-			}
-		}
-		
 	public:
 		/** Argument constructor; parses program arguments. Read code for 
 		 *  option descriptions
@@ -250,7 +56,7 @@ namespace basil {
 						->default_value(true)->implicit_value(false),
 					"Deactivate gram vector hashing (gram vectors are a cheap "
 					"optimization, but their calculation may be expensive)")
-				("no-factorization",
+				("inexact-gram",
 					bool_switch(&doFactorize)
 						->default_value(true)->implicit_value(false),
 					"Do not use prime factorization in computation of the gram "
@@ -354,8 +160,44 @@ namespace basil {
 		
 		/** Parses the input. */
 		void parse() {
-			genMatrixFromStream(matIn());
-			if ( groupOverride ) genPermutationGroupFromStream(grpIn());
+			/* initial parse */
+			parse_results p = basil::parse(matIn());
+			
+			/* get matrix */
+			m = p.m;
+			
+			/* get linearity set */
+			l = p.l;
+			
+			/* get group */
+			if ( groupOverride ) {
+				std::istream& in = grpIn();
+				string s; std::getline(in, s);
+				while ( s != string("symmetry begin") ) std::getline(in, s);
+				parsePermutationGroup(in, m->size());
+			} else {
+				g = p.g;
+			}
+			
+			/* get gram matrix */
+			if ( ! ( dfsOpts_.gramVec || p.gs == provided ) ) {
+				gm = boost::make_shared<gram_matrix>(0);
+			} else {
+				switch( p.gs ) {
+				case provided:
+					gm = p.gm;
+					break;
+				case inexact:
+					gm = boost::make_shared<gram_matrix>(
+							constructGram(mat(), false));
+					break;
+				case ommited:
+				case exact:
+					gm = boost::make_shared<gram_matrix>(
+							constructGram(mat(), doFactorize));
+					break;
+				}
+			}
 		}
 		
 		/** get the output stream */
@@ -375,31 +217,21 @@ namespace basil {
 		/** get the problem permutation group. - may call parse() if it has 
 		 *  yet to be called */
 		permutation_group& grp() {
-			if ( ! g ) {
-				if ( groupOverride ) genPermutationGroupFromStream(grpIn());
-				else parse();
-			}
+			if ( ! g ) parse();
 			return *g;
 		}
 		
-		/** get the problem linearity set - will call parse() if it has yet to 
+		/** get the problem linearity set - may call parse() if it has yet to 
 		 *  be called */
-		dfs::index_set& lin() {
-			if ( ! m ) parse();
-			return l;
+		index_set& lin() {
+			if ( ! l ) parse();
+			return *l;
 		}
 		
-		/** gets the gram matrix - will call parse() if it has yet to be 
+		/** gets the gram matrix - may call parse() if it has yet to be 
 		 *  called */
 		gram_matrix& gram() {
-			if ( ! gm ) {
-				if ( dfsOpts_.gramVec ) {
-					gm = boost::make_shared<gram_matrix>(
-							constructGram(mat(), doFactorize));
-				} else {
-					gm = boost::make_shared<gram_matrix>();
-				}
-			}
+			if ( ! gm ) parse();
 			return *gm;
 		}
 		
@@ -431,9 +263,9 @@ namespace basil {
 		/** Pointer to the permutation group for the problem */
 		permutation_group_ptr g;
 		/** linearity indices */
-		dfs::index_set l;
+		index_set_ptr l;
 		/** gram matrix for constraints */
-		boost::shared_ptr<gram_matrix> gm;
+		gram_matrix_ptr gm;
 		
 		/** verbose output printing [false]. */
 		bool verbose;
