@@ -60,6 +60,14 @@ namespace basil {
 		/** post-matrix unparsed lines */
 		std::vector<string> postLines;
 	};
+	typedef boost::shared_ptr<parse_results> parse_results_ptr;
+	
+	/** Prints p in a manner consistent with its input format.
+	 *  @param o		The output stream to print on.
+	 *  @param p		The parse_results to print
+	 *  @return o, the output stream
+	 */
+	std::ostream& operator<< (std::ostream& o, parse_results const& p);
 	
 	/** Parses the input stream into the returned results object.
 	 *  
@@ -88,7 +96,7 @@ namespace basil {
 	 *  @return the parse_results object encoding the information taken from 
 	 *  		the stream
 	 */
-	parse_results parse(std::istream& in);
+	parse_results_ptr parse(std::istream& in);
 	
 	/** Parses a matrix using the format from parse().
 	 *  @param in		The input stream to parse (The "begin" line should 

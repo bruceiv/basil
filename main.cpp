@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <istream>
 #include <fstream>
@@ -32,8 +33,8 @@ namespace basil {
 		 */
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
-				groupOverride(false), m(), g(), l(), gm(), verbose(false), 
-				doFactorize(true) {
+				groupOverride(false), p(), verbose(false), doFactorize(true), 
+				preprocessor(false) {
 			
 			using namespace boost::program_options;
 			
@@ -50,7 +51,7 @@ namespace basil {
 					"Forces Basil to assume there is no symmetry in the input.")
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
-					"Show all intermediate dictionaries in the search trewill e.")
+					"Show all intermediate dictionaries in the search tree.")
 				("no-gram-vec", 
 					bool_switch(&dfsOpts_.gramVec)
 						->default_value(true)->implicit_value(false),
@@ -86,11 +87,15 @@ namespace basil {
 					value<long>(&dfsOpts_.printVertex),
 					"Print the number of cobases found and running time every "
 					"n cobases.")
-				("print-interval,p",
+				("print-each",
 					value<long>(&printInterval),
 					"Convenience for print-{basis,ray,vertex} with the given "
 					"parameter. If any of the others are given, they take "
 					"precedence")
+				("preprocess,p", 
+					bool_switch(&preprocessor), 
+					"Do not DFS, simply do preprocessing work, and print "
+					"normalized input file to output stream")
 				("verbose,v",
 					bool_switch(&verbose),
 					"Shorthand for --print-interval=1, --print-new. Those "
@@ -161,43 +166,45 @@ namespace basil {
 		/** Parses the input. */
 		void parse() {
 			/* initial parse */
-			parse_results p = basil::parse(matIn());
+			p = basil::parse(matIn());
 			
-			/* get matrix */
-			m = p.m;
-			
-			/* get linearity set */
-			l = p.l;
-			
-			/* get group */
+			/* override group, if requested */
 			if ( groupOverride ) {
 				std::istream& in = grpIn();
 				string s; std::getline(in, s);
 				while ( s != string("symmetry begin") ) std::getline(in, s);
-				parsePermutationGroup(in, m->size());
-			} else {
-				g = p.g;
+				parsePermutationGroup(in, p->m->size());
 			}
 			
 			/* get gram matrix */
-			if ( ! ( dfsOpts_.gramVec || p.gs == provided ) ) {
-				gm = boost::make_shared<gram_matrix>(0);
+			if ( ! ( dfsOpts_.gramVec || p->gs == provided ) ) {
+				p->gm = boost::make_shared<gram_matrix>(0);
 			} else {
-				switch( p.gs ) {
+				switch( p->gs ) {
 				case provided:
-					gm = p.gm;
+					/* do nothing */
 					break;
 				case inexact:
-					gm = boost::make_shared<gram_matrix>(
+					p->gm = boost::make_shared<gram_matrix>(
 							constructGram(mat(), false));
 					break;
-				case ommited:
+				case ommited: /* equivalent to "exact" */
 				case exact:
-					gm = boost::make_shared<gram_matrix>(
+					p->gm = boost::make_shared<gram_matrix>(
 							constructGram(mat(), doFactorize));
 					break;
 				}
+				p->gs = provided;
 			}
+		}
+		
+		/** Prints the input to the output stream, in a manner consistent with 
+		 *  its input format. This is useful to perform preprocessing on input 
+		 *  files.
+		 */
+		void print() {
+			if ( ! p ) parse();
+			out() << *p;
 		}
 		
 		/** get the output stream */
@@ -210,33 +217,36 @@ namespace basil {
 		/** get the problem matrix. - may call parse() if it has yet to be 
 		 *  called */
 		matrix& mat() {
-			if ( ! m ) parse();
-			return *m;
+			if ( ! p ) parse();
+			return *p->m;
 		}
 		
 		/** get the problem permutation group. - may call parse() if it has 
 		 *  yet to be called */
 		permutation_group& grp() {
-			if ( ! g ) parse();
-			return *g;
+			if ( ! p ) parse();
+			return *p->g;
 		}
 		
 		/** get the problem linearity set - may call parse() if it has yet to 
 		 *  be called */
 		index_set& lin() {
-			if ( ! l ) parse();
-			return *l;
+			if ( ! p ) parse();
+			return *p->l;
 		}
 		
 		/** gets the gram matrix - may call parse() if it has yet to be 
 		 *  called */
 		gram_matrix& gram() {
-			if ( ! gm ) parse();
-			return *gm;
+			if ( ! p ) parse();
+			return *p->gm;
 		}
 		
 		/** true if input is split over two files, false otherwise */
 		bool isVerbose() { return verbose; }
+		
+		/** true if the options specify to preprocess the input only */
+		bool isPreprocessor() { return preprocessor; }
 		
 	private:
 		/** get the input stream for the matrix */
@@ -258,19 +268,16 @@ namespace basil {
 		/** true if the group is given in its own file */
 		bool groupOverride;
 		
-		/** Pointer to the matrix for the problem */
-		matrix_ptr m;
-		/** Pointer to the permutation group for the problem */
-		permutation_group_ptr g;
-		/** linearity indices */
-		index_set_ptr l;
-		/** gram matrix for constraints */
-		gram_matrix_ptr gm;
+		/** Pointer to the parse results for the problem */
+		parse_results_ptr p;
 		
 		/** verbose output printing [false]. */
 		bool verbose;
 		/** factorization calculation used in gram matrix construction [true] */
 		bool doFactorize;
+		/** only do pre-processing steps, rather than full calculation 
+		 *  [false] */
+		bool preprocessor;
 	}; /* class opts */
 } /* namespace basil */
 
@@ -288,6 +295,11 @@ int main(int argc, char **argv) {
 	
 	std::ostream& out = o.out();
 	std::ostream& (*endl)(std::ostream&) = std::endl;
+	
+	if ( o.isPreprocessor() ) {
+		o.print();
+		exit(EXIT_SUCCESS);
+	}
 	
 	if ( o.isVerbose() ) {
 		//print matrix
@@ -318,9 +330,9 @@ int main(int argc, char **argv) {
 				<< "\ntotal running time: " << d.getRunningTime() << " ms"
 				<< endl;
 		
+		exit(EXIT_SUCCESS);
 	} else {
 		out << "ERROR: DFS terminated due to too many bases" << endl;
+		exit(EXIT_FAILURE);
 	}
-		
-	return 0;
 }

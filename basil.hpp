@@ -61,7 +61,7 @@ namespace basil {
 		shared_ptr<permutation>
 		permutation_ptr;
 		
-	/** permutation tree traversal type */
+	/** permutation traversal type */
 	typedef 
 		permlib::SchreierTreeTransversal<permutation>
 		permutation_transversal;
