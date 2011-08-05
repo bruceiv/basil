@@ -69,7 +69,7 @@ namespace basil {
 	
 	ind dfs::getDimension() const { return dim - 1; }
 	
-	dfs::index_set dfs::getInitialCobasis() const { return initialCobasis; }
+	index_set dfs::getInitialCobasis() const { return initialCobasis; }
 	
 	bool dfs::isFinished() const { return !hitMaxBasis; }
 	
@@ -103,8 +103,6 @@ namespace basil {
 		allIndices = index_set(rows+1).set().set(0, false);
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
-		/* complementary angles are equivalent in arrangements */
-		if ( opts.aRepresentation ) gramMat.abs();
 		
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();
@@ -120,7 +118,7 @@ namespace basil {
 		workStack = std::deque<pivot>();
 	}
 	
-	dfs::index_set dfs::dfsFirstBasis() {
+	index_set dfs::dfsFirstBasis() {
 		
 		/* get initial solution from LRS */
 		if (! l.getFirstBasis() ) 
@@ -147,7 +145,7 @@ namespace basil {
 		return initialCobasis;
 	}
 	
-	bool dfs::dfsFromRoot(basil::dfs::index_set& root) {
+	bool dfs::dfsFromRoot(index_set& root) {
 		
 		/* Add new vertex representations / cobases adjacent to the root 
 		 * vertex to the work stack */
@@ -198,7 +196,7 @@ namespace basil {
 		return ! hitMaxBasis;
 	}
 	
-	void dfs::pushNewEdges(dfs::index_set& oldCob) {
+	void dfs::pushNewEdges(index_set& oldCob) {
 		
 		/* for each index in the old cobasis */
 		for (index_set_iter it = lrs::begin(oldCob); 
@@ -356,7 +354,7 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	bool dfs::isNewCobasis(dfs::index_set cob, dfs::vertex_data_ptr dat) {
+	bool dfs::isNewCobasis(index_set cob, dfs::vertex_data_ptr dat) {
 		
 		/* TODO look at adding canonTest, gramMotion from dfs.gap 
 		 * IsNewCobasis() */
@@ -411,7 +409,7 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	dfs::index_set_list dfs::matchingCobasisInvariants(dfs::index_set cob, 
+	dfs::index_set_list dfs::matchingCobasisInvariants(index_set cob, 
 			dfs::vertex_data_ptr dat) {
 		
 		/* TODO add cobasis stabilizer invariant from Symbal (?) */
@@ -490,7 +488,7 @@ namespace basil {
 		return matches;
 	}
 	
-	bool dfs::findSymmetry(dfs::index_set find, dfs::index_set_list list) {
+	bool dfs::findSymmetry(index_set find, dfs::index_set_list list) {
 		
 		if ( opts.assumesNoSymmetry || ! opts.stabSearch ) {
 			/* no stabilizer search, so only one pass through the list */
@@ -575,7 +573,7 @@ namespace basil {
 		return false;
 	}
 	
-	gram_matrix dfs::fastGramVec(dfs::index_set inc) {
+	gram_matrix dfs::fastGramVec(index_set inc) {
 		/* restrict the inner product matrix to the incidence set, then sort it 
 		 * to the canonical representation of that matrix */
 		return gramMat.restriction(inc).sort();
@@ -617,7 +615,7 @@ namespace basil {
 		return dat;
 	}
 	
-	void dfs::addCobasis(dfs::index_set const& cob, dfs::vertex_data_ptr dat) {
+	void dfs::addCobasis(index_set const& cob, dfs::vertex_data_ptr dat) {
 		/* TODO lots of stuff in dfs.gap AddCobasis() that should be looked at 
 		 */
 		

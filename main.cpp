@@ -180,18 +180,29 @@ namespace basil {
 			if ( ! ( dfsOpts_.gramVec || p->gs == provided ) ) {
 				p->gm = boost::make_shared<gram_matrix>(0);
 			} else {
+				bool aRep = dfsOpts_.aRepresentation || p->rep == arrangement;
 				switch( p->gs ) {
 				case provided:
-					/* do nothing */
+					if (dfsOpts_.aRepresentation &&  p->rep != arrangement) {
+						/* requested arrangment handling, but given gram 
+						 * matrix is presumably not set up for it, so 
+						 * reconstruct in a sign-insensitive manner  */
+						p->gm = boost::make_shared<gram_matrix>(
+								constructGram(mat(), true, doFactorize));
+					}
+					/* otherwise do nothing */
 					break;
 				case inexact:
+					/* construct inexact gram matrix (no factorization) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(mat(), false));
+							constructGram(mat(), aRep, false));
 					break;
 				case ommited: /* equivalent to "exact" */
 				case exact:
+					/* construct exact gram matrix (unless overridden by 
+					 * command line flag) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(mat(), doFactorize));
+							constructGram(mat(), aRep, doFactorize));
 					break;
 				}
 				p->gs = provided;

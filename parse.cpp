@@ -1,8 +1,6 @@
 #include <istream>
 #include <ostream>
 #include <vector>
-#include <set>
-#include <sstream>
 
 #include <boost/make_shared.hpp>
 
@@ -10,39 +8,12 @@
 
 #include "lrs/cobasis.hpp"
 
+#include "automorphism.hpp"
 #include "basil.hpp"
 #include "parse.hpp"
+#include "permUtils.hpp"
 
 namespace basil {
-	
-	/** Converts a permutation to a string compatible with its input format. 
-	 *  Derived from standard printing code in PermLib */
-	string in_str(permutation const& p) {
-		typedef permlib::dom_int dom_int;
-		std::ostringstream o;
-		
-		std::set<dom_int> worked;
-		for (dom_int x = 0; x < p.size(); ++x) {
-			dom_int px, startX;
-			startX = x;
-			px = p/x;
-			if (worked.count(x) || x == px) {
-				continue;
-			}
-
-			if ( ! worked.empty() ) o << " ,";
-			worked.insert(x);
-			o << " " << (x+1);
-			while (p/px != startX) {
-				o << " " << (px+1);
-				worked.insert(px);
-				px = p/px;
-			}
-			worked.insert(px);
-			o << " " << (px+1);
-		}
-		return o.str();
-	}
 	
 	std::ostream& operator<< (std::ostream& o, parse_results const& p) {
 		
@@ -99,8 +70,8 @@ namespace basil {
 		case exact: o << "gram auto" << endl; break;
 		case provided:
 			o << "gram begin" << endl;
-			for (ind i = 0; i < p.gm->dim(); ++i) {
-				for (ind j = 0; j < p.gm->dim(); ++j) {
+			for (uind i = 0; i < p.gm->dim(); ++i) {
+				for (uind j = 0; j < p.gm->dim(); ++j) {
 					o << " " << (*p.gm)(i, j);
 				}
 				o << endl;
@@ -109,17 +80,31 @@ namespace basil {
 			break;
 		}
 		
+		/* print symmetry group */
 		if ( p.g ) {
 			o << "symmetry begin" << endl;
-			/* gsgs is the strong generating set of *p.g, a list of pointers to 
-			 * permutations */
-			permutation_group::PERMlist& gsgs = p.g->S;
-			typedef permutation_group::PERMlist::iterator perm_iter;
-			for (perm_iter iter = gsgs.begin(); iter != gsgs.end(); ++iter) {
+			permutation_list gmgs = small_gen_set(*p.g);
+			typedef permutation_list::iterator perm_iter;
+			for (perm_iter iter = gmgs.begin(); iter != gmgs.end(); ++iter) {
 				o << in_str(**iter) << endl;
 			}
 			o << "symmetry end" << endl;
 		}
+		
+		/* TEST compute and print automorphism group */
+		permutation_group_ptr rag = compute_restricted_automorphisms(*p.gm);
+		o << "restricted automorphism group" << endl;
+		o << *rag;
+		permutation_list rmgs = small_gen_set(*rag);
+		o << "MGS[" << rmgs.size() << "]\n";
+		typedef permutation_list::iterator perm_iter;
+		for (perm_iter iter = rmgs.begin(); iter != rmgs.end(); ++iter) {
+				o << **iter << ",";
+		}
+		o << endl;
+		uind gO = p.g->order(), ragO = rag->order();
+		o << "Order(g)=" << gO << ", Order(rag)=" << ragO << " ";
+		o << (gO == ragO ? "match" : "NO MATCH") << endl;
 		
 		return o;
 	}

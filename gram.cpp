@@ -19,23 +19,23 @@
 #include <gmp.h>
 #include <gmpxx.h>
 
+#include "basil.hpp"
 #include "gram.hpp"
-
-#include "lrs/cobasis.hpp"
-#include "lrs/matrix.hpp"
 
 #include <iostream>
 
 namespace basil {
 	
-	gram_matrix::gram_matrix(long n) : n(n), m(new int*[n]), m_(new int[n*n]) { 
-		for (long i = 0; i < n; ++i) m[i] = m_+(i*n);
+	gram_matrix::gram_matrix(uind n, uind k_) : n(n), k_(k_), m(new int*[n]), 
+			m_(new int[n*n]) { 
+		for (uind i = 0; i < n; ++i) m[i] = m_+(i*n);
 		std::fill(m_, m_+(n*n), 0); /* zerofill matrix */
 	}
 	
 	gram_matrix::gram_matrix(gram_matrix const& that) 
-			: n(that.n), m(new int*[that.n]), m_(new int[that.n*that.n]) { 
-		for (long i = 0; i < n; ++i) /* copy row indices */
+			: n(that.n), k_(that.k_), m(new int*[that.n]), 
+			m_(new int[that.n*that.n]) { 
+		for (uind i = 0; i < n; ++i) /* copy row indices */
 			m[i] = m_+(that.m[i]-that.m_);
 		std::copy(that.m_, that.m_+(n*n), m_); /* copy matrix */
 	}
@@ -55,33 +55,30 @@ namespace basil {
 				m_ = new int[n*n];
 			}
 			
-			for (long i = 0; i < n; ++i) /* copy row indices */
+			for (uind i = 0; i < n; ++i) /* copy row indices */
 				m[i] = m_+(that.m[i]-that.m_);
 			std::copy(that.m_, that.m_+(n*n), m_); /* copy matrix */
+			k_ = that.k_;
 		}
 		
 		return *this;
 	}
 	
-	int& gram_matrix::operator() (long i, long j) { return m[i][j]; }
-	int gram_matrix::operator() (long i, long j) const { return m[i][j]; }
+	int& gram_matrix::operator() (uind i, uind j) 
+		{ return m[i][j]; }
 	
-	gram_matrix& gram_matrix::abs() {
-		
-		for (long i = 0; i < n*n; ++i) m_[i] = std::abs(m_[i]);
-		
-		return *this;
-	}
+	int gram_matrix::operator() (uind i, uind j) const 
+		{ return m[i][j]; }
 	
-	long gram_matrix::dim() const { return n; }
+	uind gram_matrix::dim() const { return n; }
 	
-	gram_matrix gram_matrix::restriction(lrs::index_set s) const {
-		gram_matrix r(s.count());
+	gram_matrix gram_matrix::restriction(index_set s) const {
+		gram_matrix r(s.count(), k_);
 		
-		long i = 0;
+		uind i = 0;
 		for (lrs::index_set_iter iterI = lrs::begin(s); 
 				iterI != lrs::end(s); ++iterI) {
-			long j = 0;
+			uind j = 0;
 			for (lrs::index_set_iter iterJ = lrs::begin(s); 
 					iterJ != lrs::end(s); ++iterJ) {
 				/* correct for 1-indexed index_set_iter */
@@ -98,38 +95,39 @@ namespace basil {
 	class gram_matrix_row_comparator 
 			: public std::binary_function<int*, int*, bool> {
 	public:
-		gram_matrix_row_comparator(long n = 0) : n(n) {}
+		gram_matrix_row_comparator(uind n = 0) : n(n) {}
 		
 		bool operator() (int* a, int* b) const 
 			{ return std::lexicographical_compare(a, a+n, b, b+n); }
 	
 	private:
 		/* length of the rows to compare */
-		long n;
+		uind n;
 	}; /* class gram_matrix_row_comparator */
 	
 	gram_matrix& gram_matrix::sort() {
 		
-		for (long i = 0; i < n; ++i) std::sort(m[i], m[i]+n); /* sort rows */
+		/* sort rows */
+		for (uind i = 0; i < n; ++i) std::sort(m[i], m[i]+n);
 		
-		gram_matrix_row_comparator compareRows(n);
-		std::sort(m, m+n, compareRows); /* lex-sort matrix by rows */
+		/* lex-sort matrix by rows */
+		std::sort(m, m+n, gram_matrix_row_comparator(n));
 		
 		return *this;
 	}
 	
 	bool operator== (gram_matrix const& a, gram_matrix const& b) { 
 		bool isEqual = a.n == b.n;
-		for (long i = 0; isEqual && i < a.n; ++i) {
+		for (uind i = 0; isEqual && i < a.n; ++i) {
 			isEqual = std::equal(a.m[i], a.m[i]+a.n, b.m[i]);
 		}
 		return isEqual;
 	}
 	
 	std::ostream& operator<< (std::ostream& o, gram_matrix const& g) {
-		for (long i = 0; i < g.n; ++i) {
+		for (uind i = 0; i < g.n; ++i) {
 			o << "| ";
-			for (long j = 0; j < g.n; ++j) o << g.m[i][j] << " ";
+			for (uind j = 0; j < g.n; ++j) o << g.m[i][j] << " ";
 		}
 		o << "|";
 		
@@ -142,7 +140,7 @@ namespace basil {
 	
 	std::size_t gram_matrix_hash::operator() (gram_matrix const& m) const {
 		std::size_t seed = 0UL;
-		for (long i = 0; i < m.n; ++i) for (long j = 0; j < m.n; ++j) {
+		for (uind i = 0; i < m.n; ++i) for (uind j = 0; j < m.n; ++j) {
 			/* combine values into hash */
 			boost::hash_combine(seed, m.m[i][j] );
 		}
@@ -253,7 +251,7 @@ namespace basil {
 			/* temp that can be factored down */
 			mpz_class t = x;
 			
-			for (unsigned long i = 0; t > 1; ++i) {
+			for (uind i = 0; t > 1; ++i) {
 				mpz_class p_i = 
 					( i == primes.size() ) ? nextPrime() : primes[i];
 				
@@ -282,10 +280,10 @@ namespace basil {
 			mpz_class t;
 			
 			/* ensure that primes is long enough to handle this list */
-			for (unsigned long i = primes.size(); i < l.size(); ++i) 
+			for (uind i = primes.size(); i < l.size(); ++i) 
 				nextPrime();
 			/* for each factor in the list, multiply into x, the product */
-			for (unsigned long i = 0; i < l.size(); ++i) {
+			for (uind i = 0; i < l.size(); ++i) {
 				switch( l[i] ) {
 				case 0: /* do nothing */	break;
 				case 1: x *= primes[i];		break;
@@ -312,7 +310,7 @@ namespace basil {
 			bool foundPrime = false;
 			while ( ! foundPrime ) {
 				cand += 2;
-				for (unsigned long i = 0; i < primes.size(); ++i) {
+				for (uind i = 0; i < primes.size(); ++i) {
 					mpz_class& p_i = primes[i];
 					
 					int c = cmp(mpz_class(p_i*p_i), cand);
@@ -342,7 +340,7 @@ namespace basil {
 	 *  @return The product of the two
 	 */
 	factor_list& mult(factor_list& rop, factor_list const& op) {
-		unsigned long i;
+		uind i;
 		
 		/* ensure rop is large enough to take all of op's factors */
 		for (i = rop.size(); i < op.size(); ++i) rop.push_back(0);
@@ -352,11 +350,11 @@ namespace basil {
 		return rop;
 	}
 	
-	/** Calculates the normed inner product |ip|*sqrt(fi*fj)/(ni*nj) */
+	/** Calculates the normed inner product ip*sqrt(fi*fj)/(ni*nj). If 
+	 *  ignoreSign is set, returns the absolute value of this.
+	 */
 	mpr norm(mpq_class ip, mpz_class ni, mpz_class nj, factor_list fi, 
 			factor_list fj, prime_factorizer product) {
-		
-// std::cout << "\ninit: ip=" << ip << " ni=" << ni << " nj=" << nj << " fi=" << product(fi) << " fj=" << product(fj);
 		
 		/* if ip == 0, return default (which initializes to 0, in canonical 
 		 * form) */
@@ -365,13 +363,11 @@ namespace basil {
 		/* first, multiply fj by fi */
 		mult(fj, fi);
 		
-// std::cout << "\nmult: fi=" << product(fi) << " fj=" << product(fj);
-		
 		/* now factor all the squares out into fi. fj, at the end should only 
 		 * have 0 or 1 of each prime, and fi should have half of what was 
 		 * removed  */
 		
-		unsigned long k;
+		uind k;
 		/* ensure fi is big enough */
 		for (k = fi.size(); k < fj.size(); ++k) fi.push_back(0);
 		/* perform square root */
@@ -383,36 +379,33 @@ namespace basil {
 			}
 		}
 		
-// std::cout << "\nsqrt: fi=" << product(fi) << " fj=" << product(fj);
-// std::cout << "\nret: " << mpr(mpz_class(abs(ip.get_num())*product(fi)),product(fj),mpz_class(ip.get_den()*ni*nj));
-// std::cout << std::endl;
-		
 		/* having canonicalized the radical, now generate the return value in 
 		 * canonical form */
-		return mpr( mpz_class( abs(ip.get_num()) * product(fi) ),
+		return mpr( mpz_class( ip.get_num() * product(fi) ),
 					product( fj ),
 					mpz_class( ip.get_den() * ni * nj ) );
 	}
 	
-	gram_matrix constructGram(lrs::matrix_mpq const& m, bool factorize) {
+	gram_matrix constructGram(matrix const& m, bool ignoreSign, 
+							  bool factorize) {
 		
 		/* typedefs */
 		typedef boost::unordered_map<mpr, int, mpr_hash> mpr_map;
 		
+		/* size of the matrix */
+		uind n = m.size();
+		
 		/* gram matrix being generated */
-		gram_matrix g(m.size());
+		gram_matrix g(n, 1);
 		
 		/* prime factorization functor */
 		prime_factorizer factor;
 		
-		/* current maximum inner product representative */
-		int mRep = 1;
-		/* map of unique mprs to their gram matrix representatives */
+		/* map of unique mprs (angles) to their gram matrix representatives */
 		mpr_map reps;
-		
-		/* preload 0 and 1 */
-		mpr zero; reps.insert(std::make_pair(zero, 0));
-		mpr one; one.n = 1; reps.insert(std::make_pair(one, 1));
+		/* save representative of one as 0 (as it is guaranteed to be included)
+		 */
+		mpr one; one.n = 1; reps.insert(std::make_pair(one, 0));
 		
 		/* 1/||m[i]|| = sqrt(a_d*a_n)/a_n -- nums[i] = a_n, facs[i] = a_n*a_d 
 		 * if factorization is not being performed, store the value in the rads 
@@ -423,7 +416,7 @@ namespace basil {
 		
 		/* calculate norm information */
 		mpq_class t;
-		for (long i = 0; i < m.size(); ++i) {
+		for (uind i = 0; i < n; ++i) {
 			t = lrs::inner_prod(m[i], m[i]);
 			
 // if ( i == 0 ) std::cout << "\nGRAM CONSTRUCTION\n";
@@ -444,19 +437,22 @@ namespace basil {
 				rads.push_back( t.get_num() * t.get_den() );
 			}
 			
-			g(i,i) = 1; /* normed inner product of a vector with itself is 1 */
+			/* normed inner product of a vector with itself is 1, represented 
+			 * by 0 */
+			g(i,i) = 0;
 		}
 		
 		/* calculate inner products */
-		for (long i = 0; i < m.size(); ++i) {
+		for (uind i = 0; i < n; ++i) {
 			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
-			for (long j = 0; j < i; ++j) {
+			for (uind j = 0; j < i; ++j) {
 				
 // if ( j == 0 ) std::cout << std::endl;
 // std::cout << " (" << i << "," << j << ")";
 // std::cout << " " << m[i] << "." << m[j];
 				
 				t = lrs::inner_prod(m[i], m[j]);
+				if ( ignoreSign ) t = abs(t);
 				
 				/* inner product, representing angle between m[i] and m[j], 
 				 * normalized to account for rescaling of input vectors. Note 
@@ -466,18 +462,21 @@ namespace basil {
 				 * each other */
 				
 				mpr ip;
-				if ( factorize ) {
-					ip = norm(t, nums[i], nums[j], facs[i], facs[j], factor);
-				} else {
-					/* NOTE this implictly assumes that the largest factor of 
-					 * rads[i]*rads[j] which is a perfect square is the same 
-					 * across all equivalent angles. This can only be 
-					 * guaranteed in general when that factor is 1 (i.e. 
-					 * rads[i]*rads[j] is square-free), but that requires a 
-					 * potentially expensive prime factorization calculation. */
-					ip = mpr( abs( t.get_num() ), 
-							  mpz_class( rads[i] * rads[j] ),
-							  mpz_class( t.get_den() * nums[i] * nums[j] ) );
+				if ( cmp(t,0) != 0 ) {
+					if ( factorize ) {
+						ip = norm(t, nums[i], nums[j], facs[i], facs[j], 
+								  factor);
+					} else {
+						/* NOTE this implictly assumes that the largest factor of 
+						* rads[i]*rads[j] which is a perfect square is the same 
+						* across all equivalent angles. This can only be 
+						* guaranteed in general when that factor is 1 (i.e. 
+						* rads[i]*rads[j] is square-free), but that requires a 
+						* potentially expensive prime factorization calculation. */
+						ip = mpr(t.get_num(), 
+								 mpz_class( rads[i] * rads[j] ),
+								 mpz_class( t.get_den() * nums[i] * nums[j] ));
+					}
 				}
 				
 				/* look for representative for this mpr, create new if not 
@@ -486,13 +485,12 @@ namespace basil {
 				mpr_map::iterator res = reps.find(ip);
 				if ( res == reps.end() ) {
 					/* representative not found, make new */
-					rep = ++mRep;
+					rep = g.k(); g.k()++;
 					reps.insert(std::make_pair(ip, rep));
 				} else {
 					/* representative found, use */
 					rep = res->second;
 				}
-				rep *= sgn(t); /* sign rep to match the inner product */
 				
 // std::cout << " " << ip << " -> " << rep;
 				

@@ -6,24 +6,25 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "lrs/cobasis.hpp"
-#include "lrs/matrix.hpp"
+#include "basil.hpp"
 
 namespace basil {
 	
 	/** Matrix for gram calculations. This will be an nxn square matrix of 
-	 *  integer representations of the angles between vectors of the input 
-	 *  matrix. The integers chosen to represent the angles are guaranteed to 
-	 *  be in one-to-one correspondance with the unique angles, but no further 
-	 *  guarantees are made.
+	 *  non-negative integer representations of the angles between vectors of 
+	 *  the input matrix. The integers chosen to represent the angles are 
+	 *  guaranteed to be in one-to-one correspondance with the unique angles, 
+	 *  and all values i, 0 <= i < k, are guaranteed to be included in any 
+	 *  unrestricted gram matrix, but no further guarantees are made.
 	 */
 	class gram_matrix {
 	friend class gram_matrix_hash;
 	public:
 		/** Constructs a zeroed gram matrix of dimension nxn. 
 		 *  @param n		The dimension of the gram matrix
+		 *  @param k_		The maximum value in the gram matrix
 		 */
-		gram_matrix(long n = 0);
+		gram_matrix(uind n = 0, uind k_ = 0);
 		
 		/** Copy constructor */
 		gram_matrix(gram_matrix const& that);
@@ -34,30 +35,41 @@ namespace basil {
 		/** Assignment operator */
 		gram_matrix& operator= (gram_matrix const& that);
 		
+		/** @return k, the maximum value in this matrix. Included for 
+		 *  compatibility with PermLib */
+		uind& k() { return k_; }
+		
+		/** @return k, the maximum value in this matrix. Included for 
+		 *  compatibility with PermLib */
+		uind k() const { return k_; }
+		
 		/** Indexing operator.
 		 *  @param i		The row index to retrieve
 		 *  @param j		the column index to retrieve
 		 *  @return a reference to the element at (i,j)
 		 */
-		int& operator() (long i, long j);
+		int& operator() (uind i, uind j);
 		
 		/** Indexing operator.
 		 *  @param i		The row index to retrieve
 		 *  @param j		the column index to retrieve
 		 *  @return The element at (i,j)
 		 */
-		int operator() (long i, long j) const;
+		int operator() (uind i, uind j) const;
 		
-		/** Takes the absolute value of every value in this matrix. This is 
-		 *  equivalent to asserting that for each m_i in the generating matrix, 
-		 *  m_i is equivalent to -m_i (true for arrangements, false for 
-		 *  polytopes).
-		 *  @return a reference to this matrix (now non-negative)
-		 */
-		gram_matrix& abs();
+		/** Synonym for operator(), for compatibility with PermLib */
+		inline int& at(unsigned long i, unsigned long j) 
+			{ return operator() (i,j); }
+		
+		/** Synonym for operator(), for compatibility with PermLib */
+		inline int at(unsigned long i, unsigned long j) const 
+			{ return operator() (i,j); }
 		
 		/** @return the dimension of the gram matrix */
-		long dim() const;
+		uind dim() const;
+		
+		/** Synonym for dim(), for compatibility with PermLib */
+		inline unsigned long dimension() const { return dim(); }
 		
 		/** Computes the restriction of the matrix to a given set of row and 
 		 *  column indices.
@@ -66,7 +78,7 @@ namespace basil {
 		 * 					n
 		 *  @return a matrix R such that R[i][j] = this[s[i],s[j]]
 		 */
-		gram_matrix restriction(lrs::index_set s) const;
+		gram_matrix restriction(index_set s) const;
 		
 		/** Sorts this matrix, first sorting each row, then lexicographically 
 		 *  sorting the matrix by rows. This has the effect of providing a 
@@ -81,10 +93,12 @@ namespace basil {
 		
 		/** Prints a gram matrix */
 		friend std::ostream& operator<< (std::ostream& o, gram_matrix const& g);
-	
+		
 	private:
 		/** The dimension of the gram matrix */
-		long n;
+		uind n;
+		/** The maximum value in the range of unique values in this matrix */
+		uind k_;
 		/** The matrix */
 		int **m;
 		/** Backing storage for the matrix (to save allocations) */
@@ -97,12 +111,17 @@ namespace basil {
 	 *  @param m			The input matrix, which must have no rows which are 
 	 *  					the zero vector. If a zero vector is supplied, 
 	 *  					undefined results ensue.
+	 *  @param ignoreSign	Ignore sign of inner products (that is, 
+	 *  					complementary angles are considered to be 
+	 *  					equivalent). This should be true for arrangements, 
+	 *  					false otherwise [false].
 	 *  @param factorize	Perform prime factorization for an exact answer. 
 	 *  					This can be set to false for quicker gram matrix 
 	 *  					generation, but may give incorrect answers [true].
 	 *  @return a gram matrix for the given input matrix
 	 */
-	gram_matrix constructGram(lrs::matrix_mpq const& m, bool factorize = true);
+	gram_matrix constructGram(matrix const& m, bool ignoreSign = false, 
+							  bool factorize = true);
 	
 	/** Functional to hash a gram_matrix. */
 	class gram_matrix_hash 
