@@ -22,13 +22,23 @@ namespace basil {
 	/** gram matrix state */
 	enum gram_state { 
 		/** not mentioned */
-		ommited,
+		gram_omitted,
 		/** gram matrix explicitly provided */
-		provided,
+		gram_provided,
 		/** exact auto-generation requested */
-		exact,
+		gram_auto,
 		/** inexact auto-generation requested */
-		inexact
+		gram_inexact
+	};
+	
+	/** state of given symmetry group */
+	enum symmetry_state {
+		/** not mentioned */
+		sym_omitted,
+		/** explicitly provided */
+		sym_provided,
+		/** auto-generation requested */
+		sym_auto
 	};
 	
 	/** Stores the results of an input parse. */
@@ -36,8 +46,8 @@ namespace basil {
 		
 		/** Default constructor */
 		parse_results() 
-				: name(), rep(halfspace), m(), g(), l(), gm(), gs(ommited), 
-				preLines(), postLines() {}
+				: name(), rep(halfspace), m(), g(), ss(sym_omitted), l(), 
+				gm(), gs(gram_omitted), preLines(), postLines() {}
 		
 		/** The name of the input file */
 		string name;
@@ -48,6 +58,8 @@ namespace basil {
 		matrix_ptr m;
 		/** Pointer to the permutation group for the problem */
 		permutation_group_ptr g;
+		/** parsed state of permutation group */
+		symmetry_state ss;
 		/** linearity indices */
 		index_set_ptr l;
 		/** gram matrix for constraints */

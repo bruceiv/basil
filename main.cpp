@@ -13,6 +13,7 @@
 
 #include <permlib/permlib_api.h>
 
+#include "automorphism.hpp"
 #include "basil.hpp"
 #include "dfs.hpp"
 #include "fmt.hpp"
@@ -34,7 +35,7 @@ namespace basil {
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
 				groupOverride(false), p(), verbose(false), doFactorize(true), 
-				preprocessor(false) {
+				preprocessor(false), genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -49,6 +50,9 @@ namespace basil {
 				("assume-no-symmetry", 
 					bool_switch(&dfsOpts_.assumesNoSymmetry),
 					"Forces Basil to assume there is no symmetry in the input.")
+				("generate-symmetry",
+					bool_switch(&genSymmetry),
+					"Forces Basil to generate a new symmetry group")
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
 					"Show all intermediate dictionaries in the search tree.")
@@ -168,45 +172,58 @@ namespace basil {
 			/* initial parse */
 			p = basil::parse(matIn());
 			
-			/* override group, if requested */
-			if ( groupOverride ) {
-				std::istream& in = grpIn();
-				string s; std::getline(in, s);
-				while ( s != string("symmetry begin") ) std::getline(in, s);
-				parsePermutationGroup(in, p->m->size());
-			}
-			
 			/* get gram matrix */
-			if ( ! ( dfsOpts_.gramVec || p->gs == provided ) ) {
+			bool aRep = dfsOpts_.aRepresentation || p->rep == arrangement;
+			if ( ! ( dfsOpts_.gramVec || p->gs == gram_provided ) ) {
 				p->gm = boost::make_shared<gram_matrix>(0);
 			} else {
-				bool aRep = dfsOpts_.aRepresentation || p->rep == arrangement;
 				switch( p->gs ) {
-				case provided:
+				case gram_provided:
 					if (dfsOpts_.aRepresentation &&  p->rep != arrangement) {
 						/* requested arrangment handling, but given gram 
 						 * matrix is presumably not set up for it, so 
 						 * reconstruct in a sign-insensitive manner  */
 						p->gm = boost::make_shared<gram_matrix>(
-								constructGram(mat(), true, doFactorize));
+								constructGram(*p->m, true, doFactorize));
 					}
 					/* otherwise do nothing */
 					break;
-				case inexact:
+				case gram_inexact:
 					/* construct inexact gram matrix (no factorization) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(mat(), aRep, false));
+							constructGram(*p->m, aRep, false));
 					break;
-				case ommited: /* equivalent to "exact" */
-				case exact:
+				case gram_omitted: /* equivalent to "exact" */
+				case gram_auto:
 					/* construct exact gram matrix (unless overridden by 
 					 * command line flag) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(mat(), aRep, doFactorize));
+							constructGram(*p->m, aRep, doFactorize));
 					break;
 				}
-				p->gs = provided;
+				p->gs = gram_provided;
 			}
+			
+			/* get symmetry group */
+			if ( groupOverride ) {
+				std::istream& in = grpIn();
+				string s; std::getline(in, s);
+				while ( s != string("symmetry begin") ) std::getline(in, s);
+				p->g = parsePermutationGroup(in, p->m->size());
+				p->ss = sym_provided;
+			}
+			if ( genSymmetry 
+					|| !( p->ss == sym_provided 
+						|| dfsOpts_.assumesNoSymmetry ) ) {
+				if ( ! p->gs == gram_provided ) {
+					p->gm = boost::make_shared<gram_matrix>(
+							constructGram(*p->m, aRep, doFactorize)
+					);
+				}
+				p->g = compute_restricted_automorphisms(*p->gm);
+				p->ss = sym_provided;
+			}
+			
 		}
 		
 		/** Prints the input to the output stream, in a manner consistent with 
@@ -289,6 +306,8 @@ namespace basil {
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */
 		bool preprocessor;
+		/** always generate new symmetry group [false] */
+		bool genSymmetry;
 	}; /* class opts */
 } /* namespace basil */
 

@@ -64,11 +64,11 @@ namespace basil {
 		}
 		
 		/* print gram matrix */
-		switch (p.gs) {
-		case ommited: /* do nothing */ break;
-		case inexact: o << "gram inexact" << endl; break;
-		case exact: o << "gram auto" << endl; break;
-		case provided:
+		switch ( p.gs ) {
+		case gram_omitted: /* do nothing */ break;
+		case gram_inexact: o << "gram inexact" << endl; break;
+		case gram_auto: o << "gram auto" << endl; break;
+		case gram_provided:
 			o << "gram begin" << endl;
 			for (uind i = 0; i < p.gm->dim(); ++i) {
 				for (uind j = 0; j < p.gm->dim(); ++j) {
@@ -81,7 +81,10 @@ namespace basil {
 		}
 		
 		/* print symmetry group */
-		if ( p.g ) {
+		switch ( p.ss ) {
+		case sym_omitted: /* do nothing */ break;
+		case sym_auto: o << "symmetry auto" << endl; break;
+		case sym_provided:
 			o << "symmetry begin" << endl;
 			permutation_list gmgs = small_gen_set(*p.g);
 			typedef permutation_list::iterator perm_iter;
@@ -89,22 +92,8 @@ namespace basil {
 				o << in_str(**iter) << endl;
 			}
 			o << "symmetry end" << endl;
+			break;
 		}
-		
-		/* TEST compute and print automorphism group */
-		permutation_group_ptr rag = compute_restricted_automorphisms(*p.gm);
-		o << "restricted automorphism group" << endl;
-		o << *rag;
-		permutation_list rmgs = small_gen_set(*rag);
-		o << "MGS[" << rmgs.size() << "]\n";
-		typedef permutation_list::iterator perm_iter;
-		for (perm_iter iter = rmgs.begin(); iter != rmgs.end(); ++iter) {
-				o << **iter << ",";
-		}
-		o << endl;
-		uind gO = p.g->order(), ragO = rag->order();
-		o << "Order(g)=" << gO << ", Order(rag)=" << ragO << " ";
-		o << (gO == ragO ? "match" : "NO MATCH") << endl;
 		
 		return o;
 	}
@@ -192,20 +181,25 @@ namespace basil {
 		while ( in ) {
 			getContentLine(in, s, &p->postLines);
 			
-			if ( prefixMatch(s, "symmetry begin") ) {
-				/* parse permutation group, starting here */
-				p->g = parsePermutationGroup(in, p->m->size());
+			if ( prefixMatch(s, "symmetry") ) {
+				if ( prefixMatch(s, "symmetry auto") ) {
+					p->ss = sym_auto;
+				} else if ( prefixMatch(s, "symmetry begin") ) {
+					p->ss = sym_provided;
+					p->g = parsePermutationGroup(in, p->m->size());
+				} else goto pushLine;
 			} else if ( prefixMatch(s, "gram") ) {
 				if ( prefixMatch(s, "gram auto") ) {
-					p->gs = exact;
+					p->gs = gram_auto;
 				} else if ( prefixMatch(s, "gram inexact") ) {
-					p->gs = inexact;
+					p->gs = gram_inexact;
 				} else if ( prefixMatch(s, "gram begin") ) {
-					p->gs = provided;
+					p->gs = gram_provided;
 					p->gm = parseGram(in, p->m->size());
-				}
+				} else goto pushLine;
 			} else {
-				if ( in ) p->postLines.push_back(s);
+				if ( in ) 
+					pushLine: p->postLines.push_back(s);
 			}
 		}
 		
