@@ -3,12 +3,88 @@
 
 #include <set>
 #include <sstream>
+#include <vector>
 
 #include <permlib/permlib_api.h>
 
 #include "basil.hpp"
 
 namespace basil {
+	
+	/** a representation of a permutation cycle */
+	typedef std::vector<permlib::dom_int> permutation_cycle;
+	/** a list of the cycles of a permutation */
+	typedef std::vector<permutation_cycle> permutation_cycle_list;
+	
+	/** Extracts the list of cycles from a permutation
+	 *  @param p		The permutation to extract the cycles from
+	 *  @return A representation fo p as a list of disjoint cycles
+	 */
+	static permutation_cycle_list cycle_list(permutation const& p) {
+		typedef permlib::dom_int dom_int;
+		
+		permutation_cycle_list cycles;
+		
+		/* set of group elements that have been added to their cycle */
+		std::set<dom_int> worked;
+		for (dom_int x = 0; x < p.size(); ++x) {
+			dom_int px, startX;
+			startX = x;		/* the start of the cycle */
+			px = p/x;		/* the permutation applied to x */
+			
+			/* if x has already been found, or is not moved, ignore */
+			if (worked.count(x) || x == px) {
+				continue;
+			}
+			
+			/*start the cycle */
+			permutation_cycle c;
+			worked.insert(x);
+			c.push_back(x);
+			
+			/* while the cycle is not complete, follow it */
+			while ( p/px != startX ) {
+				worked.insert(px);
+				c.push_back(px);
+				px = p/px;
+			}
+			
+			/* finish the cycle */
+			worked.insert(px);
+			c.push_back(px);
+			cycles.push_back(c);
+		}
+		
+		return cycles;
+	}
+	
+	/** Reconstitutes a permutation from a list of cycles.
+	 *  @param n		The number of elements the permutation acts on
+	 *  @param l		The list of cycles defining the permutation
+	 */
+	static permutation perm(uind n, permutation_cycle_list const& l) {
+		typedef permlib::dom_int dom_int;
+		
+		dom_int p_i[n];
+		for (uind i = 0; i < n; ++i) p_i[i] = i;
+		
+		for (permutation_cycle_list::const_iterator iter = l.begin(); 
+			 iter != l.end(); ++iter) {
+			permutation_cycle::const_iterator eIter = iter->begin();
+			dom_int startX = *eIter;
+			dom_int last = startX;
+			++eIter;
+			while ( eIter != iter->end() ) {
+				dom_int next = *eIter;
+				p_i[last] = next;
+				last = next;
+				++eIter;
+			}
+			p_i[last] = startX;
+		}
+		
+		return permutation(p_i, p_i+n);
+	}
 	
 	/** Converts a permutation to a string in a cycle representation compatible 
 	 *  with its input format. Derived from standard printing code in PermLib
@@ -17,35 +93,20 @@ namespace basil {
 	 *  		delimited elements, where the cycles are ordered by minimum 
 	 *  		element
 	 */
-	string in_str(permutation const& p) {
-		typedef permlib::dom_int dom_int;
+	static string in_str(permutation const& p) {
 		std::ostringstream o;
+		permutation_cycle_list l = cycle_list(p);
 		
-		/* set of group elements that have been added to their cycle */
-		std::set<dom_int> worked;
-		/* for each element in the permutation */
-		for (dom_int x = 0; x < p.size(); ++x) {
-			dom_int px, startX;
-			startX = x;		/* the start of the cycle */
-			px = p/x;		/* the permutation applied to x */
-			/* if x has already been found, or is not moved, ignore */
-			if (worked.count(x) || x == px) {
-				continue;
+		bool isFirst = true;
+		for (permutation_cycle_list::iterator iter = l.begin(); 
+			 iter != l.end(); ++iter) {
+			if ( isFirst ) isFirst = false; else o << " ,";
+			for (permutation_cycle::iterator iter2 = iter->begin(); 
+				 iter2 != iter->end(); ++iter2) {
+				o << " " << (*iter2)+1;
 			}
-			
-			/* start the cycle */
-			if ( ! worked.empty() ) o << " ,";
-			worked.insert(x);
-			o << " " << (x+1);
-			/* while the cycle is not complete, follow it */
-			while (p/px != startX) {
-				o << " " << (px+1);
-				worked.insert(px);
-				px = p/px;
-			}
-			worked.insert(px);
-			o << " " << (px+1);
 		}
+		
 		return o.str();
 	}
 	
@@ -54,7 +115,7 @@ namespace basil {
 	 *  @return The strong generating set of generators for the group, as a 
 	 *  		list of pointers to permutations.
 	 */
-	permutation_list strong_gen_set(permutation_group const& g) {
+	static permutation_list strong_gen_set(permutation_group const& g) {
 		return g.S;
 	}
 	
@@ -63,7 +124,7 @@ namespace basil {
 	 *  @return The strong generating set of generators for the group, as a 
 	 *  		list of pointers to permutations.
 	 */
-	permutation_list& strong_gen_set(permutation_group& g) {
+	static permutation_list& strong_gen_set(permutation_group& g) {
 		return g.S;
 	}
 	
@@ -72,7 +133,7 @@ namespace basil {
 	 *  @return A hopefully small list of generators for the group, as a list 
 	 *  		of pointers to permutations.
 	 */
-	permutation_list small_gen_set(permutation_group& g) {
+	static permutation_list small_gen_set(permutation_group& g) {
 		typedef permutation_list::iterator perm_iter;
 		
 		perm_iter iter = g.S.begin();

@@ -103,6 +103,7 @@ namespace basil {
 		allIndices = index_set(rows+1).set().set(0, false);
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
+		if ( opts.aRepresentation ) gramMat = gramMat.abs();
 		
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();

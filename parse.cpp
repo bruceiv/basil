@@ -255,7 +255,8 @@ namespace basil {
 		/* create new matrix and load data */
 		gram_matrix_ptr gm = boost::make_shared<gram_matrix>(n);
 		for (ind i = 0; i < n; ++i) for (ind j = 0; j < n; ++j) {
-			in >> (*gm)(i,j);
+			in >> gm->at(i,j);
+			if ( gm->at(i,j) >= (int)gm->k() ) gm->k() = gm->at(i,j) + 1;
 		}
 		
 		/* ignore up to end line */

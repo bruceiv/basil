@@ -15,6 +15,15 @@ namespace basil {
 	permutation_group_ptr compute_restricted_automorphisms(
 		gram_matrix const& g);
 	
+	/** Computes the restricted automorphism group for the arrangement with the 
+	 *  given gram matrix.
+	 *  @param g			The gram matrix of the arrangement to compute the 
+	 *  					restricted automorphism group for.
+	 *  @return the restricted automorphism group for the arrangement
+	 */
+	permutation_group_ptr compute_arrangement_automorphisms(
+		gram_matrix const& g);
+	
 } /* namespace basil */
 
 #endif /* _AUTOMORPHISM_HPP_ */

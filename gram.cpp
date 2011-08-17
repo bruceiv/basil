@@ -64,11 +64,9 @@ namespace basil {
 		return *this;
 	}
 	
-	int& gram_matrix::operator() (uind i, uind j) 
-		{ return m[i][j]; }
+	int& gram_matrix::at(uind i, uind j) { return m[i][j]; }
 	
-	int gram_matrix::operator() (uind i, uind j) const 
-		{ return m[i][j]; }
+	int gram_matrix::at(uind i, uind j) const { return m[i][j]; }
 	
 	uind gram_matrix::dim() const { return n; }
 	
@@ -89,6 +87,47 @@ namespace basil {
 		}
 		
 		return r;
+	}
+	
+	gram_matrix gram_matrix::abs() const {
+		gram_matrix a(n);
+		for (uind i = 0; i < n; ++i) for (uind j = 0; j < n; ++j) 
+			a.m[i][j] = std::abs(m[i][j]);
+		return a;
+	}
+	
+	gram_matrix gram_matrix::doubled() const {
+		gram_matrix d(2*n);
+		for (uind i = 0; i < n; ++i) for (uind j = 0; j < n; ++j) {
+			uind iPos = 2*i, jPos = 2*j; uind iNeg = iPos+1, jNeg = jPos+1;
+			int xPos = m[i][j]; int xNeg = -xPos;
+			d.m[iPos][jPos] = d.m[iNeg][jNeg] = xPos;
+			d.m[iPos][jNeg] = d.m[iNeg][jPos] = xNeg;
+		}
+		return d;
+	}
+	
+	gram_matrix gram_matrix::permlibCanon() const {
+		
+		typedef boost::unordered_map<int,int> rep_map;
+		
+		gram_matrix c(n);
+		rep_map reps;
+		
+		for (uind i = 0; i < n; ++i) for (uind j = 0; j < n; ++j) {
+			int val = m[i][j];
+			rep_map::iterator iter = reps.find(val);
+			int rep;
+			if ( iter == reps.end() ) {
+				rep = c.k_++;
+				reps.insert(std::make_pair(val, rep));
+			} else {
+				rep = iter->second;
+			}
+			c.m[i][j] = rep;
+		}
+		
+		return c;
 	}
 	
 	/** Functional to lexicograpically compare two rows of a gram matrix */
@@ -381,13 +420,12 @@ namespace basil {
 		
 		/* having canonicalized the radical, now generate the return value in 
 		 * canonical form */
-		return mpr( mpz_class( ip.get_num() * product(fi) ),
+		return mpr( mpz_class( abs( ip.get_num() ) * product(fi) ),
 					product( fj ),
 					mpz_class( ip.get_den() * ni * nj ) );
 	}
 	
-	gram_matrix constructGram(matrix const& m, bool ignoreSign, 
-							  bool factorize) {
+	gram_matrix constructGram(matrix const& m, bool factorize) {
 		
 		/* typedefs */
 		typedef boost::unordered_map<mpr, int, mpr_hash> mpr_map;
@@ -403,9 +441,10 @@ namespace basil {
 		
 		/* map of unique mprs (angles) to their gram matrix representatives */
 		mpr_map reps;
-		/* save representative of one as 0 (as it is guaranteed to be included)
-		 */
-		mpr one; one.n = 1; reps.insert(std::make_pair(one, 0));
+		/* save representatives of zero and one as 0 and 1 */
+		mpr zero; reps.insert(std::make_pair(zero, 0));
+		mpr one; one.n = 1; reps.insert(std::make_pair(one, 1));
+		int maxRep = 1;
 		
 		/* 1/||m[i]|| = sqrt(a_d*a_n)/a_n -- nums[i] = a_n, facs[i] = a_n*a_d 
 		 * if factorization is not being performed, store the value in the rads 
@@ -438,8 +477,8 @@ namespace basil {
 			}
 			
 			/* normed inner product of a vector with itself is 1, represented 
-			 * by 0 */
-			g(i,i) = 0;
+			 * by 1 */
+			g(i,i) = 1;
 		}
 		
 		/* calculate inner products */
@@ -452,7 +491,6 @@ namespace basil {
 // std::cout << " " << m[i] << "." << m[j];
 				
 				t = lrs::inner_prod(m[i], m[j]);
-				if ( ignoreSign ) t = abs(t);
 				
 				/* inner product, representing angle between m[i] and m[j], 
 				 * normalized to account for rescaling of input vectors. Note 
@@ -467,12 +505,13 @@ namespace basil {
 						ip = norm(t, nums[i], nums[j], facs[i], facs[j], 
 								  factor);
 					} else {
-						/* NOTE this implictly assumes that the largest factor of 
-						* rads[i]*rads[j] which is a perfect square is the same 
-						* across all equivalent angles. This can only be 
-						* guaranteed in general when that factor is 1 (i.e. 
-						* rads[i]*rads[j] is square-free), but that requires a 
-						* potentially expensive prime factorization calculation. */
+						/* NOTE this implictly assumes that the largest factor 
+						 * of rads[i]*rads[j] which is a perfect square is the 
+						 * same across all equivalent angles. This can only be 
+						 * guaranteed in general when that factor is 1 (i.e. 
+						 * rads[i]*rads[j] is square-free), but that requires a 
+						 * potentially expensive prime factorization 
+						 * calculation. */
 						ip = mpr(t.get_num(), 
 								 mpz_class( rads[i] * rads[j] ),
 								 mpz_class( t.get_den() * nums[i] * nums[j] ));
@@ -485,12 +524,14 @@ namespace basil {
 				mpr_map::iterator res = reps.find(ip);
 				if ( res == reps.end() ) {
 					/* representative not found, make new */
-					rep = g.k(); g.k()++;
+					rep = ++maxRep;
 					reps.insert(std::make_pair(ip, rep));
 				} else {
 					/* representative found, use */
 					rep = res->second;
 				}
+				/* put proper sign on representative */
+				rep *= sgn( t );
 				
 // std::cout << " " << ip << " -> " << rep;
 				

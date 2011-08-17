@@ -48,22 +48,22 @@ namespace basil {
 		 *  @param j		the column index to retrieve
 		 *  @return a reference to the element at (i,j)
 		 */
-		int& operator() (uind i, uind j);
+		inline int& operator() (uind i, uind j)
+			{ return at(i, j); }
 		
 		/** Indexing operator.
 		 *  @param i		The row index to retrieve
 		 *  @param j		the column index to retrieve
 		 *  @return The element at (i,j)
 		 */
-		int operator() (uind i, uind j) const;
+		int operator() (uind i, uind j) const
+			{ return at(i, j); }
 		
 		/** Synonym for operator(), for compatibility with PermLib */
-		inline int& at(unsigned long i, unsigned long j) 
-			{ return operator() (i,j); }
+		int& at(unsigned long i, unsigned long j);
 		
 		/** Synonym for operator(), for compatibility with PermLib */
-		inline int at(unsigned long i, unsigned long j) const 
-			{ return operator() (i,j); }
+		int at(unsigned long i, unsigned long j) const;
 		
 		/** @return the dimension of the gram matrix */
 		uind dim() const;
@@ -79,6 +79,24 @@ namespace basil {
 		 *  @return a matrix R such that R[i][j] = this[s[i],s[j]]
 		 */
 		gram_matrix restriction(index_set s) const;
+		
+		/** @return the gram matrix equivalent to taking the absolute value of 
+		 *  every value in this matrix.
+		 */
+		gram_matrix abs() const;
+		
+		/** @return the gram matrix where each row is doubled with it's 
+		 *  negation. (That is, will return a gram matrix D = (d_i,j) such for 
+		 *  the original matrix A = (a_i,j), a_i,j = x => d_2i,2j = x, 
+		 *  d_2i+1,2j+1 = x, d_2i,2j+1 = -x, d_2i+1,2j = -x ) 
+		 */
+		gram_matrix doubled() const;
+		
+		/** @return the gram matrix in a format that PermLib can deal with it 
+		 *  in, namely with all values in the matrix in the range [0,k), and 
+		 *  each value in that range appearing at least once.
+		 */
+		gram_matrix permlibCanon() const;
 		
 		/** Sorts this matrix, first sorting each row, then lexicographically 
 		 *  sorting the matrix by rows. This has the effect of providing a 
@@ -111,17 +129,12 @@ namespace basil {
 	 *  @param m			The input matrix, which must have no rows which are 
 	 *  					the zero vector. If a zero vector is supplied, 
 	 *  					undefined results ensue.
-	 *  @param ignoreSign	Ignore sign of inner products (that is, 
-	 *  					complementary angles are considered to be 
-	 *  					equivalent). This should be true for arrangements, 
-	 *  					false otherwise [false].
 	 *  @param factorize	Perform prime factorization for an exact answer. 
 	 *  					This can be set to false for quicker gram matrix 
 	 *  					generation, but may give incorrect answers [true].
 	 *  @return a gram matrix for the given input matrix
 	 */
-	gram_matrix constructGram(matrix const& m, bool ignoreSign = false, 
-							  bool factorize = true);
+	gram_matrix constructGram(matrix const& m, bool factorize = true);
 	
 	/** Functional to hash a gram_matrix. */
 	class gram_matrix_hash 
