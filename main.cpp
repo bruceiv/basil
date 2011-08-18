@@ -119,6 +119,8 @@ namespace basil {
 					value<string>(&outFileName),
 					"Output file name. Standard output if none supplied; may "
 					"also be supplied as second positional argument.")
+				("help,h",
+					"Produce help message.")
 				;
 			positional_options_description p;
  			p.add("input-file", 1).add("output-file", 1);
@@ -127,6 +129,12 @@ namespace basil {
 			store(command_line_parser(argc, argv)
 					.options(o).positional(p).allow_unregistered().run(), v);
 			notify(v);
+			
+			if ( v.count("help") ) {
+				/* print usage information and exit */
+				std::cout << o << std::endl;
+				exit(EXIT_FAILURE);
+			}
 			
 			/* mark input as split if group file explicitly set */
 			if ( v.count("group-file") ) {
