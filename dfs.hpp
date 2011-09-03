@@ -56,7 +56,6 @@ namespace basil {
 				out(&std::cout), printBasis(0), printNew(false), printRay(0), 
 				printVertex(0), showsAllDicts(false), stabSearch(false) {}
 		
-		
 		/** Sets (or unsets) the aRepresentation option */
 		dfs_opts& inARepresentation(bool opt = true)
 			{ aRepresentation = opt; return *this; }
@@ -114,6 +113,10 @@ namespace basil {
 		dfs_opts& doPrintNew(bool opt = true)
 			{ printNew = opt; return *this; }
 		
+		/** Activates (or deactivates) the trace printing option */
+		dfs_opts& doPrintTrace(bool opt = true)
+			{ printTrace = opt; return *this; }
+		
 		/** Sets the ray printing interval */
 		dfs_opts& printRayAt(long n)
 			{ printRay = n; return *this; }
@@ -169,6 +172,8 @@ namespace basil {
 		long printBasis;
 		/** print the new {cobasis,ray,vertex} when seen */
 		bool printNew;
+		/** trace the full execution of the DFS */
+		bool printTrace;
 		/** number of new (up to symmetry) rays to print a progress report 
 		 *  after; if 0, will never print [0]. */
 		long printRay;

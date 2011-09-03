@@ -79,7 +79,7 @@ namespace basil {
 	
 	/** list of permutation type */
 	typedef
-		typename permutation_group::PERMlist
+		permutation_group::PERMlist
 		permutation_list;
 	
 } /* namespace basil */

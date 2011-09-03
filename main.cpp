@@ -96,6 +96,9 @@ namespace basil {
 					"Convenience for print-{basis,ray,vertex} with the given "
 					"parameter. If any of the others are given, they take "
 					"precedence")
+				("print-trace",
+					bool_switch(&dfsOpts_.printTrace),
+					"Print the full trace of the DFS (warning: very verbose).")
 				("preprocess,p", 
 					bool_switch(&preprocessor), 
 					"Do not DFS, simply do preprocessing work, and print "
@@ -180,8 +183,14 @@ namespace basil {
 			/* initial parse */
 			p = basil::parse(matIn());
 			
+			/* set representation */
+			if ( ! dfsOpts_.aRepresentation ) {
+				if ( p->rep == arrangement ) dfsOpts_.inARepresentation();
+				else if ( p->rep == vertex ) dfsOpts_.inVRepresentation();
+			}
+			
 			/* get gram matrix */
-			bool aRep = dfsOpts_.aRepresentation || p->rep == arrangement;
+			bool aRep = dfsOpts_.aRepresentation;
 			if ( ! ( dfsOpts_.gramVec || p->gs == gram_provided ) ) {
 				p->gm = boost::make_shared<gram_matrix>(0);
 			} else {

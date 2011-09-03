@@ -138,9 +138,16 @@ namespace basil {
 		vector_mpz_ptr sol(l.getVertex());
 		vertex_data_ptr dat(vertexData(cob, sol));
 		
+		if ( opts.printTrace ) {
+			opts.output() << "#I initial basis: " << fmt( cob->cob ) << " " 
+						<< *sol << "\n";
+		}
+		
 		initialCobasis = cob->cob;
 		addVertex(dat);
 		getRays();
+		
+		cobasisCache.insert(initialCobasis);
 		
 		/* return the initial cobasic indices */
 		return initialCobasis;
@@ -178,6 +185,11 @@ namespace basil {
 			l.pivot(p.leave, p.enter);
 			/* print the dictionary pivoted to */
 			if ( opts.showsAllDicts ) l.printDict();
+			if ( opts.printTrace ) {
+				opts.output() << "#I traversing " << fmt( dict->cob ) 
+							<< " through (" << p.leave << "," << p.enter 
+							<< ")\n";
+			}
 			
 			/* get the new cobasis */
 			cobasis_ptr cob(l.getCobasis(0));
@@ -213,13 +225,28 @@ namespace basil {
 			if ( opts.aRepresentation ) {
 				/* use arrangement pivot selection */
 				entering = l.arrangementRatio(leave);
+				if ( opts.printTrace ) {
+					opts.output() << "#I arrangement ratio test\n";
+				}
 			} else if ( opts.lexOnly ) {
 				/* calculate entering index lexicographically (BAD) */
 				enter = l.lexRatio(leave);
+				if ( opts.printTrace ) {
+					opts.output() << "#I lexicograpic ratio test\n";
+				}
 				if (enter >= 0) entering.set(enter); else continue;
 			} else {
 				/* calculate set of valid entering indices */
 				entering = l.allRatio(leave);
+				if ( opts.printTrace ) {
+					opts.output() << "#I all ratio test\n";
+				}
+			}
+			
+			if ( opts.printTrace ) {
+				opts.output() << "#I for leaving index { " << leave 
+							<< " } possible entering " << fmt( entering ) 
+							<< "\n";
 			}
 			
 			/* for each valid entering index */
@@ -261,6 +288,12 @@ namespace basil {
 						/* add this vertex to the search stack */
 						workStack.push_back(pivot(oldCob, leave, enter));
 						
+						if ( opts.printTrace ) {
+							opts.output() << "#I pushing new vertex: " 
+										<< fmt( cob->cob ) << " " << *sol 
+										<< "\n";
+						}
+						
 					} else if (oldVertex->coords == newVertex->coords 
 								|| ! opts.dualFacetTrick ) {
 						
@@ -271,14 +304,32 @@ namespace basil {
 						if ( isNewCobasis(cob->cob, newVertex) ) {
 							addCobasis(cob->cob, oldVertex);
 							workStack.push_back(pivot(oldCob, leave, enter));
+							
+							if ( opts.printTrace ) {
+								opts.output() << "#I pushing new cobasis: " 
+											<< fmt( cob->cob ) << " " << *sol 
+											<< "\n";
+							}
+						} else if ( opts.printTrace ) {
+							opts.output() << "#I ignoring cobasis " 
+										<< fmt( cob->cob ) << " by symmetry\n";
 						}
 						
-					} /* else {
-						// we assume that if the new cobasis is defining a 
-						// different vertex, but that vertex is symmetric, then 
-						// its neighbours will be symmetric to those of the 
-						// known vertex. Prune via the dual facet trick.
-					} */
+					} else {
+						
+						/* we assume that if the new cobasis is defining a 
+						 * different vertex, but that vertex is symmetric, then 
+						 * its neighbours will be symmetric to those of the 
+						 * known vertex. Prune via the dual facet trick. */
+						if ( opts.printTrace ) {
+							opts.output() << "#I ignoring cobasis " 
+										<< fmt( cob->cob ) << " by dual facet "
+										"trick\n";
+						}
+					}
+				} else if ( opts.printTrace ) {
+					opts.output() << "#I seen cobasis " << fmt( cob->cob ) 
+								<< " before\n";
 				}
 			}
 		}
