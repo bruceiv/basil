@@ -250,7 +250,7 @@ namespace basil {
 	}; /* class mpz_class_hash */
 	
 	/** Postive integer representation as exponents of prime factors. */
-	typedef std::vector<mp_bitcnt_t> factor_list;
+	typedef std::vector<unsigned long> factor_list;
 	
 	/** Functor to compute the prime factorization of multi-precision integers. 
 	 *  May maintain internal state to make subsequent factorizations faster. */
