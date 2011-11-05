@@ -425,7 +425,7 @@ namespace basil {
 					mpz_class( ip.get_den() * ni * nj ) );
 	}
 	
-	gram_matrix constructGram(matrix const& m, bool factorize) {
+	gram_matrix constructGram(matrix const& m, bool normalize) {
 		
 		/* typedefs */
 		typedef boost::unordered_map<mpr, int, mpr_hash> mpr_map;
@@ -446,23 +446,19 @@ namespace basil {
 		mpr one; one.n = 1; reps.insert(std::make_pair(one, 1));
 		int maxRep = 1;
 		
-		/* 1/||m[i]|| = sqrt(a_d*a_n)/a_n -- nums[i] = a_n, facs[i] = a_n*a_d 
-		 * if factorization is not being performed, store the value in the rads 
-		 * vector */
+		/* 1/||m[i]|| = sqrt(a_d*a_n)/a_n -- nums[i] = a_n, facs[i] = a_n*a_d */
 		std::vector<mpz_class> nums;
 		std::vector<factor_list> facs;
-		std::vector<mpz_class> rads;
 		
 		/* calculate norm information */
 		mpq_class t;
 		for (uind i = 0; i < n; ++i) {
-			t = lrs::inner_prod(m[i], m[i]);
 			
 // if ( i == 0 ) std::cout << "\nGRAM CONSTRUCTION\n";
 // std::cout << " (" << i << "," << i << ") " << t;
-			
-			nums.push_back(t.get_num());
-			if ( factorize ) {
+			if ( normalize ) {
+				t = lrs::inner_prod(m[i], m[i]);
+				nums.push_back(t.get_num());
 				/* NOTE: this assumes here that m[i] is not a zero vector - bad 
 				 * things happen otherwise */
 // std::cout << " t:" << t.get_num() << "/" << t.get_den();
@@ -472,8 +468,6 @@ namespace basil {
 // std::cout << " fd:" << factor(fd);
 				facs.push_back( mult(fn, fd) );
 // std::cout << " fi:" << factor(facs.back());
-			} else {
-				rads.push_back( t.get_num() * t.get_den() );
 			}
 			
 			/* normed inner product of a vector with itself is 1, represented 
@@ -501,20 +495,15 @@ namespace basil {
 				
 				mpr ip;
 				if ( cmp(t,0) != 0 ) {
-					if ( factorize ) {
+					if ( normalize ) {
 						ip = norm(t, nums[i], nums[j], facs[i], facs[j], 
 								  factor);
 					} else {
-						/* NOTE this implictly assumes that the largest factor 
-						 * of rads[i]*rads[j] which is a perfect square is the 
-						 * same across all equivalent angles. This can only be 
-						 * guaranteed in general when that factor is 1 (i.e. 
-						 * rads[i]*rads[j] is square-free), but that requires a 
-						 * potentially expensive prime factorization 
-						 * calculation. */
+						/* NOTE this assumes that all vectors that are 
+						 * symmetric to one another have the same norm */
 						ip = mpr(t.get_num(), 
-								 mpz_class( rads[i] * rads[j] ),
-								 mpz_class( t.get_den() * nums[i] * nums[j] ));
+								 mpz_class(1),
+								 t.get_den());
 					}
 				}
 				

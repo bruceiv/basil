@@ -129,12 +129,13 @@ namespace basil {
 	 *  @param m			The input matrix, which must have no rows which are 
 	 *  					the zero vector. If a zero vector is supplied, 
 	 *  					undefined results ensue.
-	 *  @param factorize	Perform prime factorization for an exact answer. 
-	 *  					This can be set to false for quicker gram matrix 
-	 *  					generation, but may give incorrect answers [true].
+	 *  @param normalize	Normalize input vectors. If all vectors in the same 
+	 *  					orbit are known to have the same norm, this is an 
+	 *  					expensive and unneeded calculation, and may be 
+	 *  					avoided by setting this flag false. [true]
 	 *  @return a gram matrix for the given input matrix
 	 */
-	gram_matrix constructGram(matrix const& m, bool factorize = true);
+	gram_matrix constructGram(matrix const& m, bool normalize = true);
 	
 	/** Functional to hash a gram_matrix. */
 	class gram_matrix_hash 

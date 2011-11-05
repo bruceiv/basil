@@ -34,7 +34,7 @@ namespace basil {
 		 */
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
-				groupOverride(false), p(), verbose(false), doFactorize(true), 
+				groupOverride(false), p(), verbose(false), doNormalize(true), 
 				preprocessor(false), genSymmetry(false) {
 			
 			using namespace boost::program_options;
@@ -61,12 +61,12 @@ namespace basil {
 						->default_value(true)->implicit_value(false),
 					"Deactivate gram vector hashing (gram vectors are a cheap "
 					"optimization, but their calculation may be expensive)")
-				("inexact-gram",
-					bool_switch(&doFactorize)
+				("no-norm",
+					bool_switch(&doNormalize)
 						->default_value(true)->implicit_value(false),
-					"Do not use prime factorization in computation of the gram "
-					"matrix. Will result in (potentially much) quicker matrix "
-					"generation, at the possible cost of incorrect results.")
+					"If it is known that all symmetric vectors have the same "
+					"norm, this flag will save expensive normalization "
+					"calculations in gram matrix construction.")
 				("debug-gram",
 					bool_switch(&dfsOpts_.debugGram),
 					"Print gram vectors for vertices/rays/cobases that are "
@@ -201,12 +201,12 @@ namespace basil {
 						 * matrix is presumably not set up for it, so 
 						 * reconstruct in a sign-insensitive manner  */
 						p->gm = boost::make_shared<gram_matrix>(
-								constructGram(*p->m, doFactorize));
+								constructGram(*p->m, doNormalize));
 					}
 					/* otherwise do nothing */
 					break;
 				case gram_inexact:
-					/* construct inexact gram matrix (no factorization) */
+					/* construct inexact gram matrix (no normalization) */
 					p->gm = boost::make_shared<gram_matrix>(
 							constructGram(*p->m, false));
 					break;
@@ -215,7 +215,7 @@ namespace basil {
 					/* construct exact gram matrix (unless overridden by 
 					 * command line flag) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(*p->m, doFactorize));
+							constructGram(*p->m, doNormalize));
 					break;
 				}
 				p->gs = gram_provided;
@@ -234,7 +234,7 @@ namespace basil {
 						|| dfsOpts_.assumesNoSymmetry ) ) {
 				if ( ! p->gs == gram_provided ) {
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(*p->m, doFactorize)
+							constructGram(*p->m, doNormalize)
 					);
 				}
 				if ( aRep ) {
@@ -322,8 +322,8 @@ namespace basil {
 		
 		/** verbose output printing [false]. */
 		bool verbose;
-		/** factorization calculation used in gram matrix construction [true] */
-		bool doFactorize;
+		/** normalization calculation used in gram matrix construction [true] */
+		bool doNormalize;
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */
 		bool preprocessor;
