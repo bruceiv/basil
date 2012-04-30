@@ -11,11 +11,19 @@
 #include <gmp.h>
 #include <gmpxx.h>
 
+#ifdef BAS_MT
+#include <omp.h>
+#endif
+
 #include <permlib/permlib_api.h>
 
 #include "automorphism.hpp"
 #include "basil.hpp"
+#ifdef BAS_MT
+#include "dfsp.hpp"
+#else
 #include "dfs.hpp"
+#endif
 #include "fmt.hpp"
 #include "gram.hpp"
 #include "parse.hpp"
@@ -34,8 +42,9 @@ namespace basil {
 		 */
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
-				groupOverride(false), p(), verbose(false), doNormalize(true), 
-				preprocessor(false), genSymmetry(false) {
+				groupOverride(false), p(), verbose(false), 
+				doNormalize(true), preprocessor(false), 
+				genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -322,7 +331,8 @@ namespace basil {
 		
 		/** verbose output printing [false]. */
 		bool verbose;
-		/** normalization calculation used in gram matrix construction [true] */
+		/** normalization calculation used in gram matrix construction 
+		 *  [true] */
 		bool doNormalize;
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */
@@ -377,8 +387,15 @@ int main(int argc, char **argv) {
 				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits(), 1 )
 				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits(), 1 )
 				<< "\n\tray orbits: " << fmt( d.getRayOrbits(), 1 )
-				<< "\n}"
-				<< "\ntotal running time: " << d.getRunningTime() << " ms"
+				<< "\n}";
+#ifdef BAS_MT
+		#pragma omp parallel
+		{
+		#pragma omp master
+		out 	<< "\nnumber threads: " << omp_get_num_threads();
+		} /* omp parallel */
+#endif
+		out 	<< "\ntotal running time: " << d.getRunningTime() << " ms"
 				<< endl;
 		
 		exit(EXIT_SUCCESS);

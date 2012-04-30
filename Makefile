@@ -4,6 +4,8 @@ LDFLAGS = -lboost_program_options-mt -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable
 OBJS = automorphism.o parse.o gram.o dfs.o
+# object files for parallel version of executable
+OBJSP = automorphism.o parse.o gram.o dfsp.o
 
 # rules for constructions of objects from sources
 .cpp.o:  
@@ -15,6 +17,11 @@ OBJS = automorphism.o parse.o gram.o dfs.o
 # generate main program
 basil:  lrs $(OBJS) main.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) $(LDFLAGS)
+
+# generate multithreaded main program
+basilp:  lrs $(OBJSP) main.cpp
+	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS) -fopenmp \
+	-o basilp main.cpp $(OBJSP) $(LDFLAGS)
 
 # generate lrs library
 lrs:  
