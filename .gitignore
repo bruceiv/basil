@@ -2,6 +2,7 @@
 *.kdev4
 *~
 *.swp
+*.geany
 
 # build artifacts
 basil

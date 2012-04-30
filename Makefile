@@ -1,4 +1,4 @@
-CPPFLAGS = -DTIMES -DGMP -DLRS_QUIET
+CPPFLAGS = -DTIMES -DGMP -DLRS_QUIET -DLRS_THREADSAFE
 CXXFLAGS = -ggdb -O2 -Wall -Wno-unused
 LDFLAGS = -lboost_program_options-mt -Llrs -llrs -lgmpxx -lgmp
 

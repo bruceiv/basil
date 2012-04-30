@@ -19,8 +19,10 @@ long digits;
 long record_digits;
 
 /* these are allocated once and used as temporary storage where needed */
-lrs_mp temp1,temp2,temp3; 
-
+/* Thread-safety conditional added by Aaron Moss 30-Apr-2012 */
+#ifndef LRS_THREADSAFE
+lrs_mp temp1,temp2,temp3;
+#endif
 
 #define MAXINPUT 1000		/*max length of any input rational */
 
@@ -28,11 +30,17 @@ lrs_mp temp1,temp2,temp3;
 void 
 lcm (lrs_mp a, lrs_mp b)			/* a = least common multiple of a, b; b is preserved */
 {
+#ifdef LRS_THREADSAFE
+lrs_mp temp1, temp2; lrs_alloc_mp(temp1); lrs_alloc_mp(temp2);
+#endif
   copy (temp1, a);
   copy (temp2, b);
   gcd (temp1,temp2);
   exactdivint (a, temp1, temp2);		/* temp2=a/temp1   there is no remainder */
   mulint (temp2, b, a);
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1); lrs_clear_mp(temp2);
+#endif
 }				/* end of lcm */
 
 
@@ -65,8 +73,14 @@ reduce (lrs_mp Na, lrs_mp Da)	/* reduces Na/Da by gcd(Na,Da) */
 void 
 reduceint (lrs_mp Na, lrs_mp Da)	/* divide Na by Da and return */
 {
+#ifdef LRS_THREADSAFE
+lrs_mp temp1; lrs_alloc_mp(temp1);
+#endif
   copy (temp1, Na);
   exactdivint (temp1, Da, Na);
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1);
+#endif
 }
 
 
@@ -76,11 +90,17 @@ comprod (lrs_mp Na, lrs_mp Nb, lrs_mp Nc, lrs_mp Nd)
 					    /* -1 if Na*Nb < Nc*Nd  */
 					    /*  0 if Na*Nb = Nc*Nd  */
 {
+#ifdef LRS_THREADSAFE
+lrs_mp temp1, temp2; lrs_alloc_mp(temp1); lrs_alloc_mp(temp2);
+#endif
   long i;
 
   mulint (Na, Nb, temp1);
   mulint (Nc, Nd, temp2);
   i=mpz_cmp(temp1,temp2);
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1); lrs_clear_mp(temp2);
+#endif
   if (i > 0)
     return (ONE);
   else if (i < 0)
@@ -94,11 +114,17 @@ linrat (lrs_mp Na, lrs_mp Da, long ka, lrs_mp Nb, lrs_mp Db, long kb, lrs_mp Nc,
 
 	/* computes Nc/Dc = ka*Na/Da  +kb* Nb/Db and reduces answer by gcd(Nc,Dc) */
 {
+#ifdef LRS_THREADSAFE
+lrs_mp temp1; lrs_alloc_mp(temp1);
+#endif
   mulint (Na, Db, Nc);
   mulint (Da, Nb, temp1);
   linint (Nc, ka, temp1, kb);	/* Nc = (ka*Na*Db)+(kb*Da*Nb)  */
   mulint (Da, Db, Dc);		/* Dc =  Da*Db           */
   reduce (Nc, Dc);
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1);
+#endif
 }
 
 
@@ -229,6 +255,9 @@ void
 prat (char *name, lrs_mp Nin, lrs_mp Din)
      /*print the long precision rational Nt/Dt  */
 {
+#ifdef LRS_THREADSAFE
+lrs_mp temp1, temp2; lrs_alloc_mp(temp1); lrs_alloc_mp(temp2);
+#endif
   copy (temp1, Nin);
   copy (temp2, Din);
   reduce (temp1, temp2);
@@ -242,6 +271,9 @@ prat (char *name, lrs_mp Nin, lrs_mp Din)
     mpz_out_str (lrs_ofp,10,temp2);
     }
   fprintf (lrs_ofp, " ");
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1); lrs_clear_mp(temp2);
+#endif
 }				/* prat */
 
 
@@ -361,7 +393,9 @@ lrs_mp_init (long dec_digits, FILE * fpin, FILE * fpout)
   lrs_record_digits = 0;        /* not used for gmp arithmetic  */
   lrs_digits = 0;		/* not used for gmp arithmetic  */
 
+#ifndef LRS_THREADSAFE
   lrs_alloc_mp(temp1); lrs_alloc_mp(temp2); lrs_alloc_mp(temp3);
+#endif
 #ifndef LRS_QUIET
   printf(" gmp v.%d.%d",__GNU_MP_VERSION,__GNU_MP_VERSION_MINOR);
 #endif
@@ -370,7 +404,9 @@ lrs_mp_init (long dec_digits, FILE * fpin, FILE * fpout)
 
 void lrs_mp_close()
 {
+#ifndef LRS_THREADSAFE
    lrs_clear_mp(temp1); lrs_clear_mp(temp2); lrs_clear_mp(temp3);
+#endif
 }
 
 void 
@@ -391,6 +427,9 @@ notimpl (char s[])
 void 
 reducearray (lrs_mp_vector p, long n)
 {
+#ifdef LRS_THREADSAFE
+lrs_mp temp1; lrs_alloc_mp(temp1);
+#endif
   lrs_mp divisor;
   long i = 0L;
 
@@ -420,6 +459,9 @@ reducearray (lrs_mp_vector p, long n)
     if (!zero (p[i]))
       reduceint (p[i], divisor);
   lrs_clear_mp (divisor);
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1);
+#endif
 }
 				/* end of reducearray */
 
@@ -444,7 +486,9 @@ void
 linint(lrs_mp a, long ka, lrs_mp b, long kb)
 /* a=a*ka+b*kb,  b unchanged */
 {
-
+#ifdef LRS_THREADSAFE
+lrs_mp temp1; lrs_alloc_mp(temp1);
+#endif
 mpz_mul_ui (a,a,labs(ka));
 if (ka < 0)
    mpz_neg(a,a);
@@ -452,7 +496,9 @@ mpz_mul_ui (temp1,b,labs(kb));
 if (kb < 0)
    mpz_neg(temp1,temp1);
 mpz_add(a,a,temp1);
-
+#ifdef LRS_THREADSAFE
+lrs_clear_mp(temp1);
+#endif
 }
 
 
