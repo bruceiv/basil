@@ -19,11 +19,13 @@
 
 #include "automorphism.hpp"
 #include "basil.hpp"
+
 #ifdef BAS_MT
 #include "dfsp.hpp"
 #else
 #include "dfs.hpp"
 #endif
+
 #include "fmt.hpp"
 #include "gram.hpp"
 #include "parse.hpp"

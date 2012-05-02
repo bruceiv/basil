@@ -11,7 +11,6 @@ OBJSP = automorphism.o parse.o gram.o dfsp.o
 .cpp.o:  
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(LDFLAGS)
 
-
 .PHONY:  clean clean_all clean_doc doc lrs
 
 # generate main program
@@ -19,6 +18,10 @@ basil:  lrs $(OBJS) main.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o basil main.cpp $(OBJS) $(LDFLAGS)
 
 # generate multithreaded main program
+dfsp.o:  dfsp.cpp
+	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS) -fopenmp \
+	-c dfsp.cpp $(LDFLAGS)
+
 basilp:  lrs $(OBJSP) main.cpp
 	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS) -fopenmp \
 	-o basilp main.cpp $(OBJSP) $(LDFLAGS)
@@ -29,7 +32,7 @@ lrs:
 
 # clean generated files
 clean:  
-	-rm $(OBJS) basil
+	-rm $(OBJS) basil basilp
 
 # clean all generated files (including libraries and documentation)
 clean_all:  clean clean_doc
