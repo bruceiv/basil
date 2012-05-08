@@ -195,71 +195,6 @@ namespace basil {
 	
 	/** Stateful wrapper class for DFS algorithm. */
 	class dfs {
-	private:
-		
-		////////////////////////////////////////////////////////////////
-		// Typedefs for internal data types
-		////////////////////////////////////////////////////////////////
-		
-		typedef lrs::index_set_iter index_set_iter;
-		typedef lrs::index_set_hash index_set_hash;
-		
-		typedef lrs::vector_mpz vector_mpz;
-		typedef shared_ptr<vector_mpz> vector_mpz_ptr;
-		typedef lrs::vector_mpq_hash coordinates_hash;
-		typedef lrs::matrix_mpq_hash matrix_hash;
-		
-		typedef lrs::cobasis cobasis;
-		typedef shared_ptr<cobasis> cobasis_ptr;
-		
-		typedef std::pair<ind, ind> index_pair;
-		
-		/** Representation of a pivot */
-		struct pivot {
-			
-			pivot(index_set cob, ind leave, ind enter) 
-					: cob(cob), leave(leave), enter(enter) {}
-			
-			/** cobasis before pivot */
-			index_set cob;
-			/** leaving index */
-			ind leave;
-			/** entering index */
-			ind enter;
-		};
-		typedef shared_ptr<pivot> pivot_ptr;
-		
-		////////////////////////////////////////////////////////////////
-		// Thread-local data structures
-		////////////////////////////////////////////////////////////////
-		
-		/** Thread-local information for the DFS algorithm. */
-		struct explorer {
-			
-			/** Set up a DFS explorer on the given matrix, with the 
-			 *  given permuation group.
-			 *  @param m		The matrix to DFS on
-			 *  @param lin		The set of indices that are linearities
-			 *  @param g		The permutation group of the matrix
-			 *  @param gram		The gram matrix for the constraints 
-			 *  				(may be empty if o.gramVec == false)
-			 */
-			explorer(matrix& m, index_set& lin, permutation_group& g, 
-					gram_matrix& gram, dfs_opts o = dfs_opts());
-			
-			////////////////////////////////////////////////////////////
-			// Thread-local copies of initilization time globals
-			////////////////////////////////////////////////////////////
-			
-			/** LRS wrapper for this DFS thread */
-			lrs::lrs l;
-			/** Permutation group used for this DFS */
-			permutation_group& g;
-			/** matrix of pre-computed inner product representatives, 
-			 *  for gram vectors */
-			gram_matrix gramMat;
-		};
-	
 	public:
 		
 		////////////////////////////////////////////////////////////////
@@ -332,6 +267,120 @@ namespace basil {
 			boost::unordered_multimap<
 				gram_matrix, vertex_data_ptr, gram_matrix_hash>
 			vertex_gram_map;
+	
+	private:
+		
+		////////////////////////////////////////////////////////////////
+		// Typedefs for internal data types
+		////////////////////////////////////////////////////////////////
+		
+		typedef lrs::index_set_iter index_set_iter;
+		typedef lrs::index_set_hash index_set_hash;
+		
+		typedef lrs::vector_mpz vector_mpz;
+		typedef shared_ptr<vector_mpz> vector_mpz_ptr;
+		typedef lrs::vector_mpq_hash coordinates_hash;
+		typedef lrs::matrix_mpq_hash matrix_hash;
+		
+		typedef lrs::cobasis cobasis;
+		typedef shared_ptr<cobasis> cobasis_ptr;
+		
+		typedef std::pair<ind, ind> index_pair;
+		
+		/** Representation of a pivot */
+		struct pivot {
+			
+			pivot(index_set cob, ind leave, ind enter) 
+					: cob(cob), leave(leave), enter(enter) {}
+			
+			/** cobasis before pivot */
+			index_set cob;
+			/** leaving index */
+			ind leave;
+			/** entering index */
+			ind enter;
+		};
+		typedef shared_ptr<pivot> pivot_ptr;
+		
+		/** A pointer to a vertex data struct, with an attatched 
+		 *  boolean to indicate if the struct was previously in the 
+		 *  searched structure. */
+		typedef std::pair<vertex_data_ptr, bool> vertex_data_known;
+		
+		/** List of cobases with associated vertex data */
+		typedef 
+			std::vector< std::pair<index_set, vertex_data_ptr> >
+			cobasis_list;
+		/** List of coordinates with associated vertex data */
+		typedef 
+			std::vector< std::pair<coordinates, vertex_data_ptr> >
+			coordinates_list;
+		
+		////////////////////////////////////////////////////////////////
+		// Thread-local data structures
+		////////////////////////////////////////////////////////////////
+		
+		/** Thread-local information for the DFS algorithm. */
+		struct explorer {
+			
+			/** Set up a DFS explorer on the given matrix, with the 
+			 *  given permuation group.
+			 *  @param m		The matrix to DFS on
+			 *  @param lin		The set of indices that are linearities
+			 *  @param g		The permutation group of the matrix
+			 *  @param gram		The gram matrix for the constraints 
+			 *  				(may be empty if o.gramVec == false)
+			 */
+			explorer(matrix& m, index_set& lin, permutation_group& g, 
+					gram_matrix& gram, dfs_opts o = dfs_opts());
+			
+			/** Gets the canonical ray for each ray in a known orbit.
+			 *  @param rays		The set of ray orbit representatives
+			 *  @param rep		The ray to get the orbit representative 
+			 *  				of
+			 *  @return a pointer to the ray representative of this 
+			 *  		ray's orbit, or a null pointer if there is none 
+			 *  		such.
+			 */
+			vertex_data_ptr knownRay(coordinates_map rays, 
+					vertex_data_ptr rep);
+			
+			////////////////////////////////////////////////////////////
+			// Thread-local copies of initilization time globals
+			////////////////////////////////////////////////////////////
+			
+			/** LRS wrapper for this DFS thread */
+			lrs::lrs l;
+			/** Permutation group used for this DFS */
+			permutation_group& g;
+			/** matrix of pre-computed inner product representatives, 
+			 *  for gram vectors */
+			gram_matrix gramMat;
+			/** Options for controlling the DFS algorithm */
+			dfs_opts opts;
+			
+			////////////////////////////////////////////////////////////
+			// Thread-local algorithm data
+			////////////////////////////////////////////////////////////
+			
+			/** Global map of seen cobases, up to symmetry */
+			cobasis_map basisOrbits;
+			/** Cache of recently seen cobases */
+			lru::cache<index_set, index_set_hash> cobasisCache;
+			/** Lookup cobases by gram vector */
+			cobasis_gram_map cobasisGramMap;
+			/** representatives of each orbit (of rays) */
+			coordinates_map rayOrbits;
+			/** Index in the global ray orbit list this explorer is updated
+			 *  to */
+			ind rayUpdate;
+			/** representatives of each orbit (of vertices) */
+			coordinates_map vertexOrbits;
+			/** Lookup vertices by gram vector */
+			vertex_gram_map vertexGramMap;
+		};
+	
+	public:
 		
 		////////////////////////////////////////////////////////////////
 		// Public interface
@@ -363,7 +412,7 @@ namespace basil {
 		
 		/** @return representatives of each of the orbits of the 
 		 *  cobases */
-		cobasis_map const& getBasisOrbits() const;
+		cobasis_map getBasisOrbits() const;
 		
 		/** @return the dimension of the polytope */
 		ind getDimension() const;
@@ -377,7 +426,7 @@ namespace basil {
 		
 		/** @return representatives of each of the orbits of the 
 		 *  extreme rays */
-		coordinates_map const& getRayOrbits() const;
+		coordinates_map getRayOrbits() const;
 		
 		/** @return the running time of the algorithm, in 
 		 *  milliseconds */
@@ -388,19 +437,11 @@ namespace basil {
 		
 		/** @return representatives of each of the orbits of the 
 		 *  vertices */
-		coordinates_map const& getVertexOrbits() const;
+		coordinates_map getVertexOrbits() const;
 		
 		/** @return the gram matrix. (This method is of primary use for 
 		 *  debugging the gram vectors.) */
 		gram_matrix const& getGramMat() const;
-		
-		/** @return the map of gram vectors to cobases. (This method is 
-		 *  of primary use for debugging the gram vectors.) */
-		cobasis_gram_map const& getCobasisGramMap() const;
-		
-		/** @return the map of gram vectors to vertices. (This method 
-		 *  is of primary use for debugging the gram vectors.) */
-		vertex_gram_map const& getVertexGramMap() const;
 		
 	private:
 		
@@ -482,11 +523,7 @@ namespace basil {
 		////////////////////////////////////////////////////////////////
 		
 		/** Global map of seen cobases, up to symmetry */
-		cobasis_map basisOrbits;
-		/** Cache of recently seen cobases */
-		lru::cache<index_set, index_set_hash> cobasisCache;
-		/** Lookup cobases by gram vector */
-		cobasis_gram_map cobasisGramMap;
+		cobasis_list globalBasisOrbits;
 		/** Temporary to store time diffs into. Will hold total running 
 		 *  time on algorithm completion. */
 		std::clock_t diff_time;
@@ -495,15 +532,13 @@ namespace basil {
 		/** The first cobasis found */
 		index_set initialCobasis;
 		/** representatives of each orbit (of rays) */
-		coordinates_map rayOrbits;
+		coordinates_list globalRayOrbits;
 		/** The true dimension of the polytope */
 		ind realDim;
 		/** the time at which the algorithm was started */
 		std::clock_t start_time;
 		/** representatives of each orbit (of vertices) */
-		coordinates_map vertexOrbits;
-		/** Lookup vertices by gram vector */
-		vertex_gram_map vertexGramMap;
+		coordinates_list globalVertexOrbits;
 				
 		////////////////////////////////////////////////////////////////
 		// Time-related functions and values

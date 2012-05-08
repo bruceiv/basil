@@ -36,8 +36,55 @@ namespace basil {
 	
 	dfs::explorer::explorer(matrix& m, index_set& lin, 
 			permutation_group& g, gram_matrix& gram, dfs_opts o) 
-			: l(m, lin, o.lrs_o), g(g), gramMat(gram) {
+			: l(m, lin, o.lrs_o), g(g), gramMat(gram), opts(o) {
 		
+		/* resize the cobasis cache to its proper size */
+		cobasisCache.resize(opts.cacheSize);
+		
+		/* Default initialize remaining data members */
+		basisOrbits = cobasis_map();
+		cobasisGramMap = cobasis_gram_map();
+		initialCobasis = index_set();
+		rayOrbits = coordinates_map();
+		vertexOrbits = coordinates_map();
+		vertexGramMap = vertex_gram_map();
+	}
+	
+	dfs::vertex_data_ptr dfs::explorer::knownRay(
+			dfs::coordinates_map rays, dfs::vertex_data_ptr rep) {
+		/* TODO think about including gram invariant here */
+		
+		/* incidence set to find */
+		index_set& find = rep->inc;
+		
+		/* for every known orbit representative */
+		for (coordinates_map::iterator it = rays.begin(); 
+				it != rays.end(); ++it) {
+			
+			/* incidence set to check */
+			index_set& old = it->second->inc;
+			
+			/* if we assume no symmetry, check for equal cobases */
+			if ( opts.assumesNoSymmetry ) {
+				if ( find == old ) return it->second; else continue;
+			}
+			
+			/* Check incidence sets of equal size (a cheap invariant) */
+			if ( find.count() != old.count() ) continue;
+			
+			/* look for a permutation in the global group that maps the 
+			 * incidence set of the ray we are trying to find to the 
+			 * incidence set of the known ray. */
+			permutation_ptr act = permlib::setImage(
+				g, plBegin(find), plEnd(find), 
+				plBegin(old), plEnd(old));
+			
+			/* if such a permutation is found, return the known ray */
+			if ( act ) return it->second;
+		}
+		
+		/* no known ray that is equivalent up to symmetry */
+		return vertex_data_ptr;
 	}
 	
 	////////////////////////////////////////////////////////////////////
@@ -144,8 +191,10 @@ namespace basil {
 	// Query methods for after completion of doDfs()
 	////////////////////////////////////////////////////////////////////
 	
-	dfs::cobasis_map const& dfs::getBasisOrbits() const 
-		{ return basisOrbits; }
+	dfs::cobasis_map dfs::getBasisOrbits() const {
+		return cobasis_map(globalBasisOrbits.begin(), 
+				globalBasisOrbits.end());
+	}
 	
 	ind dfs::getDimension() const { return dim - 1; }
 	
@@ -153,24 +202,22 @@ namespace basil {
 	
 	bool dfs::isFinished() const { return !hitMaxBasis; }
 	
-	dfs::coordinates_map const& dfs::getRayOrbits() const 
-		{ return rayOrbits; }
+	dfs::coordinates_map dfs::getRayOrbits() const { 
+		return coordinates_map(globalRayOrbits.begin(), 
+				globalRayOrbits.end());
+	}
 	
 	std::clock_t dfs::getRunningTime() const 
 		{ return diff_time / clocks_per_ms; }
 	
 	permutation_group const& dfs::getSymmetryGroup() const { return g; }
 	
-	dfs::coordinates_map const& dfs::getVertexOrbits() const 
-		{ return vertexOrbits; }
+	dfs::coordinates_map dfs::getVertexOrbits() const { 
+		return coordinates_map(globalVertexOrbits.begin(), 
+				globalVertexOrbits.end());
+	}
 	
 	gram_matrix const& dfs::getGramMat() const { return gramMat; }
-	
-	dfs::cobasis_gram_map const& dfs::getCobasisGramMap() const 
-		{ return cobasisGramMap; }
-	
-	dfs::vertex_gram_map const& dfs::getVertexGramMap() const 
-		{ return vertexGramMap; }
 	
 	
 	////////////////////////////////////////////////////////////////////
@@ -258,7 +305,6 @@ namespace basil {
 		return gramMat.restriction(inc).sort();
 	}
 	
-	/* TODO rework me
 	void dfs::getRays(dfs::explorer ex) {
 		for (ind j = 1; j <= realDim; j++) {
 			vector_mpz_ptr s( ex.l.getSolution(j) );
@@ -266,7 +312,19 @@ namespace basil {
 			if (s) {
 				cobasis_ptr c( ex.l.getCobasis(j) );
 				vertex_data_ptr dat( rayData(c, s) );
-				if ( ! knownRay(dat) ) {
+				
+				/* Not a new ray, by local cache */
+				if ( ex.knownRay(ex.rayOrbits, dat) ) continue;
+				
+				while ( true ) {
+					coordinates_list newRayOrbits;
+
+					#pragma omp critical(rays)
+					{
+
+					} /* omp critical rays */
+				}
+				if ( ! ex.knownRay(ex.rayOrbits, dat) ) {
 					rayOrbits.insert(std::make_pair(dat->coords, dat));
 					
 					if ( opts.printRay 
@@ -284,23 +342,18 @@ namespace basil {
 			}
 		}
 	}
-	*/
 	
 	void dfs::initGlobals() {
-		/* resize the cobasis cache to its proper size */
-		cobasisCache.resize(opts.cacheSize);
 		/* account for flipability of arrangement gram matrix */
 		if ( opts.aRepresentation ) gramMat = gramMat.abs();
 		
 		/* Default initialize remaining data members */
-		basisOrbits = cobasis_map();
-		cobasisGramMap = cobasis_gram_map();
+		globalBasisOrbits = cobasis_list();
 		hitMaxBasis = false;
 		initialCobasis = index_set();
-		rayOrbits = coordinates_map();
+		globalRayOrbits = coordinates_list();
 		realDim = 0;
-		vertexOrbits = coordinates_map();
-		vertexGramMap = vertex_gram_map();
+		globalVertexOrbits = coordinates_list();
 	}
 	
 	dfs::vertex_data_ptr dfs::rayData(dfs::cobasis_ptr cob, 
