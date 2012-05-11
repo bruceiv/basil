@@ -67,9 +67,9 @@ true
   999999999999/2000000000000, 1000001999997/2000000000000, 
   999999999999/1000000000000, 999999/1000000000000, 
   1000001999997/2000000000000, 0 ]
-#I  100 bases found (18097 ms)
-#I  200 bases found (44630 ms)
-#I  300 bases found (142125 ms)
+#I  100 bases found (10232 ms)
+#I  200 bases found (26429 ms)
+#I  300 bases found (84617 ms)
 #I  adding vertex
 [ 1, 1999999999998999999999999999999/2000000000000000000000000000000, 0, 
   999999999999/1000000000000, 1999999999998999999999999999999/
@@ -16376,9 +16376,9 @@ rec( dimension := 8,
                   2999999999998000000000001/999999999998000000000001 ] ], 
           index := 356 ) ], pseudoCanons := [  ], 
   profile := rec( InvariantCheck := 7687, InvariantMatches := 8019, 
-      OldCobasis := 7073, OldCobasisTime := 1638064, DuplicateCobasis := 272, 
-      DuplicateCobasisTime := 24, NewByInvariants := 329, NewCobasis := 13, 
-      NewCobasisTime := 4640 ), ray_orbits := [  ], 
+      OldCobasis := 7073, OldCobasisTime := 990922, DuplicateCobasis := 272, 
+      DuplicateCobasisTime := 4, NewByInvariants := 329, NewCobasis := 13, 
+      NewCobasisTime := 2856 ), ray_orbits := [  ], 
   symmetry_generators := [ (3,38)(6,39)(8,40)(10,42)(11,111)(13,109)(15,
         108)(18,107)(21,116)(23,114)(25,113)(28,112)(31,126)(32,95)(33,61)(34,
         59)(35,56)(44,81)(45,78)(46,76)(48,74)(49,91)(50,88)(51,86)(53,84)(63,
@@ -16408,25 +16408,25 @@ rec( dimension := 8,
         73)(74,75)(78,79)(81,82)(84,85)(88,89)(91,92)(95,96)(103,104)(109,
         110)(114,115)(118,119)(121,122)(125,126) ], finished := true, 
   initial_cobasis := [ 105, 111, 116, 120, 123, 125, 126 ], 
-  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 37808 )
+  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 33760 )
     , 
-  gap_time := rec( user_time := 1684637, system_time := 836, user_time_childre\
-n := 7444, system_time_children := 5448 ) )
+  gap_time := rec( user_time := 1015155, system_time := 13528, user_time_child\
+ren := 4348, system_time_children := 768 ) )
 
 #STARTRESULTS
 {
 key => 'dimension',
 dimension => 8,
 gap_time => { 
-user_time => 1684637,
-system_time => 836,
-user_time_children => 7444,
-system_time_children => 5448,
+user_time => 1015155,
+system_time => 13528,
+user_time_children => 4348,
+system_time_children => 768,
 },
 nauty_total_time => { 
 user_time => 0,
 system_time => 0,
-memory => 37808,
+memory => 33760,
 },
 initial_cobasis => [ 105, 111, 116, 120, 123, 125, 126 ],
 group_order =>23040,

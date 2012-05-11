@@ -159,6 +159,7 @@ makeConstraints:=function(file,d,orbitBound,vec_gen_count)
     
     rows:=Union(Orbits(HM,vec_gens,OnPoints));
     PrintTo(file,file,"\n");
+    AppendTo(file,"A-representation\n");
     AppendTo(file,"begin\n",Length(rows)," ",d+1, " integer\n");
     for v in  rows do
         for j in v do
@@ -174,6 +175,9 @@ end;
 # orbitThreshhold (smaller is more symmetric)
 # number of vectors to act on (larger is more symmetric, I think)
 
-makeConstraints("6-6-3a.txt",6,6,3);
-makeConstraints("6-6-3b.txt",6,6,3);
-makeConstraints("6-6-3c.txt",6,6,3);
+makeConstraints("5-6-3a.txt",5,6,3);
+makeConstraints("5-6-3b.txt",5,6,3);
+makeConstraints("5-6-3c.txt",5,6,3);
+makeConstraints("5-6-3d.txt",5,6,3);
+makeConstraints("5-6-3e.txt",5,6,3);
+makeConstraints("5-6-3f.txt",5,6,3);

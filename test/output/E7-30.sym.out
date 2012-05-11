@@ -186,7 +186,7 @@ true
   999998999999000000000001/2000000000000000000000000, 
   999998999999000000000001/2000000000000000000000000, 
   -999999999999/1000000000000000000000000, 999999/1000000000000, 0 ]
-#I  100 bases found (16253 ms)
+#I  100 bases found (8688 ms)
 rec( dimension := 8, 
   vertex_orbits := [ rec( incidence := [ 105, 111, 116, 120, 123, 125, 126 ], 
           coordinates := 
@@ -15702,7 +15702,7 @@ rec( dimension := 8,
                     999999999999999998000000000000000001 ] ], index := 175 ) ]
     , pseudoCanons := [  ], 
   profile := rec( InvariantCheck := 839, NewByInvariants := 142, 
-      InvariantMatches := 697, OldCobasis := 673, OldCobasisTime := 47443, 
+      InvariantMatches := 697, OldCobasis := 673, OldCobasisTime := 28221, 
       DuplicateCobasis := 24, DuplicateCobasisTime := 0 ), ray_orbits := [  ],
   symmetry_generators := 
     [ (2,38)(5,39)(8,41)(9,42)(12,111)(13,110)(16,108)(19,107)(22,116)(23,
@@ -15731,25 +15731,25 @@ rec( dimension := 8,
         70)(77,80)(78,81)(79,82)(87,90)(88,91)(89,92)(97,98)(101,102)(107,
         108)(112,113)(118,121)(119,122)(120,123) ], finished := true, 
   initial_cobasis := [ 105, 111, 116, 120, 123, 125, 126 ], 
-  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 37804 )
+  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 33764 )
     , 
-  gap_time := rec( user_time := 61527, system_time := 224, user_time_children \
-:= 3056, system_time_children := 1020 ) )
+  gap_time := rec( user_time := 32090, system_time := 5736, user_time_children\
+ := 1384, system_time_children := 92 ) )
 
 #STARTRESULTS
 {
 key => 'dimension',
 dimension => 8,
 gap_time => { 
-user_time => 61527,
-system_time => 224,
-user_time_children => 3056,
-system_time_children => 1020,
+user_time => 32090,
+system_time => 5736,
+user_time_children => 1384,
+system_time_children => 92,
 },
 nauty_total_time => { 
 user_time => 0,
 system_time => 0,
-memory => 37804,
+memory => 33764,
 },
 initial_cobasis => [ 105, 111, 116, 120, 123, 125, 126 ],
 group_order =>2880,

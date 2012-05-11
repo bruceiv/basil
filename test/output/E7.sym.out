@@ -358,9 +358,9 @@ rec( dimension := 8,
               [ 1, 2, 2, 2, 2, 2, 3 ] ], index := 31 ) ], 
   pseudoCanons := [  ], 
   profile := rec( InvariantCheck := 834, InvariantMatches := 1105, 
-      OldCobasis := 803, OldCobasisTime := 344742, NewByInvariants := 26, 
+      OldCobasis := 803, OldCobasisTime := 212280, NewByInvariants := 26, 
       DuplicateCobasis := 1, DuplicateCobasisTime := 0, NewCobasis := 4, 
-      NewCobasisTime := 2604 ), ray_orbits := [  ], 
+      NewCobasisTime := 1669 ), ray_orbits := [  ], 
   symmetry_generators := [ (4,38)(7,39)(9,40)(10,41)(11,110)(12,109)(14,
         108)(17,107)(21,115)(22,114)(24,113)(27,112)(31,94)(32,63)(33,62)(34,
         60)(35,57)(44,80)(45,77)(46,75)(47,74)(49,90)(50,87)(51,85)(52,84)(67,
@@ -389,25 +389,25 @@ rec( dimension := 8,
         72)(75,77)(76,78)(82,83)(85,87)(86,88)(92,93)(96,97)(102,103)(108,
         109)(113,114)(117,118)(122,124)(123,125) ], finished := true, 
   initial_cobasis := [ 105, 111, 116, 120, 123, 125, 126 ], 
-  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 37804 )
+  nauty_total_time := rec( user_time := 0, system_time := 0, memory := 30692 )
     , 
-  gap_time := rec( user_time := 357114, system_time := 208, user_time_children\
- := 124, system_time_children := 548 ) )
+  gap_time := rec( user_time := 218729, system_time := 1740, user_time_childre\
+n := 56, system_time_children := 328 ) )
 
 #STARTRESULTS
 {
 key => 'dimension',
 dimension => 8,
 gap_time => { 
-user_time => 357114,
-system_time => 208,
-user_time_children => 124,
-system_time_children => 548,
+user_time => 218729,
+system_time => 1740,
+user_time_children => 56,
+system_time_children => 328,
 },
 nauty_total_time => { 
 user_time => 0,
 system_time => 0,
-memory => 37804,
+memory => 30692,
 },
 initial_cobasis => [ 105, 111, 116, 120, 123, 125, 126 ],
 group_order =>2903040,
