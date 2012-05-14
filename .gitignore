@@ -3,6 +3,9 @@
 *~
 *.swp
 *.geany
+.cproject
+.metadata
+.project
 
 # build artifacts
 basil

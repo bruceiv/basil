@@ -1,0 +1,18 @@
+5-6-3d.txt
+A-representation
+begin
+8 6 rational
+ 1 -1 -1 1 -1 -1
+ 1 -1 1 1 -1 -1
+ 1 1 -1 1 -1 -1
+ 1 1 -1 1 -1 1
+ 1 1 -1 1 1 -1
+ 1 1 1 1 -1 -1
+ 1 1 1 1 -1 1
+ 1 1 1 1 1 -1
+end
+symmetry begin
+ 1 4 , 2 7
+ 1 7 , 2 4 , 3 6 , 5 8
+ 1 2 , 3 6 , 4 8 , 5 7
+symmetry end
