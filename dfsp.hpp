@@ -195,6 +195,24 @@ namespace basil {
 	
 	/** Stateful wrapper class for DFS algorithm. */
 	class dfs {
+	private:
+
+		////////////////////////////////////////////////////////////////
+		// Typedefs for internal data types
+		////////////////////////////////////////////////////////////////
+
+		typedef lrs::index_set_iter index_set_iter;
+		typedef lrs::index_set_hash index_set_hash;
+
+		typedef lrs::vector_mpz vector_mpz;
+		typedef shared_ptr<vector_mpz> vector_mpz_ptr;
+		typedef lrs::vector_mpq_hash coordinates_hash;
+		typedef lrs::matrix_mpq_hash matrix_hash;
+
+		typedef lrs::cobasis cobasis;
+		typedef shared_ptr<cobasis> cobasis_ptr;
+
+		typedef std::pair<ind, ind> index_pair;
 	public:
 		
 		////////////////////////////////////////////////////////////////
@@ -271,21 +289,8 @@ namespace basil {
 	private:
 		
 		////////////////////////////////////////////////////////////////
-		// Typedefs for internal data types
+		// More typedefs for internal data types
 		////////////////////////////////////////////////////////////////
-		
-		typedef lrs::index_set_iter index_set_iter;
-		typedef lrs::index_set_hash index_set_hash;
-		
-		typedef lrs::vector_mpz vector_mpz;
-		typedef shared_ptr<vector_mpz> vector_mpz_ptr;
-		typedef lrs::vector_mpq_hash coordinates_hash;
-		typedef lrs::matrix_mpq_hash matrix_hash;
-		
-		typedef lrs::cobasis cobasis;
-		typedef shared_ptr<cobasis> cobasis_ptr;
-		
-		typedef std::pair<ind, ind> index_pair;
 		
 		/** Representation of a pivot */
 		struct pivot {
@@ -316,6 +321,38 @@ namespace basil {
 			std::vector< std::pair<coordinates, vertex_data_ptr> >
 			coordinates_list;
 		
+		/** Transformation of index_set_iter to provide input to PermLib
+		 *  properly. The public interfaces to PermLib are zero-indexed,
+		 *  whereas the I/O operators, rather inconsistently, are one-indexed;
+		 *  this type provides a suitable wrapper for conversion of a
+		 *  one-indexed index_set_iter into a zero-indexed iterator to provide
+		 *  input to PermLib.
+		 */
+		typedef
+			boost::transform_iterator<
+				boost::binder2nd<
+					std::minus<index_set_iter::value_type>
+				>,
+				index_set_iter
+			>
+			pl_index_set_iter;
+
+		/** Transform of lrs::begin(s) iterator to PermLib zero-index. */
+		static pl_index_set_iter plBegin(index_set& s) {
+			return boost::make_transform_iterator(
+					lrs::begin(s),
+					boost::bind2nd(std::minus<index_set_iter::value_type>(), 1)
+			);
+		}
+
+		/** Transform of lrs::end(s) iterator to PermLib zero-index. */
+		static pl_index_set_iter plEnd(index_set& s) {
+			return boost::make_transform_iterator(
+					lrs::end(s),
+					boost::bind2nd(std::minus<index_set_iter::value_type>(), 1)
+			);
+		}
+
 		////////////////////////////////////////////////////////////////
 		// Thread-local data structures
 		////////////////////////////////////////////////////////////////
@@ -331,8 +368,8 @@ namespace basil {
 			 *  @param gram		The gram matrix for the constraints 
 			 *  				(may be empty if o.gramVec == false)
 			 */
-			explorer(matrix& m, index_set& lin, permutation_group& g, 
-					gram_matrix& gram, dfs_opts o = dfs_opts());
+			explorer(matrix m, index_set lin, permutation_group g,
+					gram_matrix gram, dfs_opts o = dfs_opts());
 			
 			/** Gets the canonical ray for each ray in a known orbit.
 			 *  @param rays		The set of ray orbit representatives
@@ -373,7 +410,7 @@ namespace basil {
 			coordinates_map rayOrbits;
 			/** Index in the global ray orbit list this explorer is updated
 			 *  to */
-			ind rayUpdate;
+			uind rayUpdate;
 			/** representatives of each orbit (of vertices) */
 			coordinates_map vertexOrbits;
 			/** Lookup vertices by gram vector */
@@ -478,6 +515,11 @@ namespace basil {
 		 */
 		gram_matrix fastGramVec(index_set inc);
 		
+		/** Finds the rays in the current dictionary of the explorer.
+		 *  @param ex		The explorer to use to find the rays
+		 */
+		void getRays(explorer ex);
+
 		/** Initializes algorithm globals */
 		void initGlobals();
 		

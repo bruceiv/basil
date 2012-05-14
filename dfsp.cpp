@@ -34,8 +34,8 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////
 	
-	dfs::explorer::explorer(matrix& m, index_set& lin, 
-			permutation_group& g, gram_matrix& gram, dfs_opts o) 
+	dfs::explorer::explorer(matrix m, index_set lin,
+			permutation_group g, gram_matrix gram, dfs_opts o)
 			: l(m, lin, o.lrs_o), g(g), gramMat(gram), opts(o) {
 		
 		/* resize the cobasis cache to its proper size */
@@ -44,7 +44,6 @@ namespace basil {
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();
 		cobasisGramMap = cobasis_gram_map();
-		initialCobasis = index_set();
 		rayOrbits = coordinates_map();
 		vertexOrbits = coordinates_map();
 		vertexGramMap = vertex_gram_map();
@@ -84,7 +83,7 @@ namespace basil {
 		}
 		
 		/* no known ray that is equivalent up to symmetry */
-		return vertex_data_ptr;
+		return vertex_data_ptr();
 	}
 	
 	////////////////////////////////////////////////////////////////////
@@ -160,20 +159,18 @@ namespace basil {
 		vector_mpz_ptr sol(ex.l.getVertex());
 		vertex_data_ptr dat(vertexData(cob, sol));
 		
+		initialCobasis = cob->cob;
+		ex.cobasisCache.insert(initialCobasis);
+
 		#pragma omp master
 		{
 		if ( opts.printTrace ) {
 			opts.output() << "#I initial basis: " << fmt( cob->cob ) 
 					<< " " << *sol << "\n";
 		}
-		
-		initialCobasis = cob->cob;
-		
+
 		addVertex(dat);
-		
-		//TODO FIXME getRays(ex);
-		
-		cobasisCache.insert(initialCobasis);
+		getRays(ex);
 		} /* omp master */
 		
 		/* DFS the edge graph, returning whether it successfully completes */
@@ -232,16 +229,8 @@ namespace basil {
 		unsigned int oSize;
 		#pragma omp critical(globals)
 		{
-		basisOrbits.insert(std::make_pair(cob, dat));
-		oSize = basisOrbits.size();
-		
-		/* add gram vector, if option set */
-		if (opts.gramVec) {
-			cobasisGramMap.insert(
-				std::make_pair(
-					fastGramVec(cob), std::make_pair(cob, dat))
-			);
-		}
+		globalBasisOrbits.push_back(std::make_pair(cob, dat));
+		oSize = globalBasisOrbits.size();
 		} /* omp critical(globals) */
 		
 		/* print cobasis, if option set */
@@ -267,14 +256,8 @@ namespace basil {
 		{
 		/* map the rationalization of the coordinates to the vertex 
 		 * data */
-		vertexOrbits.insert(std::make_pair(dat->coords, dat));
-		oSize = vertexOrbits.size();
-		
-		/* add gram vector, if option set */
-		if (opts.gramVec) {
-			vertexGramMap.insert(
-					std::make_pair(fastGramVec(dat->inc), dat));
-		}
+		globalVertexOrbits.push_back(std::make_pair(dat->coords, dat));
+		oSize = globalVertexOrbits.size();
 		} /* omp critical(globals) */
 		
 		/* for each defined cobasis, map it to the vertex data */
@@ -317,26 +300,59 @@ namespace basil {
 				if ( ex.knownRay(ex.rayOrbits, dat) ) continue;
 				
 				while ( true ) {
-					coordinates_list newRayOrbits;
+					coordinates_map newRayOrbits;
+					uind oSize;
 
 					#pragma omp critical(rays)
 					{
-
-					} /* omp critical rays */
-				}
-				if ( ! ex.knownRay(ex.rayOrbits, dat) ) {
-					rayOrbits.insert(std::make_pair(dat->coords, dat));
-					
-					if ( opts.printRay 
-							&& rayOrbits.size() % opts.printRay == 0 ) {
-						std::ostream& out = opts.output();
-						out << "# rays: " << rayOrbits.size() << " (" 
-								<< currentTime() << " ms)";
-						if ( opts.printNew ) {
-							out << " " << dat->coords;
-							if ( opts.debugGram ) out << " " << dat->gram;
+						if ( ex.rayUpdate == globalRayOrbits.size() ) {
+							globalRayOrbits.push_back(
+									std::make_pair(dat->coords, dat));
+						} else {
+							newRayOrbits.insert(
+									globalRayOrbits.begin() + ex.rayUpdate,
+									globalRayOrbits.end());
 						}
-						out << std::endl;
+						oSize = globalRayOrbits.size();
+					} /* omp critical rays */
+
+					if ( newRayOrbits.empty() ) {
+						ex.rayOrbits.insert(std::make_pair(dat->coords,
+								boost::make_shared<vertex_data>(dat->coords,
+										dat->inc, dat->cobs, dat->det,
+										dat->gram)));
+						++ex.rayUpdate;
+
+						if ( opts.printRay && oSize % opts.printRay == 0 ) {
+							#pragma omp critical(print)
+							{
+							std::ostream& out = opts.output();
+							out << "# rays: " << oSize << " ("
+									<< currentTime() << " ms)";
+							if ( opts.printNew ) {
+								out << " " << dat->coords;
+								if ( opts.debugGram ) out << " " << dat->gram;
+							}
+							out << std::endl;
+							} /* omp critical print */
+						}
+
+						break;
+					} else {
+						for (coordinates_map::iterator it =
+								newRayOrbits.begin(); it != newRayOrbits.end();
+								++it) {
+							vertex_data& val = *(it->second);
+
+							ex.rayOrbits.insert(std::make_pair(val.coords,
+									boost::make_shared<vertex_data>(val.coords,
+											val.inc, val.cobs, val.det,
+											val.gram)));
+						}
+						ex.rayUpdate += newRayOrbits.size();
+
+						/* Not a new ray, by new local cache */
+						if ( ex.knownRay(newRayOrbits, dat) ) break;
 					}
 				}
 			}
