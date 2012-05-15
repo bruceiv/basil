@@ -589,7 +589,8 @@ lrs_alloc_dat (char *name)
   lrs_dat *Q;
   long i;
 
-
+  #pragma omp critical(lrs_global)
+  {
   if (lrs_global_count >= MAX_LRS_GLOBALS)
     {
       fprintf (stderr,
@@ -597,14 +598,18 @@ lrs_alloc_dat (char *name)
       exit (1);
 
     }
+  } /* omp critical(lrs_global) */
 
   Q = (lrs_dat *) malloc (sizeof (lrs_dat));
   if (Q == NULL)
     return Q;			/* failure to allocate */
 
+  #pragma omp critical(lrs_global)
+  {
   lrs_global_list[lrs_global_count] = Q;
   Q->id = lrs_global_count;
   lrs_global_count++;
+  } /* omp critical(lrs_global) */
   Q->name=(char *) CALLOC ((unsigned) strlen(name)+1, sizeof (char));
   strcpy(Q->name,name); 
 
@@ -3982,7 +3987,10 @@ lrs_free_dat ( lrs_dat *Q )
   free (Q->name);  
   free (Q->saved_C);
 
+  #pragma omp critical(lrs_global)
+  {
   lrs_global_count--;
+  } /* omp critical(lrs_global) */
 
   free(Q);
 }
@@ -4199,10 +4207,13 @@ lrs_dump_state ()
 	   DIG2DEC (lrs_record_digits),
 	   DIG2DEC (lrs_digits));
 
+  #pragma omp critical(lrs_global)
+  {
   for (i = 0; i < lrs_global_count; i++)
     {
       print_basis (stderr, lrs_global_list[i]);
     }
+  } /* omp critical(lrs_global) */
   fprintf (stderr, "lrs_lib: checkpoint finished\n");
 }
 

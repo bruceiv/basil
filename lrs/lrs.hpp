@@ -33,6 +33,14 @@ namespace lrs {
 		
 		lrs_opts() : out(&std::cout), vRepresentation(false) {}
 		
+		lrs_opts(lrs_opts const& o) 
+			: out(o.out), vRepresentation(o.vRepresentation) {}
+		
+		lrs_opts& operator= (lrs_opts const& o) {
+			out = o.out;
+			vRepresentation = o.vRepresentation;
+			return *this;
+		}
 		
 		/** Sets output file */
 		lrs_opts& withOutput(std::ostream& o)
@@ -184,6 +192,8 @@ namespace lrs {
 		lrs_mp_matrix Lin;
 		/** Options provided to this instance of LRS */
 		lrs_opts o;
+		/** Number of instances of the LRS class */
+		static int nInstances;
 	}; /* class lrs */
 	
 } /* namespace lrs */

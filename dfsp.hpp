@@ -368,7 +368,7 @@ namespace basil {
 			 *  @param gram		The gram matrix for the constraints 
 			 *  				(may be empty if o.gramVec == false)
 			 */
-			explorer(matrix m, index_set lin, permutation_group g,
+			explorer(matrix& m, index_set& lin, permutation_group g,
 					gram_matrix gram, dfs_opts o = dfs_opts());
 			
 			/** Gets the canonical ray for each ray in a known orbit.
@@ -518,7 +518,7 @@ namespace basil {
 		/** Finds the rays in the current dictionary of the explorer.
 		 *  @param ex		The explorer to use to find the rays
 		 */
-		void getRays(explorer ex);
+		void getRays(explorer& ex);
 
 		/** Initializes algorithm globals */
 		void initGlobals();

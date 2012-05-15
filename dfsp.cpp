@@ -19,6 +19,7 @@
 #include "dfsp.hpp"
 #include "fmt.hpp"
 #include "gram.hpp"
+#include "permUtils.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
@@ -34,7 +35,7 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////
 	
-	dfs::explorer::explorer(matrix m, index_set lin,
+	dfs::explorer::explorer(matrix& m, index_set& lin,
 			permutation_group g, gram_matrix gram, dfs_opts o)
 			: l(m, lin, o.lrs_o), g(g), gramMat(gram), opts(o) {
 		
@@ -45,6 +46,7 @@ namespace basil {
 		basisOrbits = cobasis_map();
 		cobasisGramMap = cobasis_gram_map();
 		rayOrbits = coordinates_map();
+		rayUpdate = 0;
 		vertexOrbits = coordinates_map();
 		vertexGramMap = vertex_gram_map();
 	}
@@ -288,7 +290,7 @@ namespace basil {
 		return gramMat.restriction(inc).sort();
 	}
 	
-	void dfs::getRays(dfs::explorer ex) {
+	void dfs::getRays(dfs::explorer& ex) {
 		for (ind j = 1; j <= realDim; j++) {
 			vector_mpz_ptr s( ex.l.getSolution(j) );
 			

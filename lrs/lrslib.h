@@ -210,7 +210,7 @@ lrs_dat, lrs_dat_p;
 /*********************/
 #define MAX_LRS_GLOBALS 100L
 #define MAXIMIZE 1L         /* maximize the lp  */
-#define MINIMIZE 0L         /* maximize the lp  */
+#define MINIMIZE 0L         /* minimize the lp  */
 #define GE 1L               /* constraint is >= */
 #define EQ 0L               /* constraint is linearity */
 

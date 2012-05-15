@@ -16,9 +16,14 @@
 
 namespace lrs {
 	
+	int lrs::nInstances = 0;
+	
 	lrs::lrs(matrix_mpq const& m, index_set const& lin, lrs_opts o) : o(o) {
 		/* Initialize LRS */
-		lrs_init_quiet(stdin, stderr);
+		#pragma omp critical(lrs_globals)
+		{
+		if ( nInstances++ == 0 ) lrs_init_quiet(stdin, stderr);
+		} /* omp critical(lrs_globals) */
 		
 		/* Init LRS global data */
 		Q = lrs_alloc_dat((char*)"LRS globals");
@@ -36,7 +41,10 @@ namespace lrs {
 	lrs::~lrs() {
 		lrs_free_dic(P, Q);
 		lrs_free_dat(Q);
-		lrs_close_quiet();
+		#pragma omp critical(lrs_globals)
+		{
+		if ( --nInstances == 0 ) lrs_close_quiet();
+		} /* omp critical(lrs_globals) */
 	}
 	
 	index_set lrs::allRatio(ind leave) {

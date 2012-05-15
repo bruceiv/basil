@@ -189,6 +189,27 @@ namespace basil {
 		return gens;
 	}
 	
+	/** @return a copy of a permutation group such that no state is shared
+	 *  between the original and the copy
+	 */
+	static permutation_group deepCopy(permutation_group& g) {
+		typedef permutation_list::iterator perm_iter;
+
+		/* New list of generators */
+		permutation_list gens;
+
+		/* Copy old generators */
+		for (perm_iter it = g.S.begin(); it != g.S.end(); ++it) {
+			//permutation_cycle_list l = cycle_list(**it);
+			//permutation_ptr p = boost::make_shared<permutation>(perm(g.n, l));
+			permutation_ptr p = *it;
+			gens.push_back(p);
+		}
+
+		/* Group from new generators */
+		return *permlib::construct(g.n, gens.begin(), gens.end());
+	}
+
 } /* namespace basil */
 
 #endif /* _PERM_UTILS_HPP_ */
