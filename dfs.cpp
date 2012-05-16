@@ -378,7 +378,7 @@ namespace basil {
 		/* New by invariants */
 		if ( possibleMatches.size() == 0 ) return vertex_data_ptr();
 		
-		/* incedence set to find */
+		/* Incidence set to find */
 		index_set& find = rep->inc;
 		
 		/* for every known orbit representative */
@@ -469,7 +469,7 @@ namespace basil {
 		/* list of cobases with matching invariants */
 		index_set_list matches;
 		
-		if (opts.gramVec) {
+		if ( opts.gramVec ) {
 			
 			/* get set of cobases with matching gram vectors */
 			cobasis_gram_range range = 
@@ -491,7 +491,7 @@ namespace basil {
 			for (cobasis_map::const_iterator it = basisOrbits.begin();
 					it != basisOrbits.end(); ++it) {
 				
-				if ( invariantsMatch(*it->second, *dat) ) {
+				if ( cobasisInvariantsMatch(*it->second, *dat) ) {
 					matches.push_back(it->first);
 				}
 				

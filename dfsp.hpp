@@ -307,9 +307,18 @@ namespace basil {
 		};
 		typedef shared_ptr<pivot> pivot_ptr;
 		
-		/** A pointer to a vertex data struct, with an attatched 
-		 *  boolean to indicate if the struct was previously in the 
-		 *  searched structure. */
+		typedef
+			std::pair<cobasis_gram_map::const_iterator,
+				cobasis_gram_map::const_iterator>
+			cobasis_gram_range;
+
+		typedef
+			std::pair<vertex_gram_map::const_iterator,
+				vertex_gram_map::const_iterator>
+			vertex_gram_range;
+
+		/** A pointer to a vertex data struct with an attached boolean to
+		 *  indicate if the struct was previously in the searched structure. */
 		typedef std::pair<vertex_data_ptr, bool> vertex_data_known;
 		
 		/** List of cobases with associated vertex data */
@@ -371,6 +380,17 @@ namespace basil {
 			explorer(matrix& m, index_set& lin, permutation_group g,
 					gram_matrix gram, dfs_opts o = dfs_opts());
 			
+			/** Checks if the given cobasis is in a known orbit
+			 *  @param cobs		The set of cobasis orbit representatives
+			 *  @param grams	The gram map for the cobasis orbit
+			 *  				representatives
+			 *  @param cob		The cobasis to check
+			 *  @param dat		The invariant data for this cobasis
+			 *  @return true for already found, false for not
+			 */
+			bool isKnownCobasis(cobasis_map cobs, cobasis_gram_map grams,
+					index_set cob, vertex_data_ptr dat);
+
 			/** Gets the canonical ray for each ray in a known orbit.
 			 *  @param rays		The set of ray orbit representatives
 			 *  @param rep		The ray to get the orbit representative 
@@ -382,6 +402,38 @@ namespace basil {
 			vertex_data_ptr knownRay(coordinates_map rays, 
 					vertex_data_ptr rep);
 			
+			/** Gets the canonical vertex for each vertex in a known orbit.
+			 *  @param verts	The set of vertex orbit representatives
+			 *  @param grams	The gram map for the vertex orbit
+			 *  				representatives
+			 *  @param rep		The vertex to get the orbit representative of
+			 *  @return a pointer to the vertex representative of this vertex's
+			 * 		orbit, or a null pointer if there is none such.
+			 */
+			vertex_data_ptr knownVertex(coordinates_map verts,
+					vertex_gram_map grams, vertex_data_ptr rep);
+
+			/** Gets the cobases whose invariants match the given one.
+			 *  @param cobs		The set of cobasis orbit representatives
+			 *  @param grams	The gram map for the cobasis orbit
+			 *  				representatives
+			 *  @param cob		The cobasis to match
+			 *  @param dat		The invariant data for this cobasis
+			 *  @return a list of vertices with matching invariants.
+			 */
+			index_set_list matchingCobasisInvariants(cobasis_map cobs,
+					cobasis_gram_map grams, index_set cob, vertex_data_ptr dat);
+
+			/** Gets the vertices whose invariants match the given one.
+			 *  @param verts	The set of vertex orbit representatives
+			 *  @param grams	The gram map for the vertex orbit
+			 *  				representatives
+			 *  @param rep		The vertex data to match
+			 *  @return a list of vertices with matching invariants.
+			 */
+			vertex_data_list matchingInvariants(coordinates_map verts,
+					vertex_gram_map grams, vertex_data_ptr rep);
+
 			////////////////////////////////////////////////////////////
 			// Thread-local copies of initilization time globals
 			////////////////////////////////////////////////////////////
@@ -395,6 +447,10 @@ namespace basil {
 			gram_matrix gramMat;
 			/** Options for controlling the DFS algorithm */
 			dfs_opts opts;
+			/** Dimension of the problem */
+			ind dim;
+			/** number of rows in the problem */
+			ind rows;
 			
 			////////////////////////////////////////////////////////////
 			// Thread-local algorithm data
@@ -406,6 +462,9 @@ namespace basil {
 			lru::cache<index_set, index_set_hash> cobasisCache;
 			/** Lookup cobases by gram vector */
 			cobasis_gram_map cobasisGramMap;
+			/* Index in the global cobasis orbit list this explorer is updated
+			 * to */
+			uind cobasisUpdate;
 			/** representatives of each orbit (of rays) */
 			coordinates_map rayOrbits;
 			/** Index in the global ray orbit list this explorer is updated
@@ -415,6 +474,9 @@ namespace basil {
 			coordinates_map vertexOrbits;
 			/** Lookup vertices by gram vector */
 			vertex_gram_map vertexGramMap;
+			/** Index in the global vertex orbit list this explorer is updated
+			 *  to */
+			uind vertexUpdate;
 		};
 	
 	public:
@@ -507,14 +569,6 @@ namespace basil {
 		 */
 		void addVertex(vertex_data_ptr dat);
 		
-		/** Gets the gram vector for an incidence set.
-		 *  @param inc		The incidence set to take the gram vector 
-		 *  				for
-		 *  @return the gram matrix, restricted to this incidence set 
-		 *  		in row and column indices, then sorted
-		 */
-		gram_matrix fastGramVec(index_set inc);
-		
 		/** Finds the rays in the current dictionary of the explorer.
 		 *  @param ex		The explorer to use to find the rays
 		 */
@@ -523,6 +577,36 @@ namespace basil {
 		/** Initializes algorithm globals */
 		void initGlobals();
 		
+		/** Gets the canonical cobasis for each cobasis in a known orbit; if
+		 *  the given cobasis represents a new orbit, stores it.
+		 *  @param ex		The explorer to use to find the representative
+		 *  @param cob		The cobasis to get (or store) the orbit
+		 *  				representative of
+		 *  @param dat		The invariant data for this cobasis
+		 *  @return a boolean showing if this representative was newly added.
+		 */
+		bool knownOrAddNewCobasis(explorer& ex, index_set cob,
+				vertex_data_ptr dat);
+
+		/** Gets the canonical vertex for each vertex in a known orbit; if the
+		 *  given vertex represents a new orbit, stores it.
+		 *  @param ex		The explorer to use to find the representative
+		 *  @param rep		The vertex to get (or store) the orbit
+		 *  				representative of
+		 *  @return a pointer to the vertex representative of this vertex's
+		 *  		orbit, paired with a boolean showing if this representative
+		 *  		was newly added.
+		 */
+		vertex_data_known knownOrAddNewVertex(explorer& ex,
+				vertex_data_ptr rep);
+
+		/** Add new edges to the search stack.
+		 *  @param ex		The explorer to use to find the edges (should be
+		 *  				pivoted to oldCob already)
+		 *  @param oldCob	The cobasis to search for adjacent edges
+		 */
+		void pushNewEdges(explorer& ex, index_set& oldCob);
+
 		/** Combines the cobasis and coordinate data into a vertex_data 
 		 *  object
 		 *  @param cob		The cobasis data
@@ -581,6 +665,8 @@ namespace basil {
 		std::clock_t start_time;
 		/** representatives of each orbit (of vertices) */
 		coordinates_list globalVertexOrbits;
+		/** Pivots in the working stack */
+		std::deque<pivot> globalWorkStack;
 				
 		////////////////////////////////////////////////////////////////
 		// Time-related functions and values
@@ -597,6 +683,15 @@ namespace basil {
 		
 	}; /* class dfs */
 	
+	/** Gets the gram vector for an incidence set.
+	 *  @param gramMat	The gram matrix to restrict
+	 *  @param inc		The incidence set to take the gram vector
+	 *  				for
+	 *  @return the gram matrix, restricted to this incidence set
+	 *  		in row and column indices, then sorted
+	 */
+	gram_matrix fastGramVec(gram_matrix& gramMat, index_set inc);
+
 } /* namespace basil */
 
 #endif /* _DFS_HPP_ */
