@@ -379,7 +379,14 @@ namespace basil {
 			 */
 			explorer(matrix& m, index_set& lin, permutation_group g,
 					gram_matrix gram, dfs_opts o = dfs_opts());
+		private:
+			/** Disallow copy-construction */
+			explorer(explorer& that);
 			
+			/** Disallow assignment */
+			explorer& operator= (explorer& that);
+
+		public:
 			/** Checks if the given cobasis is in a known orbit
 			 *  @param cobs		The set of cobasis orbit representatives
 			 *  @param grams	The gram map for the cobasis orbit
@@ -388,7 +395,7 @@ namespace basil {
 			 *  @param dat		The invariant data for this cobasis
 			 *  @return true for already found, false for not
 			 */
-			bool isKnownCobasis(cobasis_map cobs, cobasis_gram_map grams,
+			bool isKnownCobasis(cobasis_map& cobs, cobasis_gram_map& grams,
 					index_set cob, vertex_data_ptr dat);
 
 			/** Gets the canonical ray for each ray in a known orbit.
@@ -399,7 +406,7 @@ namespace basil {
 			 *  		ray's orbit, or a null pointer if there is none 
 			 *  		such.
 			 */
-			vertex_data_ptr knownRay(coordinates_map rays, 
+			vertex_data_ptr knownRay(coordinates_map& rays,
 					vertex_data_ptr rep);
 			
 			/** Gets the canonical vertex for each vertex in a known orbit.
@@ -410,8 +417,8 @@ namespace basil {
 			 *  @return a pointer to the vertex representative of this vertex's
 			 * 		orbit, or a null pointer if there is none such.
 			 */
-			vertex_data_ptr knownVertex(coordinates_map verts,
-					vertex_gram_map grams, vertex_data_ptr rep);
+			vertex_data_ptr knownVertex(coordinates_map& verts,
+					vertex_gram_map& grams, vertex_data_ptr rep);
 
 			/** Gets the cobases whose invariants match the given one.
 			 *  @param cobs		The set of cobasis orbit representatives
@@ -421,8 +428,9 @@ namespace basil {
 			 *  @param dat		The invariant data for this cobasis
 			 *  @return a list of vertices with matching invariants.
 			 */
-			index_set_list matchingCobasisInvariants(cobasis_map cobs,
-					cobasis_gram_map grams, index_set cob, vertex_data_ptr dat);
+			index_set_list matchingCobasisInvariants(
+					cobasis_map& cobs, cobasis_gram_map& grams,
+					index_set cob, vertex_data_ptr dat);
 
 			/** Gets the vertices whose invariants match the given one.
 			 *  @param verts	The set of vertex orbit representatives
@@ -431,8 +439,8 @@ namespace basil {
 			 *  @param rep		The vertex data to match
 			 *  @return a list of vertices with matching invariants.
 			 */
-			vertex_data_list matchingInvariants(coordinates_map verts,
-					vertex_gram_map grams, vertex_data_ptr rep);
+			vertex_data_list matchingInvariants(coordinates_map& verts,
+					vertex_gram_map& grams, vertex_data_ptr rep);
 
 			////////////////////////////////////////////////////////////
 			// Thread-local copies of initilization time globals
@@ -441,7 +449,7 @@ namespace basil {
 			/** LRS wrapper for this DFS thread */
 			lrs::lrs l;
 			/** Permutation group used for this DFS */
-			permutation_group& g;
+			permutation_group g;
 			/** matrix of pre-computed inner product representatives, 
 			 *  for gram vectors */
 			gram_matrix gramMat;
@@ -629,20 +637,20 @@ namespace basil {
 		////////////////////////////////////////////////////////////////
 		
 		/** Matrix to store */
-		matrix& m;
+		matrix& globalM;
 		/** Index set of linearities */
-		index_set& lin;
+		index_set& globalLin;
 		/** Permutation group used for this DFS */
-		permutation_group& g;
+		permutation_group& globalG;
 		/** Options for controlling the DFS algorithm */
-		dfs_opts opts;
+		dfs_opts globalOpts;
 		/** Dimension of the problem */
-		ind dim;
+		ind globalDim;
 		/** number of rows in the problem */
-		ind rows;
+		ind globalRows;
 		/** matrix of pre-computed inner product representatives, for 
 		 *  gram vectors */
-		gram_matrix gramMat;
+		gram_matrix globalGramMat;
 		
 		////////////////////////////////////////////////////////////////
 		// Algorithm Data

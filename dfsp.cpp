@@ -55,7 +55,7 @@ namespace basil {
 	}
 	
 	bool dfs::explorer::isKnownCobasis(
-			dfs::cobasis_map cobs, dfs::cobasis_gram_map grams,
+			dfs::cobasis_map& cobs, dfs::cobasis_gram_map& grams,
 			index_set cob, dfs::vertex_data_ptr dat) {
 
 		index_set_list possibleMatches =
@@ -149,7 +149,7 @@ namespace basil {
 	}
 
 	dfs::vertex_data_ptr dfs::explorer::knownRay(
-			dfs::coordinates_map rays, dfs::vertex_data_ptr rep) {
+			dfs::coordinates_map& rays, dfs::vertex_data_ptr rep) {
 		/* TODO think about including gram invariant here */
 		
 		/* incidence set to find */
@@ -185,9 +185,8 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	dfs::vertex_data_ptr dfs::explorer::knownVertex(dfs::coordinates_map verts,
-			dfs::vertex_gram_map grams, dfs::vertex_data_ptr rep) {
-
+	dfs::vertex_data_ptr dfs::explorer::knownVertex(dfs::coordinates_map& verts,
+			dfs::vertex_gram_map& grams, dfs::vertex_data_ptr rep) {
 		coordinates_map::iterator found = verts.find(rep->coords);
 		if ( found != verts.end() ) {
 			/* duplicate vertex */
@@ -202,7 +201,9 @@ namespace basil {
 				matchingInvariants(verts, grams, rep);
 
 		/* Test new by invariants */
-		if ( possibleMatches.size() == 0 ) return vertex_data_ptr();
+		if ( possibleMatches.size() == 0 ) {
+			return vertex_data_ptr();
+		}
 
 		/* Incidence set to find */
 		index_set& find = rep->inc;
@@ -223,9 +224,10 @@ namespace basil {
 			 * incidence set of the known vertex. */
 			permutation_ptr act = permlib::setImage(
 					g, plBegin(find), plEnd(find), plBegin(old), plEnd(old));
-
 			/* if such a permuation is found, return the known vertex */
-			if (act) return *it;
+			if (act) {
+				return *it;
+			}
 		}
 
 		/* no known vertex that is equivalent up to symmetry */
@@ -233,7 +235,7 @@ namespace basil {
 	}
 
 	dfs::index_set_list dfs::explorer::matchingCobasisInvariants(
-			dfs::cobasis_map cobs, dfs::cobasis_gram_map grams,
+			dfs::cobasis_map& cobs, dfs::cobasis_gram_map& grams,
 			index_set cob, dfs::vertex_data_ptr dat) {
 
 		/* list of cobases with matching invariants */
@@ -278,7 +280,7 @@ namespace basil {
 	}
 
 	dfs::vertex_data_list dfs::explorer::matchingInvariants(
-			dfs::coordinates_map verts, dfs::vertex_gram_map grams,
+			dfs::coordinates_map& verts, dfs::vertex_gram_map& grams,
 			dfs::vertex_data_ptr rep) {
 
 		/* list of vertices with matching invariants */
@@ -321,8 +323,9 @@ namespace basil {
 	////////////////////////////////////////////////////////////////////
 	
 	dfs::dfs(matrix& m, index_set& lin, permutation_group& g, 
-			gram_matrix& gram, dfs_opts o) : m(m), lin(lin), g(g), 
-			opts(o), dim(m.dim()), rows(m.size()), gramMat(gram) { 
+			gram_matrix& gram, dfs_opts o) : globalM(m), globalLin(lin),
+			globalG(g), globalOpts(o),
+			globalDim(m.dim()), globalRows(m.size()), globalGramMat(gram) {
 		
 		/* set up algorithm globals */
 		initGlobals();
@@ -345,12 +348,12 @@ namespace basil {
 		} /* omp master */
 		
 		/* Set up thread locals */
-		explorer ex(m, lin, g, gramMat, opts);
+		explorer ex(globalM, globalLin, globalG, globalGramMat, globalOpts);
 		
 		/* print initial dictionary */
 		#pragma omp master
 		{
-		if (opts.showsAllDicts) ex.l.printDict();
+		if ( globalOpts.showsAllDicts ) ex.l.printDict();
 		} /* omp master */ 
 		
 		////////////////////////////////////////////////////////////////
@@ -369,11 +372,13 @@ namespace basil {
 		/* print initial solution */
 		#pragma omp master
 		{
-		if (opts.showsAllDicts) ex.l.printDict();
+		if ( globalOpts.showsAllDicts ) ex.l.printDict();
 		} /* omp master */
 		
 		/* go to the initial cobasis, if supplied */
-		if ( opts.firstCobasis ) ex.l.setCobasis( *opts.firstCobasis );
+		if ( globalOpts.firstCobasis ) {
+			ex.l.setCobasis( *globalOpts.firstCobasis );
+		}
 		
 		/* get true problem dimension */
 		#pragma omp master
@@ -392,8 +397,8 @@ namespace basil {
 
 		#pragma omp master
 		{
-		if ( opts.printTrace ) {
-			opts.output() << "#I initial basis: " << fmt( cob->cob ) 
+		if ( globalOpts.printTrace ) {
+			globalOpts.output() << "#I initial basis: " << fmt( cob->cob )
 					<< " " << *sol << "\n";
 		}
 
@@ -424,7 +429,7 @@ namespace basil {
 				globalBasisOrbits.end());
 	}
 	
-	ind dfs::getDimension() const { return dim - 1; }
+	ind dfs::getDimension() const { return globalDim - 1; }
 	
 	index_set dfs::getInitialCobasis() const { return initialCobasis; }
 	
@@ -438,14 +443,14 @@ namespace basil {
 	std::clock_t dfs::getRunningTime() const 
 		{ return diff_time / clocks_per_ms; }
 	
-	permutation_group const& dfs::getSymmetryGroup() const { return g; }
+	permutation_group const& dfs::getSymmetryGroup() const { return globalG; }
 	
 	dfs::coordinates_map dfs::getVertexOrbits() const { 
 		return coordinates_map(globalVertexOrbits.begin(), 
 				globalVertexOrbits.end());
 	}
 	
-	gram_matrix const& dfs::getGramMat() const { return gramMat; }
+	gram_matrix const& dfs::getGramMat() const { return globalGramMat; }
 	
 	
 	////////////////////////////////////////////////////////////////////
@@ -465,15 +470,15 @@ namespace basil {
 		} /* omp critical(globals) */
 		
 		/* print cobasis, if option set */
-		if ( opts.printBasis && oSize % opts.printBasis == 0 ) {
+		if ( globalOpts.printBasis && oSize % globalOpts.printBasis == 0 ) {
 			#pragma omp critical(print)
 			{
-			std::ostream& out = opts.output();
+			std::ostream& out = globalOpts.output();
 			out << "# cobases: " << oSize << " (" << currentTime() 
 					<< " ms)";
-			if ( opts.printNew ) {
+			if ( globalOpts.printNew ) {
 				out << " " << fmt( cob );
-				if ( opts.debugGram ) out << " " << dat->gram;
+				if ( globalOpts.debugGram ) out << " " << dat->gram;
 			}
 			out << std::endl;
 			} /* omp critical(print) */
@@ -498,15 +503,15 @@ namespace basil {
 		}
 		
 		/* print vertex, if option set */
-		if ( opts.printVertex && oSize % opts.printVertex == 0 ) {
+		if ( globalOpts.printVertex && oSize % globalOpts.printVertex == 0 ) {
 			#pragma omp critical(print)
 			{
-			std::ostream& out = opts.output();
+			std::ostream& out = globalOpts.output();
 			out << "# vertices: " << oSize << " (" << currentTime() 
 					<< " ms)";
-			if ( opts.printNew ) { 
+			if ( globalOpts.printNew ) {
 				out << " " << dat->coords;
-				if ( opts.debugGram ) out << " " << dat->gram;
+				if ( globalOpts.debugGram ) out << " " << dat->gram;
 			}
 			out << std::endl;
 			} /* omp critical(print) */
@@ -552,15 +557,18 @@ namespace basil {
 										dat->gram)));
 						++ex.rayUpdate;
 
-						if ( opts.printRay && oSize % opts.printRay == 0 ) {
+						if ( globalOpts.printRay
+								&& oSize % globalOpts.printRay == 0 ) {
 							#pragma omp critical(print)
 							{
-							std::ostream& out = opts.output();
+							std::ostream& out = globalOpts.output();
 							out << "# rays: " << oSize << " ("
 									<< currentTime() << " ms)";
-							if ( opts.printNew ) {
+							if ( globalOpts.printNew ) {
 								out << " " << dat->coords;
-								if ( opts.debugGram ) out << " " << dat->gram;
+								if ( globalOpts.debugGram ) {
+									out << " " << dat->gram;
+								}
 							}
 							out << std::endl;
 							} /* omp critical print */
@@ -592,7 +600,7 @@ namespace basil {
 	
 	void dfs::initGlobals() {
 		/* account for flipability of arrangement gram matrix */
-		if ( opts.aRepresentation ) gramMat = gramMat.abs();
+		if ( globalOpts.aRepresentation ) globalGramMat = globalGramMat.abs();
 		
 		/* Default initialize remaining data members */
 		globalBasisOrbits = cobasis_list();
@@ -610,9 +618,8 @@ namespace basil {
 		/* check cobasis against local store */
 		bool known =
 				ex.isKnownCobasis(ex.basisOrbits, ex.cobasisGramMap, cob, dat);
-		if ( known ) { return false; }
 
-		while ( true ) {
+		while ( ! known ) {
 			cobasis_map newBasisOrbits;
 			cobasis_gram_map newCobasisGramMap;
 
@@ -636,9 +643,9 @@ namespace basil {
 						dat->coords, dat->inc, dat->cobs, dat->det, dat->gram);
 
 				ex.basisOrbits.insert(std::make_pair(cob, newDat));
-				if ( opts.gramVec ) {
+				if ( globalOpts.gramVec ) {
 					ex.cobasisGramMap.insert(std::make_pair(
-							fastGramVec(gramMat, cob),
+							fastGramVec(globalGramMat, cob),
 							std::make_pair(cob, newDat)));
 				}
 				++ex.cobasisUpdate;
@@ -654,8 +661,8 @@ namespace basil {
 							val.coords, val.inc, val.cobs, val.det, val.gram);
 
 					ex.basisOrbits.insert(std::make_pair(cob, newDat));
-					if ( opts.gramVec ) {
-						gram_matrix gram = fastGramVec(gramMat, cob);
+					if ( globalOpts.gramVec ) {
+						gram_matrix gram = fastGramVec(globalGramMat, cob);
 						ex.cobasisGramMap.insert(
 								std::make_pair(gram,
 										std::make_pair(cob, newDat)));
@@ -669,23 +676,21 @@ namespace basil {
 				/* test vertex against new local cache */
 				known = ex.isKnownCobasis(
 						newBasisOrbits, newCobasisGramMap, cob, dat);
-				if ( known ) { return false; }
 			}
 		}
+
+		return false;
 	}
 
 	dfs::vertex_data_known dfs::knownOrAddNewVertex(dfs::explorer& ex,
 			dfs::vertex_data_ptr rep) {
-
 		/* check vertex against local store */
 		vertex_data_ptr known =
 				ex.knownVertex(ex.vertexOrbits, ex.vertexGramMap, rep);
-		if ( known ) { return vertex_data_known(known, false); }
 
-		while ( true ) {
+		while ( ! known ) {
 			coordinates_map newVertexOrbits;
 			vertex_gram_map newVertexGramMap;
-			uind oSize;
 
 			#pragma omp critical(vertices)
 			{
@@ -698,7 +703,6 @@ namespace basil {
 						globalVertexOrbits.begin() + ex.vertexUpdate,
 						globalVertexOrbits.end());
 			}
-			oSize = globalVertexOrbits.size();
 			} /* omp critical(vertices) */
 
 			if ( newVertexOrbits.empty() ) {
@@ -707,7 +711,7 @@ namespace basil {
 				vertex_data_ptr dat = boost::make_shared<vertex_data>(
 						rep->coords, rep->inc, rep->cobs, rep->det, rep->gram);
 				ex.vertexOrbits.insert(std::make_pair(dat->coords, dat));
-				if ( opts.gramVec ) {
+				if ( globalOpts.gramVec ) {
 					ex.vertexGramMap.insert(std::make_pair(dat->gram, dat));
 				}
 				++ex.vertexUpdate;
@@ -723,7 +727,7 @@ namespace basil {
 							val.coords, val.inc, val.cobs, val.det, val.gram);
 
 					ex.vertexOrbits.insert(std::make_pair(dat->coords, dat));
-					if ( opts.gramVec ) {
+					if ( globalOpts.gramVec ) {
 						ex.vertexGramMap.insert(std::make_pair(dat->gram, dat));
 						newVertexGramMap.insert(std::make_pair(dat->gram, dat));
 					}
@@ -732,9 +736,10 @@ namespace basil {
 
 				/* test vertex against new local cache */
 				known = ex.knownVertex(newVertexOrbits, newVertexGramMap, rep);
-				if ( known ) { return vertex_data_known(known, false); }
 			}
 		}
+
+		return vertex_data_known(known, false);
 	}
 
 	void dfs::pushNewEdges(explorer& ex, index_set& oldCob) {
@@ -750,10 +755,10 @@ namespace basil {
 			/* the entering index */
 			ind enter;
 
-			if ( opts.aRepresentation ) {
+			if ( globalOpts.aRepresentation ) {
 				/* use arrangement pivot selection */
 				entering = ex.l.arrangementRatio(leave);
-			} else if ( opts.lexOnly ) {
+			} else if ( globalOpts.lexOnly ) {
 				/* calculate entering index lexicographically (BAD) */
 				enter = ex.l.lexRatio(leave);
 				if (enter >= 0) entering.set(enter); else continue;
@@ -762,10 +767,10 @@ namespace basil {
 				entering = ex.l.allRatio(leave);
 			}
 
-			if ( opts.printTrace ) {
+			if ( globalOpts.printTrace ) {
 				#pragma omp critical(print)
 				{
-				opts.output() << "#I for leaving index { " << leave
+				globalOpts.output() << "#I for leaving index { " << leave
 							<< " } possible entering " << fmt( entering )
 							<< "\n";
 				} /* omp critical(print) */
@@ -781,10 +786,11 @@ namespace basil {
 				ex.l.pivot(leave, enter);
 				cobasis_ptr cob(ex.l.getCobasis(0));
 				vector_mpz_ptr sol(ex.l.getVertex());
-				if ( opts.showsAllDicts ) {
+				if ( globalOpts.showsAllDicts ) {
 					#pragma omp critical(print)
 					{
-					opts.output() << "\nPivot: " << leave << "=>" << enter;
+					globalOpts.output() << "\nPivot: " << leave << "=>"
+							<< enter;
 					ex.l.printDict();
 					} /* omp critical(print) */
 				}
@@ -813,15 +819,15 @@ namespace basil {
 						globalWorkStack.push_back(pivot(oldCob, leave, enter));
 						} /* omp critical(stacks) */
 
-						if ( opts.printTrace ) {
+						if ( globalOpts.printTrace ) {
 							#pragma omp critical(print)
 							{
-							opts.output() << "#I pushing new vertex: "
+							globalOpts.output() << "#I pushing new vertex: "
 									<< fmt( cob->cob ) << " " << *sol << "\n";
 							} /* omp critical(print) */
 						}
 					} else if ( dat->coords == vert.first->coords
-							|| ! opts.dualFacetTrick ) {
+							|| ! globalOpts.dualFacetTrick ) {
 
 						/* if this is a new cobasis for a previously seen
 						 * vertex, and we are not employing the dual facet
@@ -835,10 +841,11 @@ namespace basil {
 									pivot(oldCob, leave, enter));
 							} /* omp critical(stacks) */
 
-							if ( opts.printTrace ) {
+							if ( globalOpts.printTrace ) {
 								#pragma omp critical(print)
 								{
-								opts.output() << "#I pushing new cobasis: "
+								globalOpts.output()
+										<< "#I pushing new cobasis: "
 										<< fmt( cob->cob ) << " " << *sol
 										<< "\n";
 								} /* omp critical(print) */
@@ -850,20 +857,20 @@ namespace basil {
 						 * different vertex, but that vertex is symmetric, then
 						 * its neighbours will be symmetric to those of the
 						 * known vertex. Prune via the dual facet trick. */
-						if ( opts.printTrace ) {
+						if ( globalOpts.printTrace ) {
 							#pragma omp critical(print)
 							{
-							opts.output() << "#I ignoring cobasis "
+							globalOpts.output() << "#I ignoring cobasis "
 									<< fmt( cob->cob ) << " by dual facet "
 									"trick\n";
 							} /* omp critical(print) */
 						}
 					}
-				} else if ( opts.printTrace ) {
+				} else if ( globalOpts.printTrace ) {
 					#pragma omp critical(print)
 					{
-					opts.output() << "#I seen cobasis " << fmt( cob->cob )
-							<< " before\n";
+					globalOpts.output() << "#I seen cobasis "
+							<< fmt( cob->cob ) << " before\n";
 					} /* omp critical(print) */
 				}
 			}
@@ -896,8 +903,8 @@ namespace basil {
 		 * data */
 		index_set inc = cob->cob | cob->extraInc;
 		/* gram matrix, or empty if option off */
-		gram_matrix gram = ( opts.gramVec ) ? 
-				fastGramVec(gramMat, inc) : gram_matrix();
+		gram_matrix gram = ( globalOpts.gramVec ) ?
+				fastGramVec(globalGramMat, inc) : gram_matrix();
 		
 		vertex_data_ptr dat = boost::make_shared<vertex_data>(
 				coords->rationalization(), inc, cob->cob, 
