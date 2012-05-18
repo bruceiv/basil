@@ -47,6 +47,7 @@ namespace basil {
 		basisOrbits = cobasis_map();
 		cobasisGramMap = cobasis_gram_map();
 		cobasisUpdate = 0;
+		pathStack = std::deque<index_pair>();
 		rayOrbits = coordinates_map();
 		rayUpdate = 0;
 		vertexOrbits = coordinates_map();
@@ -339,6 +340,8 @@ namespace basil {
 		/* Algorithm success */
 		int nThreads = 0;
 		int nSuccess = 0;
+		/* Waiting threads */
+		int nWaiting = 0;
 		
 		#pragma omp parallel reduction(+:nSuccess)
 		{
@@ -410,8 +413,90 @@ namespace basil {
 		//TODO FIXME res = dfsFromRoot(cob);
 		pushNewEdges(ex, cob->cob);
 
+		/* construct empty pivot */
+		pivot p(cob->cob, 0, 0);
+		bool waiting = false;
+		bool working = true;
 
-		nSuccess += true;
+		while ( working ) {
+			#pragma omp critical(stacks)
+			{
+			/* check for work */
+			if ( globalWorkStack.empty() ) {
+				if ( ! waiting ) {
+					waiting = true;
+					++nWaiting;
+				}
+			} else {
+				/* pop the pivot to the edge to explore off the work stack */
+				p = globalWorkStack.back(); globalWorkStack.pop_back();
+				if ( waiting ) {
+					waiting = false;
+					--nWaiting;
+				}
+			}
+
+			/* decide whether to run again or not */
+			working = ( nWaiting < nThreads
+					&& globalOpts.basisLimit > ex.basisOrbits.size() );
+			} /* omp critical(stacks) */
+
+			/* poll for new work if we don't have any */
+			if ( waiting ) continue;
+
+			/* get the current cobasis */
+			cobasis_ptr dict(ex.l.getCobasis(0));
+
+			/* backtrack LRS to a state consistent with the pivot to make */
+			while ( dict->cob != p.cob && ! ex.pathStack.empty() ) {
+
+				/* get the backtracking pivot off the path stack */
+				index_pair btPivot
+						= ex.pathStack.back(); ex.pathStack.pop_back();
+				/* reverse the pivot */
+				ex.l.pivot(btPivot.second, btPivot.first);
+				if ( globalOpts.showsAllDicts ) {
+					#pragma omp critical(print)
+					{
+					ex.l.printDict();
+					} /* omp critical(print) */
+				}
+				/* dict = l.getCobasis(0) */
+				dict.reset(ex.l.getCobasis(0));
+			}
+
+			/* pivot to the vertex to explore */
+			ex.l.pivot(p.leave, p.enter);
+			/* print the dictionary pivoted to */
+			if ( globalOpts.showsAllDicts ) {
+				#pragma omp critical(print)
+				{
+				ex.l.printDict();
+				} /* omp critical(print) */
+			}
+			if ( globalOpts.printTrace ) {
+				#pragma omp critical(print)
+				{
+				globalOpts.output() << "#I traversing " << fmt( dict->cob )
+							<< " through (" << p.leave << "," << p.enter
+							<< ")\n";
+				} /* omp critical(print) */
+			}
+
+			/* get the new cobasis */
+			cobasis_ptr cob(ex.l.getCobasis(0));
+			/* get the new rays */
+			getRays(ex);
+
+			/* Add new vertex representations / cobases adjacent to the new
+			 * vertex to the work stack */
+			pushNewEdges(ex, cob->cob);
+
+			/* push the pivot just made onto the backtracking stack */
+			ex.pathStack.push_back( index_pair(p.leave, p.enter) );
+		}
+
+		nSuccess += ( globalOpts.basisLimit >= ex.basisOrbits.size() );
 		} /* omp parallel */
 		
 		/* set algorithm end time */

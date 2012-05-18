@@ -52,7 +52,6 @@ void ptimes ();
 double get_time();
 #endif
 
-
 #define CALLOC(n,s) xcalloc(n,s,__LINE__,__FILE__)
 
 /* make this include file includable in a C++ file

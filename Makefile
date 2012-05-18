@@ -1,5 +1,5 @@
 CPPFLAGS = -DTIMES -DGMP -DLRS_QUIET -DLRS_THREADSAFE
-CXXFLAGS = -ggdb -O0 -Wall -Wno-unused
+CXXFLAGS = -ggdb -O0 -Wall -Wno-unused -fopenmp
 LDFLAGS = -lboost_program_options-mt -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable
@@ -19,12 +19,10 @@ basil:  lrs $(OBJS) main.cpp
 
 # generate multithreaded main program
 dfsp.o:  dfsp.cpp
-	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS) -fopenmp \
-	-c dfsp.cpp $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS)	-c dfsp.cpp $(LDFLAGS)
 
 basilp:  lrs $(OBJSP) main.cpp
-	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS) -fopenmp \
-	-o basilp main.cpp $(OBJSP) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) -DBAS_MT $(CXXFLAGS)	-o basilp main.cpp $(OBJSP) $(LDFLAGS)
 
 # generate lrs library
 lrs:  

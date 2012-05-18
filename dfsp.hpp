@@ -473,6 +473,8 @@ namespace basil {
 			/* Index in the global cobasis orbit list this explorer is updated
 			 * to */
 			uind cobasisUpdate;
+			/** Backtracking stack. */
+			std::deque<index_pair> pathStack;
 			/** representatives of each orbit (of rays) */
 			coordinates_map rayOrbits;
 			/** Index in the global ray orbit list this explorer is updated
