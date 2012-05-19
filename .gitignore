@@ -24,3 +24,4 @@ doc/
 # testing temps
 test/prof
 test/tmp
+test/isomorphTest*
