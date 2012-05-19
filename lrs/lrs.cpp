@@ -185,7 +185,7 @@ namespace lrs {
 		/* minimum negative/positive numerators/denominators */
 		mpz_t nNmin, nDmin, pNmin, pDmin;
 		mpz_init(nNmin); mpz_init(nDmin); mpz_init(pNmin); mpz_init(pDmin);
-		/* First negative/positive/zero value found */
+		/* First negative/positive value found */
 		bool nFirst = true, pFirst = true;
 		
 		for (ind j = lastdv + 1; j <= m; j++) {
@@ -302,6 +302,7 @@ namespace lrs {
 						minratio[nEnter++] = minratio[zEnter];
 						/* store value at array start (before negatives) */
 						minratio[zEnter++] = j;
+						break;
 					case -1:
 						/* store value at array start (after zeros) */
 						minratio[nEnter++] = j;
