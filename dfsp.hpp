@@ -307,6 +307,13 @@ namespace basil {
 		};
 		typedef shared_ptr<pivot> pivot_ptr;
 		
+		/** A stack of pivots representing the state of a simplex tableau as
+		 *  pivots from its initial basis */
+		typedef std::vector<pivot> pivot_stack;
+		/** A stack of pivot stacks, representing the bases yet to be
+		 *  explored */
+		typedef std::vector<pivot_stack> state_stack;
+
 		typedef
 			std::pair<cobasis_gram_map::const_iterator,
 				cobasis_gram_map::const_iterator>
@@ -442,6 +449,12 @@ namespace basil {
 			vertex_data_list matchingInvariants(coordinates_map& verts,
 					vertex_gram_map& grams, vertex_data_ptr rep);
 
+			/** Moves this explorer to a given state
+			 *  @param target	The destination state, expressed as a stack of
+			 *  				pivots from the initial basis
+			 */
+			void pivotTo(pivot_stack const& target);
+
 			////////////////////////////////////////////////////////////
 			// Thread-local copies of initilization time globals
 			////////////////////////////////////////////////////////////
@@ -474,7 +487,7 @@ namespace basil {
 			 * to */
 			uind cobasisUpdate;
 			/** Backtracking stack. */
-			std::deque<index_pair> pathStack;
+			pivot_stack pathStack;
 			/** representatives of each orbit (of rays) */
 			coordinates_map rayOrbits;
 			/** Index in the global ray orbit list this explorer is updated
@@ -676,7 +689,7 @@ namespace basil {
 		/** representatives of each orbit (of vertices) */
 		coordinates_list globalVertexOrbits;
 		/** Pivots in the working stack */
-		std::deque<pivot> globalWorkStack;
+		state_stack globalWorkStack;
 				
 		////////////////////////////////////////////////////////////////
 		// Time-related functions and values
