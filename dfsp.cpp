@@ -46,13 +46,10 @@ namespace basil {
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();
 		cobasisGramMap = cobasis_gram_map();
-		cobasisUpdate = 0;
 		pathStack = pivot_stack();
 		rayOrbits = coordinates_map();
-		rayUpdate = 0;
 		vertexOrbits = coordinates_map();
 		vertexGramMap = vertex_gram_map();
-		vertexUpdate = 0;
 	}
 	
 	bool dfs::explorer::isKnownCobasis(
@@ -636,14 +633,14 @@ namespace basil {
 
 					#pragma omp critical(rays)
 					{
-					if ( ex.rayUpdate == globalRayOrbits.size() ) {
+					if ( ex.rayOrbits.size() == globalRayOrbits.size() ) {
 						/* local up to date, add to global */
 						globalRayOrbits.push_back(
 								std::make_pair(dat->coords, dat));
 					} else {
 						/* update local to current global state */
 						newRayOrbits.insert(
-								globalRayOrbits.begin() + ex.rayUpdate,
+								globalRayOrbits.begin() + ex.rayOrbits.size(),
 								globalRayOrbits.end());
 					}
 					oSize = globalRayOrbits.size();
@@ -656,7 +653,6 @@ namespace basil {
 								boost::make_shared<vertex_data>(dat->coords,
 										dat->inc, dat->cobs, dat->det,
 										dat->gram)));
-						++ex.rayUpdate;
 
 						if ( globalOpts.printRay
 								&& oSize % globalOpts.printRay == 0 ) {
@@ -689,7 +685,6 @@ namespace basil {
 											val.inc, val.cobs, val.det,
 											val.gram)));
 						}
-						ex.rayUpdate += newRayOrbits.size();
 
 						/* Not a new ray, by new local cache */
 						if ( ex.knownRay(newRayOrbits, dat) ) break;
@@ -716,9 +711,16 @@ namespace basil {
 	bool dfs::knownOrAddNewCobasis(dfs::explorer& ex,
 			index_set cob, dfs::vertex_data_ptr dat) {
 
+int tid = omp_get_thread_num();
+#pragma omp critical(print)
+std::cout << "\t[" << tid << "] exploring cobasis " << fmt( cob ) << std::endl;
 		/* check cobasis against local store */
 		bool known =
 				ex.isKnownCobasis(ex.basisOrbits, ex.cobasisGramMap, cob, dat);
+if ( known ) {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.basisOrbits.size() << std::endl;
+}
 
 		while ( ! known ) {
 			cobasis_map newBasisOrbits;
@@ -726,13 +728,17 @@ namespace basil {
 
 			#pragma omp critical(cobases)
 			{
-			if ( ex.cobasisUpdate == globalBasisOrbits.size() ) {
+			if ( ex.basisOrbits.size() == globalBasisOrbits.size() ) {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] accepted: l = g = " << ex.basisOrbits.size() << std::endl;
 				/* local up to date, add to global */
 				addCobasis(cob, dat);
 			} else {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] delayed: l = " << ex.basisOrbits.size() << ", g = " << globalBasisOrbits.size() << std::endl;
 				/* update local to current global state */
 				newBasisOrbits.insert(
-						globalBasisOrbits.begin() + ex.cobasisUpdate,
+						globalBasisOrbits.begin() + ex.basisOrbits.size(),
 						globalBasisOrbits.end());
 			}
 			} /* omp critical(cobases) */
@@ -749,7 +755,6 @@ namespace basil {
 							fastGramVec(globalGramMat, cob),
 							std::make_pair(cob, newDat)));
 				}
-				++ex.cobasisUpdate;
 
 				return true;
 			} else {
@@ -757,26 +762,30 @@ namespace basil {
 
 				for (cobasis_map::iterator it = newBasisOrbits.begin();
 						it != newBasisOrbits.end(); ++it) {
+					const index_set& key = it->first;
 					vertex_data& val = *(it->second);
 					vertex_data_ptr newDat = boost::make_shared<vertex_data>(
 							val.coords, val.inc, val.cobs, val.det, val.gram);
 
-					ex.basisOrbits.insert(std::make_pair(cob, newDat));
+					ex.basisOrbits.insert(std::make_pair(key, newDat));
 					if ( globalOpts.gramVec ) {
-						gram_matrix gram = fastGramVec(globalGramMat, cob);
+						gram_matrix gram = fastGramVec(globalGramMat, key);
 						ex.cobasisGramMap.insert(
 								std::make_pair(gram,
-										std::make_pair(cob, newDat)));
+										std::make_pair(key, newDat)));
 						newCobasisGramMap.insert(
 								std::make_pair(gram,
-										std::make_pair(cob, newDat)));
+										std::make_pair(key, newDat)));
 					}
 				}
-				ex.cobasisUpdate += newBasisOrbits.size();
 
 				/* test vertex against new local cache */
 				known = ex.isKnownCobasis(
 						newBasisOrbits, newCobasisGramMap, cob, dat);
+if ( known ) {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newBasisOrbits.size() << ", l = " << ex.basisOrbits.size() << std::endl;
+}
 			}
 		}
 
@@ -785,9 +794,16 @@ namespace basil {
 
 	dfs::vertex_data_known dfs::knownOrAddNewVertex(dfs::explorer& ex,
 			dfs::vertex_data_ptr rep) {
+int tid = omp_get_thread_num();
+#pragma omp critical(print)
+std::cout << "\t[" << tid << "] exploring vertex " << rep->coords << std::endl;
 		/* check vertex against local store */
 		vertex_data_ptr known =
 				ex.knownVertex(ex.vertexOrbits, ex.vertexGramMap, rep);
+if ( known ) {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.vertexOrbits.size() << std::endl;
+}
 
 		while ( ! known ) {
 			coordinates_map newVertexOrbits;
@@ -795,13 +811,17 @@ namespace basil {
 
 			#pragma omp critical(vertices)
 			{
-			if ( ex.vertexUpdate == globalVertexOrbits.size() ) {
+			if ( ex.vertexOrbits.size() == globalVertexOrbits.size() ) {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] accepted: l = g = " << ex.vertexOrbits.size() << std::endl;
 				/* local up to date, add to global */
 				addVertex(rep);
 			} else {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] delayed: l = " << ex.vertexOrbits.size() << ", g = " << globalVertexOrbits.size() << std::endl;
 				/* update local to current global state */
 				newVertexOrbits.insert(
-						globalVertexOrbits.begin() + ex.vertexUpdate,
+						globalVertexOrbits.begin() + ex.vertexOrbits.size(),
 						globalVertexOrbits.end());
 			}
 			} /* omp critical(vertices) */
@@ -815,7 +835,6 @@ namespace basil {
 				if ( globalOpts.gramVec ) {
 					ex.vertexGramMap.insert(std::make_pair(dat->gram, dat));
 				}
-				++ex.vertexUpdate;
 
 				return vertex_data_known(dat, true);
 			} else {
@@ -833,10 +852,13 @@ namespace basil {
 						newVertexGramMap.insert(std::make_pair(dat->gram, dat));
 					}
 				}
-				ex.vertexUpdate += newVertexOrbits.size();
 
 				/* test vertex against new local cache */
 				known = ex.knownVertex(newVertexOrbits, newVertexGramMap, rep);
+if ( known ) {
+#pragma omp critical(print)
+std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newVertexOrbits.size() << ", l = " << ex.vertexOrbits.size() << std::endl;
+}
 			}
 		}
 

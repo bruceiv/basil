@@ -483,23 +483,14 @@ namespace basil {
 			lru::cache<index_set, index_set_hash> cobasisCache;
 			/** Lookup cobases by gram vector */
 			cobasis_gram_map cobasisGramMap;
-			/* Index in the global cobasis orbit list this explorer is updated
-			 * to */
-			uind cobasisUpdate;
 			/** Backtracking stack. */
 			pivot_stack pathStack;
 			/** representatives of each orbit (of rays) */
 			coordinates_map rayOrbits;
-			/** Index in the global ray orbit list this explorer is updated
-			 *  to */
-			uind rayUpdate;
 			/** representatives of each orbit (of vertices) */
 			coordinates_map vertexOrbits;
 			/** Lookup vertices by gram vector */
 			vertex_gram_map vertexGramMap;
-			/** Index in the global vertex orbit list this explorer is updated
-			 *  to */
-			uind vertexUpdate;
 		};
 	
 	public:
