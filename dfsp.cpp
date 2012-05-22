@@ -58,6 +58,9 @@ namespace basil {
 
 		index_set_list possibleMatches =
 				matchingCobasisInvariants(cobs, grams, cob, dat);
+//int tid = omp_get_thread_num();
+//#pragma omp critical(print)
+//std::cout << "\t\t\t[" << tid << "] matchingInvariants: " << possibleMatches.size() << std::endl;
 
 		/* if no known cobasis has invariants matching this one, it's new */
 		if ( possibleMatches.size() == 0 ) return false;
@@ -76,6 +79,8 @@ namespace basil {
 
 				if ( cob == old ) {
 					/* duplicate cobasis */
+//#pragma omp critical(print)
+//std::cout << "\t\t\t\t[" << tid << "] duplicate found" << std::endl;
 					return true;
 				}
 
@@ -89,8 +94,14 @@ namespace basil {
 						plBegin(cob), plEnd(cob), plBegin(old), plEnd(old));
 
 				/* This cobasis is symmetric to one we already know of */
-				if (act) return true;
+				if (act) {
+//#pragma omp critical(print)
+//std::cout << "\t\t\t\t[" << tid << "] isomorph found" << std::endl;
+					return true;
+				}
 			}
+//#pragma omp critical(print)
+//std::cout << "\t\t\t\t[" << tid << "] no isomorph found" << std::endl;
 		} else {
 			/* using stabilizer search, so need to check multiple grounds */
 
@@ -244,16 +255,27 @@ namespace basil {
 			/* get set of cobases with matching gram vectors */
 			cobasis_gram_range range =
 					grams.equal_range( fastGramVec(gramMat, cob) );
+//int tid = omp_get_thread_num();
+//#pragma omp critical(print)
+//std::cout << "\t\t\t[" << tid << "] has matching grams: " << ((range.second == range.first) ? "false" : "true") << std::endl;
 
 			/* check invariants for each of these cobases */
 			for (cobasis_gram_map::const_iterator it = range.first;
 					it != range.second; ++it) {
 
 				vertex_data_ptr oldDat = it->second.second;
+//int matchInd = 0;
 
 				if ( dat->inc.count() == oldDat->inc.count()
 						&& dat->gram == oldDat->gram ) {
+//#pragma omp critical(print)
+//std::cout << "\t\t\t\t[" << tid << "] <" << matchInd << "> n = o = (" << dat->inc.count() << ", " << dat->gram << ")" << std::endl;
+//matchInd++
 					matches.push_back(it->second.first);
+				} else {
+//#pragma omp critical(print)
+//std::cout << "\t\t\t\t[" << tid << "] <" << matchInd << "> n = (" << dat->inc.count() << ", " << dat->gram << "), o = (" << oldDat->inc.count() << ", " << oldDat->gram << ")" << std::endl;
+//matchInd++
 				}
 			}
 
@@ -711,16 +733,16 @@ namespace basil {
 	bool dfs::knownOrAddNewCobasis(dfs::explorer& ex,
 			index_set cob, dfs::vertex_data_ptr dat) {
 
-int tid = omp_get_thread_num();
-#pragma omp critical(print)
-std::cout << "\t[" << tid << "] exploring cobasis " << fmt( cob ) << std::endl;
+//int tid = omp_get_thread_num();
+//#pragma omp critical(print)
+//std::cout << "\t[" << tid << "] exploring cobasis " << fmt( cob ) << std::endl;
 		/* check cobasis against local store */
 		bool known =
 				ex.isKnownCobasis(ex.basisOrbits, ex.cobasisGramMap, cob, dat);
-if ( known ) {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.basisOrbits.size() << std::endl;
-}
+//if ( known ) {
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.basisOrbits.size() << std::endl;
+//}
 
 		while ( ! known ) {
 			cobasis_map newBasisOrbits;
@@ -729,13 +751,13 @@ std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.basisOrbits.si
 			#pragma omp critical(cobases)
 			{
 			if ( ex.basisOrbits.size() == globalBasisOrbits.size() ) {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] accepted: l = g = " << ex.basisOrbits.size() << std::endl;
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] accepted: l = g = " << ex.basisOrbits.size() << std::endl;
 				/* local up to date, add to global */
 				addCobasis(cob, dat);
 			} else {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] delayed: l = " << ex.basisOrbits.size() << ", g = " << globalBasisOrbits.size() << std::endl;
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] delayed: l = " << ex.basisOrbits.size() << ", g = " << globalBasisOrbits.size() << std::endl;
 				/* update local to current global state */
 				newBasisOrbits.insert(
 						globalBasisOrbits.begin() + ex.basisOrbits.size(),
@@ -751,6 +773,8 @@ std::cout << "\t\t[" << tid << "] delayed: l = " << ex.basisOrbits.size() << ", 
 
 				ex.basisOrbits.insert(std::make_pair(cob, newDat));
 				if ( globalOpts.gramVec ) {
+//#pragma omp critical(print)
+//std::cout << "\t\t\t[" << tid << "] inserted " << fmt( cob ) <<  fastGramVec(globalGramMat, cob) << std::endl;
 					ex.cobasisGramMap.insert(std::make_pair(
 							fastGramVec(globalGramMat, cob),
 							std::make_pair(cob, newDat)));
@@ -770,6 +794,8 @@ std::cout << "\t\t[" << tid << "] delayed: l = " << ex.basisOrbits.size() << ", 
 					ex.basisOrbits.insert(std::make_pair(key, newDat));
 					if ( globalOpts.gramVec ) {
 						gram_matrix gram = fastGramVec(globalGramMat, key);
+//#pragma omp critical(print)
+//std::cout << "\t\t\t[" << tid << "] updated " << fmt( key ) <<  gram << std::endl;
 						ex.cobasisGramMap.insert(
 								std::make_pair(gram,
 										std::make_pair(key, newDat)));
@@ -782,10 +808,10 @@ std::cout << "\t\t[" << tid << "] delayed: l = " << ex.basisOrbits.size() << ", 
 				/* test vertex against new local cache */
 				known = ex.isKnownCobasis(
 						newBasisOrbits, newCobasisGramMap, cob, dat);
-if ( known ) {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newBasisOrbits.size() << ", l = " << ex.basisOrbits.size() << std::endl;
-}
+//if ( known ) {
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newBasisOrbits.size() << ", l = " << ex.basisOrbits.size() << std::endl;
+//}
 			}
 		}
 
@@ -794,16 +820,16 @@ std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newBasisOrbits.s
 
 	dfs::vertex_data_known dfs::knownOrAddNewVertex(dfs::explorer& ex,
 			dfs::vertex_data_ptr rep) {
-int tid = omp_get_thread_num();
-#pragma omp critical(print)
-std::cout << "\t[" << tid << "] exploring vertex " << rep->coords << std::endl;
+//int tid = omp_get_thread_num();
+//#pragma omp critical(print)
+//std::cout << "\t[" << tid << "] exploring vertex " << rep->coords << std::endl;
 		/* check vertex against local store */
 		vertex_data_ptr known =
 				ex.knownVertex(ex.vertexOrbits, ex.vertexGramMap, rep);
-if ( known ) {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.vertexOrbits.size() << std::endl;
-}
+//if ( known ) {
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.vertexOrbits.size() << std::endl;
+//}
 
 		while ( ! known ) {
 			coordinates_map newVertexOrbits;
@@ -812,13 +838,13 @@ std::cout << "\t\t[" << tid << "] rejected by locals: l = " << ex.vertexOrbits.s
 			#pragma omp critical(vertices)
 			{
 			if ( ex.vertexOrbits.size() == globalVertexOrbits.size() ) {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] accepted: l = g = " << ex.vertexOrbits.size() << std::endl;
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] accepted: l = g = " << ex.vertexOrbits.size() << std::endl;
 				/* local up to date, add to global */
 				addVertex(rep);
 			} else {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] delayed: l = " << ex.vertexOrbits.size() << ", g = " << globalVertexOrbits.size() << std::endl;
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] delayed: l = " << ex.vertexOrbits.size() << ", g = " << globalVertexOrbits.size() << std::endl;
 				/* update local to current global state */
 				newVertexOrbits.insert(
 						globalVertexOrbits.begin() + ex.vertexOrbits.size(),
@@ -855,10 +881,10 @@ std::cout << "\t\t[" << tid << "] delayed: l = " << ex.vertexOrbits.size() << ",
 
 				/* test vertex against new local cache */
 				known = ex.knownVertex(newVertexOrbits, newVertexGramMap, rep);
-if ( known ) {
-#pragma omp critical(print)
-std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newVertexOrbits.size() << ", l = " << ex.vertexOrbits.size() << std::endl;
-}
+//if ( known ) {
+//#pragma omp critical(print)
+//std::cout << "\t\t[" << tid << "] rejected by updates: u = " << newVertexOrbits.size() << ", l = " << ex.vertexOrbits.size() << std::endl;
+//}
 			}
 		}
 
