@@ -44,6 +44,9 @@ namespace basil {
 		
 		/* set algorithm start time */
 		start_time = std::clock();
+#ifdef BAS_WALLTIME
+		gettimeofday(&wall_start_time, 0);
+#endif /* BAS_WALLTIME */
 		
 		/* print initial dictionary */
 		if (opts.showsAllDicts) l.printDict();
@@ -56,6 +59,9 @@ namespace basil {
 		
 		/* set algorithm end time */
 		diff_time = std::clock() - start_time;
+#ifdef BAS_WALLTIME
+		gettimeofday(&wall_end_time, 0);
+#endif /* BAS_WALLTIME */
 		
 		return res;
 	}
@@ -78,6 +84,16 @@ namespace basil {
 	std::clock_t dfs::getRunningTime() const 
 		{ return diff_time / clocks_per_ms; }
 	
+#ifdef BAS_WALLTIME
+	long dfs::getWallTime() const {
+		double d_start =
+				wall_start_time.tv_sec * 1000000 + wall_start_time.tv_usec;
+		double d_end =
+				wall_end_time.tv_sec * 1000000 + wall_end_time.tv_usec;
+		return (long)((d_end - d_start)/1000);
+	}
+#endif /* BAS_WALLTIME */
+
 	permutation_group const& dfs::getSymmetryGroup() const { return g; }
 	
 	dfs::coordinates_map const& dfs::getVertexOrbits() const 

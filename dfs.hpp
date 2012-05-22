@@ -20,6 +20,10 @@
 
 #include <gmpxx.h>
 
+#ifdef BAS_WALLTIME
+#include <sys/time.h>
+#endif /* BAS_WALLTIME */
+
 #include "basil.hpp"
 #include "gram.hpp"
 
@@ -321,6 +325,11 @@ namespace basil {
 		/** @return the running time of the algorithm, in milliseconds */
 		std::clock_t getRunningTime() const;
 		
+#ifdef BAS_WALLTIME
+		/** @return the wall time the algorithm took, in milliseconds */
+		long getWallTime() const;
+#endif /* BAS_WALLTIME */
+
 		/** @return the symmetry group used in the DFS */
 		permutation_group const& getSymmetryGroup() const;
 		
@@ -553,6 +562,11 @@ namespace basil {
 		/** Temporary to store time diffs into. Will hold total running time on 
 		 *  algorithm completion. */
 		std::clock_t diff_time;
+#ifdef BAS_WALLTIME
+		/** Temporary to store time diffs into. Will hold total running time on
+		 *  algorithm completion. Uses wall time instead of CPU time. */
+		struct timeval wall_end_time;
+#endif /* BAS_WALLTIME */
 		/** If the basis count hit the maximum count */
 		bool hitMaxBasis;
 		/** The first cobasis found */
@@ -565,6 +579,10 @@ namespace basil {
 		ind realDim;
 		/** the time at which the algorithm was started */
 		std::clock_t start_time;
+#ifdef BAS_WALLTIME
+		/* The wall time at which the algorithm was started */
+		struct timeval wall_start_time;
+#endif /* BAS_WALLTIME */
 		/** representatives of each orbit (of vertices) */
 		coordinates_map vertexOrbits;
 		/** Lookup vertices by gram vector */

@@ -13,7 +13,7 @@
 
 #ifdef BAS_MT
 #include <omp.h>
-#endif
+#endif /* BAS_MT */
 
 #include <permlib/permlib_api.h>
 
@@ -24,7 +24,7 @@
 #include "dfsp.hpp"
 #else
 #include "dfs.hpp"
-#endif
+#endif /* BAS_MT */
 
 #include "fmt.hpp"
 #include "gram.hpp"
@@ -404,9 +404,12 @@ int main(int argc, char **argv) {
 		#pragma omp master
 		out 	<< "\nnumber threads: " << omp_get_num_threads();
 		} /* omp parallel */
-#endif
-		out 	<< "\ntotal running time: " << d.getRunningTime() << " ms"
-				<< endl;
+#endif /* BAS_MT */
+		out 	<< "\ntotal running time: " << d.getRunningTime() << " ms";
+#ifdef BAS_WALLTIME
+		out		<< "\nwall time: " << d.getWallTime() << " ms";
+#endif /* BAS_WALLTIME */
+		out		<< endl;
 		
 		exit(EXIT_SUCCESS);
 	} else {
