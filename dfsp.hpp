@@ -55,9 +55,9 @@ namespace basil {
 				basisLimit(std::numeric_limits<unsigned long>::max()), 
 				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
 				gramVec(true), debugGram(false), lexOnly(false), 
-				lrs_o(), out(&std::cout), printBasis(0), 
+				lrs_o(), out(&std::cout), printBasis(0),
 				printNew(false), printRay(0), printVertex(0), 
-				showsAllDicts(false), stabSearch(false) {}
+				showsAllDicts(false), stabSearch(false), usesLocalStack(true) {}
 		
 		/** Sets (or unsets) the aRepresentation option */
 		dfs_opts& inARepresentation(bool opt = true)
@@ -95,6 +95,10 @@ namespace basil {
 		dfs_opts& withLexOnly(bool opt = true)
 			{ lexOnly = opt; return *this; }
 		
+		/** Deactivates (or activates) the uselocalStack option */
+		dfs_opts& useLocalStack(bool opt = false)
+			{ usesLocalStack = opt; return *this; }
+
 		/** Sets the output stream for this DFS. Also sets the output 
 		 *  stream for the associated LRS instance. */
 		dfs_opts& withOutput(std::ostream& o) 
@@ -191,6 +195,8 @@ namespace basil {
 		 *  than the full symmetry group [false]. Not reccommended, 
 		 *  stabilizer computation costs more than it saves */
 		bool stabSearch;
+		/** Use thread-local stacks to reduce global sychronization [true] */
+		bool usesLocalStack;
 	}; /* struct dfs_opts */
 	
 	/** Stateful wrapper class for DFS algorithm. */
@@ -491,6 +497,8 @@ namespace basil {
 			coordinates_map vertexOrbits;
 			/** Lookup vertices by gram vector */
 			vertex_gram_map vertexGramMap;
+			/** This thread's pending bases to explore */
+			state_stack workStack;
 		};
 	
 	public:

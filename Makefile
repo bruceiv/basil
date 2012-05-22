@@ -1,5 +1,5 @@
 CPPFLAGS = -DTIMES -DGMP -DLRS_QUIET -DLRS_THREADSAFE
-CXXFLAGS = -ggdb -O0 -Wall -Wno-unused -fopenmp
+CXXFLAGS = -ggdb -O2 -Wall -Wno-unused -fopenmp
 LDFLAGS = -lboost_program_options-mt -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable
@@ -11,7 +11,7 @@ OBJSP = automorphism.o parse.o gram.o dfsp.o
 .cpp.o:  
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(LDFLAGS)
 
-.PHONY:  clean clean_all clean_doc doc lrs
+.PHONY:  clean clean_p clean_all clean_doc doc lrs
 
 # generate main program
 basil:  lrs $(OBJS) main.cpp
@@ -30,10 +30,13 @@ lrs:
 
 # clean generated files
 clean:  
-	-rm $(OBJS) basil basilp
+	-rm $(OBJS) basil
+
+clean_p:
+	-rm $(OBJSP) basilp
 
 # clean all generated files (including libraries and documentation)
-clean_all:  clean clean_doc
+clean_all:  clean clean_p clean_doc
 	-cd lrs && make clean
 
 #clean documentation

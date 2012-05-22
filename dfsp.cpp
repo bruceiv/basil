@@ -50,6 +50,9 @@ namespace basil {
 		rayOrbits = coordinates_map();
 		vertexOrbits = coordinates_map();
 		vertexGramMap = vertex_gram_map();
+		if ( opts.usesLocalStack ) {
+			workStack = state_stack();
+		}
 	}
 	
 	bool dfs::explorer::isKnownCobasis(
@@ -396,7 +399,7 @@ namespace basil {
 		/* Algorithm success */
 		int nThreads = 0;
 		int nSuccess = 0;
-		/* Waiting threads */
+		/* Number of stalled threads */
 		int nWaiting = 0;
 		
 		#pragma omp parallel reduction(+:nSuccess)
@@ -474,27 +477,47 @@ namespace basil {
 		bool working = true;
 
 		while ( working ) {
-			#pragma omp critical(stacks)
-			{
-			/* check for work */
-			if ( globalWorkStack.empty() ) {
-				if ( ! waiting ) {
-					waiting = true;
-					++nWaiting;
+			if ( globalOpts.usesLocalStack && ! ex.workStack.empty() ) {
+				/* pop the pivot to explore off of the local stack */
+				ps = ex.workStack.back(); ex.workStack.pop_back();
+				/* share local work stack */
+				if ( ! ex.workStack.empty() ) {
+					#pragma omp critical(stacks)
+					{
+						if ( nWaiting > 0 ) {
+							/* unload local work stack into global if needed */
+							do {
+								globalWorkStack.push_back(ex.workStack.back());
+								ex.workStack.pop_back();
+							} while ( ! ex.workStack.empty() );
+						}
+					} /* omp critical(stacks) */
 				}
+				/* decide whether to run again or not */
+				working = ( globalOpts.basisLimit > ex.basisOrbits.size() );
 			} else {
-				/* pop the pivot to the edge to explore off the work stack */
-				ps = globalWorkStack.back(); globalWorkStack.pop_back();
-				if ( waiting ) {
-					waiting = false;
-					--nWaiting;
+				#pragma omp critical(stacks)
+				{
+				/* check for work */
+				if ( globalWorkStack.empty() ) {
+					if ( ! waiting ) {
+						waiting = true;
+						++nWaiting;
+					}
+				} else {
+					/* pop the pivot to the edge to explore off the global
+					 * stack */
+					ps = globalWorkStack.back(); globalWorkStack.pop_back();
+					if ( waiting ) {
+						waiting = false;
+						--nWaiting;
+					}
 				}
+				/* decide whether to run again or not */
+				working = ( nWaiting < nThreads
+						&& globalOpts.basisLimit > ex.basisOrbits.size() );
+				} /* omp critical(stacks) */
 			}
-
-			/* decide whether to run again or not */
-			working = ( nWaiting < nThreads
-					&& globalOpts.basisLimit > ex.basisOrbits.size() );
-			} /* omp critical(stacks) */
 
 			/* poll for new work if we don't have any */
 			if ( waiting ) continue;
@@ -965,10 +988,14 @@ namespace basil {
 
 						pivot_stack newWork = ex.pathStack;
 						newWork.push_back(pivot(oldCob, leave, enter));
-						#pragma omp critical(stacks)
-						{
-						globalWorkStack.push_back(newWork);
-						} /* omp critical(stacks) */
+						if ( globalOpts.usesLocalStack ) {
+							ex.workStack.push_back(newWork);
+						} else {
+							#pragma omp critical(stacks)
+							{
+							globalWorkStack.push_back(newWork);
+							} /* omp critical(stacks) */
+						}
 
 						if ( globalOpts.printTrace ) {
 							#pragma omp critical(print)
@@ -989,10 +1016,14 @@ namespace basil {
 
 							pivot_stack newWork = ex.pathStack;
 							newWork.push_back(pivot(oldCob, leave, enter));
-							#pragma omp critical(stacks)
-							{
-							globalWorkStack.push_back(newWork);
-							} /* omp critical(stacks) */
+							if ( globalOpts.usesLocalStack ) {
+								ex.workStack.push_back(newWork);
+							} else {
+								#pragma omp critical(stacks)
+								{
+								globalWorkStack.push_back(newWork);
+								} /* omp critical(stacks) */
+							}
 
 							if ( globalOpts.printTrace ) {
 								#pragma omp critical(print)

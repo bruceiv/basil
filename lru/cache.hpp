@@ -156,7 +156,7 @@ namespace lru {
 		/** Gets the beginning iterator (points to the least recently used 
 		 *  item). Iteration using this iterator will not modify the use order 
 		 *  of the cache. */
-		iterator begin() const { 
+		iterator begin() const {
 			return cache_.template get<lru_list>().begin();
 			/* return cache_.rbegin(); */
 		}
@@ -164,7 +164,7 @@ namespace lru {
 		/** Gets the ending iterator (points just past the most recently used 
 		 *  item). Iteration using this iterator will not modify the use order 
 		 *  of the cache. */
-		iterator end() const { 
+		iterator end() const {
 			return cache_.template get<lru_list>().end();
 			/* return cache_.rend(); */
 		}

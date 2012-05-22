@@ -77,7 +77,8 @@ namespace basil {
 						->default_value(true)->implicit_value(false),
 					"If it is known that all symmetric vectors have the same "
 					"norm, this flag will save expensive normalization "
-					"calculations in gram matrix construction.")
+					"calculations in gram matrix construction; use may result "
+					"in duplicate orbit representatives.")
 				("debug-gram",
 					bool_switch(&dfsOpts_.debugGram),
 					"Print gram vectors for vertices/rays/cobases that are "
@@ -86,6 +87,13 @@ namespace basil {
 					bool_switch(&dfsOpts_.stabSearch),
 					"Activate cobasis stabilizer search (not reccommended, "
 					"stabilizer computation costs more than it saves)")
+#ifdef BAS_MT
+				("no-local-stack",
+					bool_switch(&dfsOpts_.usesLocalStack)
+						->default_value(true)->implicit_value(false),
+					"Deactivate thread-local work stacks; This reduces memory "
+					"usage at the cost of increased execution time.")
+#endif
 				("print-basis",
 					value<long>(&dfsOpts_.printBasis),
 					"Print the number of cobases found and running time every "
