@@ -31,6 +31,14 @@
 #include "parse.hpp"
 
 namespace basil {
+	/** Switch between sequential and parallel DFS */
+#ifdef BAS_MT
+	typedef dfsp		dfs_t;
+	typedef dfsp_opts	dfs_opts_t;
+#else
+	typedef dfs			dfs_t;
+	typedef dfs_opts	dfs_opts_t;
+#endif /* BAS_MT */
 
 	/** Contains runtime custimizations for basil
 	 */
@@ -280,7 +288,7 @@ namespace basil {
 			{ return outFile.is_open() ? outFile : std::cout; }
 		
 		/** get the DFS options */
-		dfs_opts& dfsOpts() { return dfsOpts_; }
+		dfs_opts_t& dfsOpts() { return dfsOpts_; }
 		
 		/** get the problem matrix. - may call parse() if it has yet to be 
 		 *  called */
@@ -326,7 +334,7 @@ namespace basil {
 			{ return grpFile.is_open() ? grpFile : matIn(); }
 		
 		/** options to provide to the DFS */
-		dfs_opts dfsOpts_;
+		dfs_opts_t dfsOpts_;
 		/** Matrix input stream */
 		std::ifstream matFile;
 		/** Group input stream */
@@ -384,7 +392,7 @@ int main(int argc, char **argv) {
 	}
 	
 	//initialize DFS algorithm
-	dfs d(o.mat(), o.lin(), o.grp(), o.gram(), o.dfsOpts() );
+	dfs_t d(o.mat(), o.lin(), o.grp(), o.gram(), o.dfsOpts() );
 	
 	//run DFS algorithm
 	if ( d.doDfs() ) {

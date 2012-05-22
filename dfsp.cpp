@@ -35,8 +35,8 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////
 	
-	dfs::explorer::explorer(matrix& m, index_set& lin,
-			permutation_group g, gram_matrix gram, dfs_opts o)
+	dfsp::explorer::explorer(matrix& m, index_set& lin,
+			permutation_group g, gram_matrix gram, dfsp_opts o)
 			: l(m, lin, o.lrs_o), g(g), gramMat(gram), opts(o),
 			  dim(m.dim()), rows(m.size()) {
 		
@@ -55,9 +55,9 @@ namespace basil {
 		}
 	}
 	
-	bool dfs::explorer::isKnownCobasis(
-			dfs::cobasis_map& cobs, dfs::cobasis_gram_map& grams,
-			index_set cob, dfs::vertex_data_ptr dat) {
+	bool dfsp::explorer::isKnownCobasis(
+			cobasis_map& cobs, cobasis_gram_map& grams,
+			index_set cob, vertex_data_ptr dat) {
 
 		index_set_list possibleMatches =
 				matchingCobasisInvariants(cobs, grams, cob, dat);
@@ -160,8 +160,8 @@ namespace basil {
 		return false;
 	}
 
-	dfs::vertex_data_ptr dfs::explorer::knownRay(
-			dfs::coordinates_map& rays, dfs::vertex_data_ptr rep) {
+	vertex_data_ptr dfsp::explorer::knownRay(
+			coordinates_map& rays, vertex_data_ptr rep) {
 		/* TODO think about including gram invariant here */
 		
 		/* incidence set to find */
@@ -197,8 +197,8 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	dfs::vertex_data_ptr dfs::explorer::knownVertex(dfs::coordinates_map& verts,
-			dfs::vertex_gram_map& grams, dfs::vertex_data_ptr rep) {
+	vertex_data_ptr dfsp::explorer::knownVertex(coordinates_map& verts,
+			vertex_gram_map& grams, vertex_data_ptr rep) {
 		coordinates_map::iterator found = verts.find(rep->coords);
 		if ( found != verts.end() ) {
 			/* duplicate vertex */
@@ -246,9 +246,9 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 
-	dfs::index_set_list dfs::explorer::matchingCobasisInvariants(
-			dfs::cobasis_map& cobs, dfs::cobasis_gram_map& grams,
-			index_set cob, dfs::vertex_data_ptr dat) {
+	index_set_list dfsp::explorer::matchingCobasisInvariants(
+			cobasis_map& cobs, cobasis_gram_map& grams,
+			index_set cob, vertex_data_ptr dat) {
 
 		/* list of cobases with matching invariants */
 		index_set_list matches;
@@ -302,9 +302,9 @@ namespace basil {
 		return matches;
 	}
 
-	dfs::vertex_data_list dfs::explorer::matchingInvariants(
-			dfs::coordinates_map& verts, dfs::vertex_gram_map& grams,
-			dfs::vertex_data_ptr rep) {
+	vertex_data_list dfsp::explorer::matchingInvariants(
+			coordinates_map& verts, vertex_gram_map& grams,
+			vertex_data_ptr rep) {
 
 		/* list of vertices with matching invariants */
 		vertex_data_list matches;
@@ -339,7 +339,7 @@ namespace basil {
 		return matches;
 	}
 
-	void dfs::explorer::pivotTo(dfs::pivot_stack const& target) {
+	void dfsp::explorer::pivotTo(dfsp::pivot_stack const& target) {
 		/* backtrack up state stack until it is only the prefix shared with the
 		 * target stack, then fill the state stack back in with the remainder
 		 * of the destination stack */
@@ -382,8 +382,8 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////
 	
-	dfs::dfs(matrix& m, index_set& lin, permutation_group& g, 
-			gram_matrix& gram, dfs_opts o) : globalM(m), globalLin(lin),
+	dfsp::dfsp(matrix& m, index_set& lin, permutation_group& g,
+			gram_matrix& gram, dfsp_opts o) : globalM(m), globalLin(lin),
 			globalG(g), globalOpts(o),
 			globalDim(m.dim()), globalRows(m.size()), globalGramMat(gram) {
 		
@@ -391,7 +391,7 @@ namespace basil {
 		initGlobals();
 	}
 	
-	bool dfs::doDfs() {
+	bool dfsp::doDfs() {
 		
 		/* set algorithm start time */
 		start_time = std::clock();
@@ -573,27 +573,27 @@ namespace basil {
 	// Query methods for after completion of doDfs()
 	////////////////////////////////////////////////////////////////////
 	
-	dfs::cobasis_map dfs::getBasisOrbits() const {
+	cobasis_map dfsp::getBasisOrbits() const {
 		return cobasis_map(globalBasisOrbits.begin(), 
 				globalBasisOrbits.end());
 	}
 	
-	ind dfs::getDimension() const { return globalDim - 1; }
+	ind dfsp::getDimension() const { return globalDim - 1; }
 	
-	index_set dfs::getInitialCobasis() const { return initialCobasis; }
+	index_set dfsp::getInitialCobasis() const { return initialCobasis; }
 	
-	bool dfs::isFinished() const { return !hitMaxBasis; }
+	bool dfsp::isFinished() const { return !hitMaxBasis; }
 	
-	dfs::coordinates_map dfs::getRayOrbits() const { 
+	coordinates_map dfsp::getRayOrbits() const {
 		return coordinates_map(globalRayOrbits.begin(), 
 				globalRayOrbits.end());
 	}
 	
-	std::clock_t dfs::getRunningTime() const 
+	std::clock_t dfsp::getRunningTime() const
 		{ return diff_time / clocks_per_ms; }
 	
 #ifdef BAS_WALLTIME
-	long dfs::getWallTime() const {
+	long dfsp::getWallTime() const {
 		double d_start =
 				wall_start_time.tv_sec * 1000000 + wall_start_time.tv_usec;
 		double d_end =
@@ -602,14 +602,14 @@ namespace basil {
 	}
 #endif /* BAS_WALLTIME */
 
-	permutation_group const& dfs::getSymmetryGroup() const { return globalG; }
+	permutation_group const& dfsp::getSymmetryGroup() const { return globalG; }
 	
-	dfs::coordinates_map dfs::getVertexOrbits() const { 
+	coordinates_map dfsp::getVertexOrbits() const {
 		return coordinates_map(globalVertexOrbits.begin(), 
 				globalVertexOrbits.end());
 	}
 	
-	gram_matrix const& dfs::getGramMat() const { return globalGramMat; }
+	gram_matrix const& dfsp::getGramMat() const { return globalGramMat; }
 	
 	
 	////////////////////////////////////////////////////////////////////
@@ -618,8 +618,7 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////
 	
-	void dfs::addCobasis(index_set const& cob, 
-			dfs::vertex_data_ptr dat) {
+	void dfsp::addCobasis(index_set const& cob, vertex_data_ptr dat) {
 		
 		unsigned int oSize;
 		#pragma omp critical(globals)
@@ -644,7 +643,7 @@ namespace basil {
 		}
 	}
 	
-	void dfs::addVertex(dfs::vertex_data_ptr dat) {
+	void dfsp::addVertex(vertex_data_ptr dat) {
 		
 		unsigned int oSize;
 		#pragma omp critical(globals)
@@ -677,7 +676,7 @@ namespace basil {
 		}
 	}
 	
-	void dfs::getRays(dfs::explorer& ex) {
+	void dfsp::getRays(dfsp::explorer& ex) {
 		for (ind j = 1; j <= realDim; j++) {
 			vector_mpz_ptr s( ex.l.getSolution(j) );
 			
@@ -755,7 +754,7 @@ namespace basil {
 		}
 	}
 	
-	void dfs::initGlobals() {
+	void dfsp::initGlobals() {
 		/* account for flipability of arrangement gram matrix */
 		if ( globalOpts.aRepresentation ) globalGramMat = globalGramMat.abs();
 		
@@ -769,8 +768,8 @@ namespace basil {
 		globalWorkStack = state_stack();
 	}
 	
-	bool dfs::knownOrAddNewCobasis(dfs::explorer& ex,
-			index_set cob, dfs::vertex_data_ptr dat) {
+	bool dfsp::knownOrAddNewCobasis(dfsp::explorer& ex,
+			index_set cob, vertex_data_ptr dat) {
 
 //int tid = omp_get_thread_num();
 //#pragma omp critical(print)
@@ -857,8 +856,8 @@ namespace basil {
 		return false;
 	}
 
-	dfs::vertex_data_known dfs::knownOrAddNewVertex(dfs::explorer& ex,
-			dfs::vertex_data_ptr rep) {
+	dfsp::vertex_data_known dfsp::knownOrAddNewVertex(dfsp::explorer& ex,
+			vertex_data_ptr rep) {
 //int tid = omp_get_thread_num();
 //#pragma omp critical(print)
 //std::cout << "\t[" << tid << "] exploring vertex " << rep->coords << std::endl;
@@ -930,7 +929,7 @@ namespace basil {
 		return vertex_data_known(known, false);
 	}
 
-	void dfs::pushNewEdges(explorer& ex, index_set& oldCob) {
+	void dfsp::pushNewEdges(explorer& ex, index_set& oldCob) {
 
 		/* for each index in the old cobasis */
 		for (index_set_iter it = lrs::begin(oldCob);
@@ -1077,8 +1076,8 @@ namespace basil {
 		}
 	}
 
-	dfs::vertex_data_ptr dfs::rayData(dfs::cobasis_ptr cob, 
-			dfs::vector_mpz_ptr coords) {
+	vertex_data_ptr dfsp::rayData(dfsp::cobasis_ptr cob,
+			dfsp::vector_mpz_ptr coords) {
 		/* TODO look at including gramVec from dfs.gap RayRep() */
 		
 		/* union of the cobasis and extra incidence of the cobasis 
@@ -1096,8 +1095,8 @@ namespace basil {
 		return dat;
 	}
 	
-	dfs::vertex_data_ptr dfs::vertexData(dfs::cobasis_ptr cob, 
-			dfs::vector_mpz_ptr coords) {
+	vertex_data_ptr dfsp::vertexData(dfsp::cobasis_ptr cob,
+			dfsp::vector_mpz_ptr coords) {
 		
 		/* union of the cobasis and extra incidence of the cobasis 
 		 * data */

@@ -7,7 +7,8 @@
 
 #include <boost/functional.hpp>
 
-#include "dfs.hpp"
+#include "dfs_types.hpp"
+
 #include "lrs/cobasis.hpp"
 
 namespace basil {
@@ -117,7 +118,7 @@ namespace basil {
 	}
 
 	/** Prints a list of cobases. */
-	static string fmt(dfs::cobasis_map const& m, int tabs = single_line) {
+	static string fmt(cobasis_map const& m, int tabs = single_line) {
 		typedef
 			bool (*index_set_comparator)(index_set const&, index_set const&);
 		
@@ -142,9 +143,9 @@ namespace basil {
 	}
 
 	/** prints a representation of a list of vertices */
-	static string fmt(dfs::coordinates_map const& m, int tabs = single_line) {
+	static string fmt(coordinates_map const& m, int tabs = single_line) {
 		std::ostringstream o;
-		std::set<dfs::coordinates> s;
+		std::set<coordinates> s;
 		/* sort the set of coordinates */
 		insertKeys(m.begin(), m.end(), std::inserter(s, s.begin()));
 		o << s.size() << lineSpace(tabs);

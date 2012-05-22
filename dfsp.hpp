@@ -1,7 +1,7 @@
 #ifndef _DFS_HPP_
 #define _DFS_HPP_
 
-/* NOTE: Do not include with dfs.hpp - name collisions */
+/* NOTE: Will not include along with dfs.hpp */
 
 #include <ctime>
 #include <deque>
@@ -27,6 +27,7 @@
 #endif /* BAS_WALLTIME */
 
 #include "basil.hpp"
+#include "dfs_types.hpp"
 #include "gram.hpp"
 
 #include "lrs/cobasis.hpp"
@@ -50,11 +51,11 @@ namespace basil {
 	 *  default values, while the methods can be used to modify the 
 	 *  options.
 	 */
-	struct dfs_opts {
+	struct dfsp_opts {
 		
 		/** Default constructor - sets all options to their default 
 		 *  value. */
-		dfs_opts() 
+		dfsp_opts()
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<unsigned long>::max()), 
 				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
@@ -64,48 +65,48 @@ namespace basil {
 				showsAllDicts(false), stabSearch(false), usesLocalStack(true) {}
 		
 		/** Sets (or unsets) the aRepresentation option */
-		dfs_opts& inARepresentation(bool opt = true)
+		dfsp_opts& inARepresentation(bool opt = true)
 			{ aRepresentation = opt; return *this; }
 		
 		/** Activates (or deactivates) the assumesNoSymmetry option */
-		dfs_opts& assumeNoSymmetry(bool opt = true)
+		dfsp_opts& assumeNoSymmetry(bool opt = true)
 			{ assumesNoSymmetry = opt; return *this; }
 		
 		/** Sets the maximum number of bases to be considered */
-		dfs_opts& withBasisLimit(unsigned long lim)
+		dfsp_opts& withBasisLimit(unsigned long lim)
 			{ basisLimit = lim; return *this; }
 		
 		/** Sets the size of the cobasis cache */
-		dfs_opts& withCacheSize(long size)
+		dfsp_opts& withCacheSize(long size)
 			{ cacheSize = size; return *this; }
 		
 		/** Deactivates (or activates) the dualFacetTrick option */
-		dfs_opts& noDualFacetTrick(bool opt = true) 
+		dfsp_opts& noDualFacetTrick(bool opt = true)
 			{ dualFacetTrick = !opt; return *this; }
 		
 		/** Sets the initial cobasis to DFS from */
-		dfs_opts& withFirstCobasis(shared_ptr<lrs::index_set>& ptr) 
+		dfsp_opts& withFirstCobasis(shared_ptr<lrs::index_set>& ptr)
 			{ firstCobasis = ptr; return *this; }
 		
 		/** Deactivates (or activates) the gramVec option */
-		dfs_opts& noGramVec(bool opt = true) 
+		dfsp_opts& noGramVec(bool opt = true)
 			{ gramVec = !opt; return *this; }
 		
 		/** Activates (or deactivates) the debugGram option */
-		dfs_opts& doDebugGram(bool opt = true) 
+		dfsp_opts& doDebugGram(bool opt = true)
 			{ debugGram = opt; return *this; }
 		
 		/** Activates (or deactivates) the lexOnly option */
-		dfs_opts& withLexOnly(bool opt = true)
+		dfsp_opts& withLexOnly(bool opt = true)
 			{ lexOnly = opt; return *this; }
 		
 		/** Deactivates (or activates) the uselocalStack option */
-		dfs_opts& useLocalStack(bool opt = false)
+		dfsp_opts& useLocalStack(bool opt = false)
 			{ usesLocalStack = opt; return *this; }
 
 		/** Sets the output stream for this DFS. Also sets the output 
 		 *  stream for the associated LRS instance. */
-		dfs_opts& withOutput(std::ostream& o) 
+		dfsp_opts& withOutput(std::ostream& o)
 			{ out = &o; lrs_o.withOutput(o); return *this; }
 		
 		/** Gets the output stream for this DFS */
@@ -113,41 +114,41 @@ namespace basil {
 			{ return *out; }
 		
 		/** Convenience for print{Basis,Ray,Vertex} */
-		dfs_opts& printAt(long n) {
+		dfsp_opts& printAt(long n) {
 			printBasis = n; printRay = n; printVertex = n; 
 			return *this;
 		}
 		
 		/** Sets the basis printing interval */
-		dfs_opts& printBasisAt(long n)
+		dfsp_opts& printBasisAt(long n)
 			{ printBasis = n; return *this; }
 		
 		/** Activates (or deactivates) the printNew option */
-		dfs_opts& doPrintNew(bool opt = true)
+		dfsp_opts& doPrintNew(bool opt = true)
 			{ printNew = opt; return *this; }
 		
 		/** Activates (or deactivates) the trace printing option */
-		dfs_opts& doPrintTrace(bool opt = true)
+		dfsp_opts& doPrintTrace(bool opt = true)
 			{ printTrace = opt; return *this; }
 		
 		/** Sets the ray printing interval */
-		dfs_opts& printRayAt(long n)
+		dfsp_opts& printRayAt(long n)
 			{ printRay = n; return *this; }
 		
 		/** Sets the vertex printing interval */
-		dfs_opts& printVertexAt(long n)
+		dfsp_opts& printVertexAt(long n)
 			{ printVertex = n; return *this; }
 		
 		/** Activates (or deactivates) the showsAllDicts option */
-		dfs_opts& showAllDicts(bool opt = true) 
+		dfsp_opts& showAllDicts(bool opt = true)
 			{ showsAllDicts = opt; return *this; }
 		
 		/** Activates (or deactivates) the stabSearch option */
-		dfs_opts& useStabSearch(bool opt = true)
+		dfsp_opts& useStabSearch(bool opt = true)
 			{ stabSearch = opt; return *this; }
 		
 		/** Sets (or unsets) the V-representation flag  */
-		dfs_opts& inVRepresentation(bool opt = true)
+		dfsp_opts& inVRepresentation(bool opt = true)
 			{ lrs_o.inVRepresentation(opt); return *this; }
 		
 		
@@ -201,10 +202,10 @@ namespace basil {
 		bool stabSearch;
 		/** Use thread-local stacks to reduce global sychronization [true] */
 		bool usesLocalStack;
-	}; /* struct dfs_opts */
+	}; /* struct dfsp_opts */
 	
 	/** Stateful wrapper class for DFS algorithm. */
-	class dfs {
+	class dfsp {
 	private:
 
 		////////////////////////////////////////////////////////////////
@@ -223,84 +224,6 @@ namespace basil {
 		typedef shared_ptr<cobasis> cobasis_ptr;
 
 		typedef std::pair<ind, ind> index_pair;
-	public:
-		
-		////////////////////////////////////////////////////////////////
-		// Typedefs for external data types
-		////////////////////////////////////////////////////////////////
-		
-		typedef lrs::vector_mpq coordinates;
-		
-		typedef std::vector<index_set> index_set_list;
-		
-		/** Joint vertex-cobasis storage */
-		struct vertex_data {
-			
-			/** Single-cobasis constructor. Initializes all fields as 
-			 *  you would think, where cobs is set up to be a set 
-			 *  initially including only cob. 
-			 */
-			vertex_data(coordinates coords, index_set inc, 
-					index_set cob, mpz_class det, gram_matrix gram) 
-					: coords(coords), inc(inc), cobs(), det(det), 
-					gram(gram) {
-				cobs.insert(cob);
-			}
-			
-			/** Multiple-cobasis constructor. Initializes all fields to 
-			 *  the given values */
-			vertex_data(coordinates coords, index_set inc, 
-					std::set<index_set> cobs, mpz_class det, 
-					gram_matrix gram) 
-					: coords(coords), inc(inc), cobs(cobs), det(det), 
-					gram(gram) { }
-			
-			/* Key data */
-			/** Coordinates of the vertex */
-			coordinates coords;
-			/** Set of incident cobasis indices */
-			index_set inc;
-			/** Set of cobases for this vertex */
-			std::set<index_set> cobs;
-			
-			/* Invariants */
-			/** determinant */
-			mpz_class det;
-			/** gram matrix */
-			gram_matrix gram;
-		};
-		typedef shared_ptr<vertex_data> vertex_data_ptr;
-		typedef std::vector<vertex_data_ptr> vertex_data_list;
-		
-		/** map of vertex coordinates to a vertex data pointer */
-		typedef 
-			boost::unordered_map<
-				coordinates, vertex_data_ptr, coordinates_hash>
-			coordinates_map;
-		/** map of a cobasis to a vertex data pointer */
-		typedef
-			boost::unordered_map<
-				index_set, vertex_data_ptr, index_set_hash>
-			cobasis_map;
-		/** map of a gram vector to its cobases, and the associated vertex 
-		 *  data */
-		typedef
-			boost::unordered_multimap<
-				gram_matrix, 
-				std::pair<index_set, vertex_data_ptr>, 
-				gram_matrix_hash>
-			cobasis_gram_map;
-		/** map of a gram vector to its vertices */
-		typedef
-			boost::unordered_multimap<
-				gram_matrix, vertex_data_ptr, gram_matrix_hash>
-			vertex_gram_map;
-	
-	private:
-		
-		////////////////////////////////////////////////////////////////
-		// More typedefs for internal data types
-		////////////////////////////////////////////////////////////////
 		
 		/** Representation of a pivot */
 		struct pivot {
@@ -395,7 +318,7 @@ namespace basil {
 			 *  				(may be empty if o.gramVec == false)
 			 */
 			explorer(matrix& m, index_set& lin, permutation_group g,
-					gram_matrix gram, dfs_opts o = dfs_opts());
+					gram_matrix gram, dfsp_opts o = dfsp_opts());
 		private:
 			/** Disallow copy-construction */
 			explorer(explorer& that);
@@ -477,7 +400,7 @@ namespace basil {
 			 *  for gram vectors */
 			gram_matrix gramMat;
 			/** Options for controlling the DFS algorithm */
-			dfs_opts opts;
+			dfsp_opts opts;
 			/** Dimension of the problem */
 			ind dim;
 			/** number of rows in the problem */
@@ -521,8 +444,8 @@ namespace basil {
 		 *  @param opts		The options for this DFS (default values if 
 		 *  				not provided)
 		 */
-		dfs(matrix& m, index_set& lin, permutation_group& g, 
-			gram_matrix& gram, dfs_opts o = dfs_opts());
+		dfsp(matrix& m, index_set& lin, permutation_group& g,
+			gram_matrix& gram, dfsp_opts o = dfsp_opts());
 		
 		/** Perform the DFS. Should be called single-threaded, handles 
 		 *  parallelism internally.
@@ -666,7 +589,7 @@ namespace basil {
 		/** Permutation group used for this DFS */
 		permutation_group& globalG;
 		/** Options for controlling the DFS algorithm */
-		dfs_opts globalOpts;
+		dfsp_opts globalOpts;
 		/** Dimension of the problem */
 		ind globalDim;
 		/** number of rows in the problem */
@@ -721,7 +644,7 @@ namespace basil {
 			return diff_time / clocks_per_ms;
 		}
 		
-	}; /* class dfs */
+	}; /* class dfsp */
 	
 	/** Gets the gram vector for an incidence set.
 	 *  @param gramMat	The gram matrix to restrict

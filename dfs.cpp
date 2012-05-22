@@ -71,7 +71,7 @@ namespace basil {
 	// Query methods for after completion of doDfs()
 	////////////////////////////////////////////////////////////////////////////
 	
-	dfs::cobasis_map const& dfs::getBasisOrbits() const { return basisOrbits; }
+	cobasis_map const& dfs::getBasisOrbits() const { return basisOrbits; }
 	
 	ind dfs::getDimension() const { return dim - 1; }
 	
@@ -79,7 +79,7 @@ namespace basil {
 	
 	bool dfs::isFinished() const { return !hitMaxBasis; }
 	
-	dfs::coordinates_map const& dfs::getRayOrbits() const { return rayOrbits; }
+	coordinates_map const& dfs::getRayOrbits() const { return rayOrbits; }
 	
 	std::clock_t dfs::getRunningTime() const 
 		{ return diff_time / clocks_per_ms; }
@@ -96,15 +96,15 @@ namespace basil {
 
 	permutation_group const& dfs::getSymmetryGroup() const { return g; }
 	
-	dfs::coordinates_map const& dfs::getVertexOrbits() const 
+	coordinates_map const& dfs::getVertexOrbits() const
 		{ return vertexOrbits; }
 	
 	gram_matrix const& dfs::getGramMat() const { return gramMat; }
 	
-	dfs::cobasis_gram_map const& dfs::getCobasisGramMap() const 
+	cobasis_gram_map const& dfs::getCobasisGramMap() const
 		{ return cobasisGramMap; }
 	
-	dfs::vertex_gram_map const& dfs::getVertexGramMap() const 
+	vertex_gram_map const& dfs::getVertexGramMap() const
 		{ return vertexGramMap; }
 
 	
@@ -377,7 +377,7 @@ namespace basil {
 		}
 	}
 	
-	dfs::vertex_data_ptr dfs::knownVertex(dfs::vertex_data_ptr rep) {
+	vertex_data_ptr dfs::knownVertex(vertex_data_ptr rep) {
 		
 		/* if it's already in the set, it's not new */
 		if ( vertexOrbits.find(rep->coords) != vertexOrbits.end() ) {
@@ -422,7 +422,7 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	bool dfs::isNewCobasis(index_set cob, dfs::vertex_data_ptr dat) {
+	bool dfs::isNewCobasis(index_set cob, vertex_data_ptr dat) {
 		
 		/* TODO look at adding canonTest, gramMotion from dfs.gap 
 		 * IsNewCobasis() */
@@ -440,7 +440,7 @@ namespace basil {
 		return true;
 	}
 	
-	dfs::vertex_data_ptr dfs::knownRay(dfs::vertex_data_ptr rep) {
+	vertex_data_ptr dfs::knownRay(vertex_data_ptr rep) {
 		
 		/* TODO think about including gram invariant here */
 		
@@ -477,8 +477,8 @@ namespace basil {
 		return vertex_data_ptr();
 	}
 	
-	dfs::index_set_list dfs::matchingCobasisInvariants(index_set cob, 
-			dfs::vertex_data_ptr dat) {
+	index_set_list dfs::matchingCobasisInvariants(index_set cob,
+			vertex_data_ptr dat) {
 		
 		/* TODO add cobasis stabilizer invariant from Symbal (?) */
 		
@@ -518,7 +518,7 @@ namespace basil {
 		return matches;
 	}
 	
-	dfs::vertex_data_list dfs::matchingInvariants(dfs::vertex_data_ptr rep) {
+	vertex_data_list dfs::matchingInvariants(vertex_data_ptr rep) {
 		
 		/* list of vertices with matching invariants */
 		vertex_data_list matches;
@@ -556,7 +556,7 @@ namespace basil {
 		return matches;
 	}
 	
-	bool dfs::findSymmetry(index_set find, dfs::index_set_list list) {
+	bool dfs::findSymmetry(index_set find, index_set_list list) {
 		
 		if ( opts.assumesNoSymmetry || ! opts.stabSearch ) {
 			/* no stabilizer search, so only one pass through the list */
@@ -647,8 +647,8 @@ namespace basil {
 		return gramMat.restriction(inc).sort();
 	}
 	
-	bool dfs::cobasisInvariantsMatch(dfs::vertex_data const& a, 
-			dfs::vertex_data const& b) {
+	bool dfs::cobasisInvariantsMatch(vertex_data const& a,
+			vertex_data const& b) {
 		return true
 // 				&& a.det == b.det						/* determinant */
 				&& a.inc.count() == b.inc.count()		/* # incident facets */
@@ -656,8 +656,7 @@ namespace basil {
 				;
 	}
 	
-	bool dfs::invariantsMatch(dfs::vertex_data const& a, 
-			dfs::vertex_data const& b) {
+	bool dfs::invariantsMatch(vertex_data const& a, vertex_data const& b) {
 		return true
 // 				&& a.det == b.det						/* determinant */
 				&& a.inc.count() == b.inc.count()		/* # incident facets */
@@ -666,7 +665,7 @@ namespace basil {
 				;
 	}
 	
-	dfs::vertex_data_ptr dfs::rayData(dfs::cobasis_ptr cob, 
+	vertex_data_ptr dfs::rayData(dfs::cobasis_ptr cob,
 			dfs::vector_mpz_ptr coords) {
 		/* TODO look at including gramVec from dfs.gap RayRep() */
 		
@@ -683,7 +682,7 @@ namespace basil {
 		return dat;
 	}
 	
-	void dfs::addCobasis(index_set const& cob, dfs::vertex_data_ptr dat) {
+	void dfs::addCobasis(index_set const& cob, vertex_data_ptr dat) {
 		/* TODO lots of stuff in dfs.gap AddCobasis() that should be looked at 
 		 */
 		
@@ -709,7 +708,7 @@ namespace basil {
 		}
 	}
 	
-	void dfs::addVertex(dfs::vertex_data_ptr dat) {
+	void dfs::addVertex(vertex_data_ptr dat) {
 		
 		/* map the rationalization of the coordinates to the vertex data */
 		vertexOrbits.insert(std::make_pair(dat->coords, dat));
@@ -738,7 +737,7 @@ namespace basil {
 		}
 	}
 	
-	dfs::vertex_data_ptr dfs::vertexData(dfs::cobasis_ptr cob, 
+	vertex_data_ptr dfs::vertexData(dfs::cobasis_ptr cob,
 			dfs::vector_mpz_ptr coords) {
 		/* TODO look at including stabilizerOrbits from dfs.gap VertexRep() */
 		

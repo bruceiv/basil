@@ -81,7 +81,7 @@ namespace basil {
 	typedef
 		permutation_group::PERMlist
 		permutation_list;
-	
+
 } /* namespace basil */
 
 #endif /* _BASIL_HPP_ */
