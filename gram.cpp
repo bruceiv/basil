@@ -22,8 +22,6 @@
 #include "basil.hpp"
 #include "gram.hpp"
 
-#include <iostream>
-
 namespace basil {
 	
 	gram_matrix::gram_matrix(uind n, uind k_) : n(n), k_(k_), m(new int*[n]), 

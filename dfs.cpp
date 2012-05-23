@@ -11,9 +11,6 @@
 #include <gmp.h>
 #include <gmpxx.h>
 
-#include <permlib/permlib_api.h>
-#include <permlib/permutation.h>
-
 #include "dfs.hpp"
 #include "fmt.hpp"
 #include "gram.hpp"
@@ -23,6 +20,9 @@
 #include "lrs/matrix.hpp"
 
 #include "lru/cache.hpp"
+
+#include "permlib/permlib_api.h"
+#include "permlib/permutation.h"
 
 namespace basil {
 	

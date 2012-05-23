@@ -5,9 +5,9 @@
 #include <sstream>
 #include <vector>
 
-#include <permlib/permlib_api.h>
-
 #include "basil.hpp"
+
+#include "permlib/permlib_api.h"
 
 namespace basil {
 	

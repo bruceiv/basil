@@ -4,14 +4,15 @@
 
 #include <boost/make_shared.hpp>
 
-#include <permlib/permlib_api.h>
-
-#include "lrs/cobasis.hpp"
-
 #include "automorphism.hpp"
 #include "basil.hpp"
 #include "parse.hpp"
 #include "permUtils.hpp"
+
+#include "lrs/cobasis.hpp"
+
+#include "permlib/permlib_api.h"
+
 
 namespace basil {
 	

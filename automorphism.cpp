@@ -4,16 +4,16 @@
 
 #include <boost/make_shared.hpp>
 
-#include <permlib/common.h>
-#include <permlib/sorter/base_sorter.h>
-//above included because the PermLib author didn't ...
-#include <permlib/symmetric_group.h>
-#include <permlib/search/partition/matrix_automorphism_search.h>
-
 #include "automorphism.hpp"
 #include "basil.hpp"
 #include "gram.hpp"
 #include "permUtils.hpp"
+
+#include "permlib/common.h"
+#include "permlib/sorter/base_sorter.h"
+//above included because the PermLib author didn't ...
+#include "permlib/symmetric_group.h"
+#include "permlib/search/partition/matrix_automorphism_search.h"
 
 namespace basil {
 	

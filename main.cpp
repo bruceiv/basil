@@ -15,8 +15,6 @@
 #include <omp.h>
 #endif /* BAS_MT */
 
-#include <permlib/permlib_api.h>
-
 #include "automorphism.hpp"
 #include "basil.hpp"
 
@@ -29,6 +27,8 @@
 #include "fmt.hpp"
 #include "gram.hpp"
 #include "parse.hpp"
+
+#include "permlib/permlib_api.h"
 
 namespace basil {
 	/** Switch between sequential and parallel DFS */

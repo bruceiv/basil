@@ -5,13 +5,13 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <permlib/common.h> //because the PermLib author didn't ...
-#include <permlib/bsgs.h>
-#include <permlib/permutation.h>
-#include <permlib/transversal/schreier_tree_transversal.h>
-
 #include "lrs/cobasis.hpp"
 #include "lrs/matrix.hpp"
+
+#include "permlib/common.h" //because the PermLib author didn't ...
+#include "permlib/bsgs.h"
+#include "permlib/permutation.h"
+#include "permlib/transversal/schreier_tree_transversal.h"
 
 namespace basil {
 	
