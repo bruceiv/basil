@@ -228,21 +228,21 @@ namespace basil {
 						 * matrix is presumably not set up for it, so 
 						 * reconstruct in a sign-insensitive manner  */
 						p->gm = boost::make_shared<gram_matrix>(
-								constructGram(*p->m, doNormalize));
+								constructEuclideanGram(*p->m, doNormalize));
 					}
 					/* otherwise do nothing */
 					break;
 				case gram_inexact:
 					/* construct inexact gram matrix (no normalization) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(*p->m, false));
+							constructEuclideanGram(*p->m, false));
 					break;
 				case gram_omitted: /* equivalent to "exact" */
 				case gram_auto:
 					/* construct exact gram matrix (unless overridden by 
 					 * command line flag) */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(*p->m, doNormalize));
+							constructEuclideanGram(*p->m, doNormalize));
 					break;
 				}
 				p->gs = gram_provided;
@@ -261,7 +261,7 @@ namespace basil {
 						|| dfsOpts_.assumesNoSymmetry ) ) {
 				if ( ! p->gs == gram_provided ) {
 					p->gm = boost::make_shared<gram_matrix>(
-							constructGram(*p->m, doNormalize)
+							constructEuclideanGram(*p->m, doNormalize)
 					);
 				}
 				if ( aRep ) {

@@ -423,7 +423,7 @@ namespace basil {
 					mpz_class( ip.get_den() * ni * nj ) );
 	}
 	
-	gram_matrix constructGram(matrix const& m, bool normalize) {
+	gram_matrix constructEuclideanGram(matrix const& m, bool normalize) {
 		
 		/* typedefs */
 		typedef boost::unordered_map<mpr, int, mpr_hash> mpr_map;

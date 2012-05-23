@@ -135,7 +135,7 @@ namespace basil {
 	 *  					avoided by setting this flag false. [true]
 	 *  @return a gram matrix for the given input matrix
 	 */
-	gram_matrix constructGram(matrix const& m, bool normalize = true);
+	gram_matrix constructEuclideanGram(matrix const& m, bool normalize = true);
 	
 	/** Functional to hash a gram_matrix. */
 	class gram_matrix_hash 
