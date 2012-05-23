@@ -53,8 +53,8 @@ namespace basil {
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
 				groupOverride(false), p(), verbose(false), 
-				doNormalize(true), preprocessor(false), 
-				genSymmetry(false) {
+				doNormalize(true), euclideanGram(true), qGram(false),
+				preprocessor(false), genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -75,11 +75,17 @@ namespace basil {
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
 					"Show all intermediate dictionaries in the search tree.")
-				("no-gram-vec", 
+				("no-gram",
 					bool_switch(&dfsOpts_.gramVec)
 						->default_value(true)->implicit_value(false),
-					"Deactivate gram vector hashing (gram vectors are a cheap "
+					"Deactivate Gram matrix hashing (Gram matrix are a cheap "
 					"optimization, but their calculation may be expensive)")
+				("euclidean-gram",
+					bool_switch(&euclideanGram),
+					"Use Euclidean metric for Gram matrix generation")
+				("q-gram",
+					bool_switch(&qGram),
+					"Use Q-matrix metric for Gram matrix generation")
 				("no-norm",
 					bool_switch(&doNormalize)
 						->default_value(true)->implicit_value(false),
@@ -218,13 +224,18 @@ namespace basil {
 			
 			/* get gram matrix */
 			bool aRep = dfsOpts_.aRepresentation;
-			if ( ! ( dfsOpts_.gramVec || p->gs == gram_provided ) ) {
+			if ( qGram ) {
+				p->gm = boost::make_shared<gram_matrix>(constructQGram(*p->m));
+			} else if ( euclideanGram ) {
+				p->gm = boost::make_shared<gram_matrix>(
+						constructEuclideanGram(*p->m, doNormalize));
+			} else if ( ! ( dfsOpts_.gramVec || p->gs == gram_provided ) ) {
 				p->gm = boost::make_shared<gram_matrix>(0);
 			} else {
 				switch( p->gs ) {
 				case gram_provided:
 					if (dfsOpts_.aRepresentation &&  p->rep != arrangement) {
-						/* requested arrangment handling, but given gram 
+						/* requested arrangment handling, but given Gram
 						 * matrix is presumably not set up for it, so 
 						 * reconstruct in a sign-insensitive manner  */
 						p->gm = boost::make_shared<gram_matrix>(
@@ -233,16 +244,21 @@ namespace basil {
 					/* otherwise do nothing */
 					break;
 				case gram_inexact:
-					/* construct inexact gram matrix (no normalization) */
+					/* construct inexact Gram matrix (no normalization) */
 					p->gm = boost::make_shared<gram_matrix>(
 							constructEuclideanGram(*p->m, false));
 					break;
-				case gram_omitted: /* equivalent to "exact" */
-				case gram_auto:
-					/* construct exact gram matrix (unless overridden by 
+				case gram_omitted: /* equivalent to "auto" */
+				case gram_euclid:
+					/* construct exact Gram matrix (unless overridden by
 					 * command line flag) */
 					p->gm = boost::make_shared<gram_matrix>(
 							constructEuclideanGram(*p->m, doNormalize));
+					break;
+				case gram_q:
+					/* construct Q-matrix based Gram matrix */
+					p->gm = boost::make_shared<gram_matrix>(
+							constructQGram(*p->m));
 					break;
 				}
 				p->gs = gram_provided;
@@ -352,6 +368,10 @@ namespace basil {
 		/** normalization calculation used in gram matrix construction 
 		 *  [true] */
 		bool doNormalize;
+		/** Use Euclidean Gram matrix calculation [true] */
+		bool euclideanGram;
+		/** Use Q-matrix Gram matrix calculation [false] */
+		bool qGram;
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */
 		bool preprocessor;

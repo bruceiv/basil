@@ -125,7 +125,8 @@ namespace basil {
 	
 	typedef boost::shared_ptr<gram_matrix> gram_matrix_ptr;
 	
-	/** Constructs the gram matrix for a given input matrix.
+	/** Constructs the gram matrix for a given input matrix using a Euclidean
+	 *  metric.
 	 *  @param m			The input matrix, which must have no rows which are 
 	 *  					the zero vector. If a zero vector is supplied, 
 	 *  					undefined results ensue.
@@ -137,6 +138,13 @@ namespace basil {
 	 */
 	gram_matrix constructEuclideanGram(matrix const& m, bool normalize = true);
 	
+	/** Constructs the gram matrix for a given input matrix using Shurmann's
+	 *  Q-matrix metric.
+	 *  @param m			The input matrix.
+	 *  @return a gram matrix for the given input matrix
+	 */
+	gram_matrix constructQGram(matrix const& m);
+
 	/** Functional to hash a gram_matrix. */
 	class gram_matrix_hash 
 			: public std::unary_function<gram_matrix, std::size_t> {

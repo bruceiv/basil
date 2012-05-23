@@ -68,7 +68,8 @@ namespace basil {
 		switch ( p.gs ) {
 		case gram_omitted: /* do nothing */ break;
 		case gram_inexact: o << "gram inexact" << endl; break;
-		case gram_auto: o << "gram auto" << endl; break;
+		case gram_euclid: o << "gram Euclid" << endl; break;
+		case gram_q: o << "gram Q" << endl; break;
 		case gram_provided:
 			o << "gram begin" << endl;
 			for (uind i = 0; i < p.gm->dim(); ++i) {
@@ -191,9 +192,13 @@ namespace basil {
 				} else goto pushLine;
 			} else if ( prefixMatch(s, "gram") ) {
 				if ( prefixMatch(s, "gram auto") ) {
-					p->gs = gram_auto;
+					p->gs = gram_euclid;
+				} else if ( prefixMatch(s, "gram Euclid") ) {
+					p->gs = gram_euclid;
 				} else if ( prefixMatch(s, "gram inexact") ) {
 					p->gs = gram_inexact;
+				} else if ( prefixMatch(s, "gram Q") ) {
+					p->gs = gram_q;
 				} else if ( prefixMatch(s, "gram begin") ) {
 					p->gs = gram_provided;
 					p->gm = parseGram(in, p->m->size());

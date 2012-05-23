@@ -23,6 +23,7 @@ namespace lrs {
 	class matrix_row_mpq;
 	class vector_mpz;
 	class vector_mpq_hash;
+	class matrix_mpq;
 	
 	/** Wraps a multi-precision rational vector. */
 	class vector_mpq_base {
@@ -120,7 +121,7 @@ namespace lrs {
 		/** Computes the inner product of two vectors.
 		 *  @param a		A vector of length d
 		 *  @param b		A vector of length d
-		 *  @return \f$\sum_{i=0}^{d} a_i * b_i\f$
+		 *  @return \f$\sum_{i=0}^{d} a_i * b_i'\f$
 		 *  @throws std::runtime_error on a.d != b.d
 		 */
 		friend mpq_class inner_prod (vector_mpq_base const& a, 
@@ -147,6 +148,10 @@ namespace lrs {
 	
 	int compare(vector_mpq_base const& a, vector_mpq_base const& b);
 	mpq_class inner_prod (vector_mpq_base const& a, vector_mpq_base const& b);
+	matrix_mpq outer_prod (vector_mpq_base const& a, vector_mpq_base const& b);
+	matrix_mpq& add_outer_prod (vector_mpq_base const& a,
+								vector_mpq_base const& b,
+								matrix_mpq& m);
 	
 	class vector_mpz;
 	
@@ -215,8 +220,6 @@ namespace lrs {
 		vector_mpq& operator= (vector_mpz const& that);
 		
 	};
-	
-	class matrix_mpq;
 	
 	/** Multi-precision rational vector that is a view of a matrix row */
 	class matrix_row_mpq : public vector_mpq_base {
@@ -742,11 +745,24 @@ namespace lrs {
 		 */
 		friend matrix_mpq abs(matrix_mpq const& m);
 		
+		/** Inverts the matrix in place.
+		 *  @return this matrix, inverted.
+		 *  @throws std::runtime_error on non-square matrix
+		 *  @throws divide by zero error on non-invertable matrix
+		 */
+		matrix_mpq& invert();
+
 		/** Computes the inner product matrix of this matrix.
 		 *  @return a matrix P such that P[i][j] = inner_prod(this[i], this[j])
 		 */
-		matrix_mpq inner_prod_mat();
+		matrix_mpq inner_prod_mat() const;
 		
+		/** Computes the Q-matrix for this matrix.
+		 *  @return a matrix Q such that
+		 *  		Q = sum 1 to n of outer_prod(this[i], this[j])
+		 */
+		matrix_mpq q_mat() const;
+
 		/** Computes the restriction of the matrix to a given set of row and 
 		 *  column indices.
 		 *  @param s		The set of indices to restrict the matrix to. The 
@@ -777,6 +793,14 @@ namespace lrs {
 	int compare(matrix_mpq const& a, matrix_mpq const& b);
 	matrix_mpq abs(matrix_mpq const& m);
 	
+	/** Left-multiplies a row vector by a matrix.
+	 *  @param v		A vector of n elements
+	 *  @param m		An n*d matrix
+	 *  @return a d-element result vector r = v*m
+	 *  @throws std::runtime_error on vector length != n
+	 */
+	vector_mpq row_mat_mul(vector_mpq_base const& v, matrix_mpq const& m);
+
 } /* namespace lrs */
 
 #endif /* _LRS_MATRIX_HPP_ */

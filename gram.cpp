@@ -239,6 +239,17 @@ namespace basil {
 		}
 	}; /* class mpr_hash */
 	
+	/** Functional to hash an mpq_class */
+	class mpq_class_hash : public std::unary_function<mpq_class, std::size_t> {
+	public:
+		std::size_t operator() (mpq_class const& x) const {
+			std::size_t seed = 0UL;
+			boost::hash_combine(seed, x.get_num().get_si());
+			boost::hash_combine(seed, x.get_den().get_si());
+			return seed;
+		}
+	}; /* class mpq_class_hash */
+
 	/** Functional to hash an mpz_class. */
 	class mpz_class_hash : public std::unary_function<mpz_class, std::size_t> {
 	public:
@@ -531,4 +542,44 @@ namespace basil {
 		return g;
 	}
 	
+	gram_matrix constructQGram(matrix const& m) {
+		/* typedefs */
+		typedef boost::unordered_map<mpq_class, int, mpq_class_hash> mpq_map;
+
+		/* size of the matrix */
+		ind n = m.size();
+
+		/* gram matrix being generated */
+		gram_matrix g(n, 1);
+
+		/* get Q-matrix inverse */
+		matrix q = m.q_mat().invert();
+
+		/* get unique representatives */
+		mpq_map reps;
+		int nextRep = 0;
+
+		for (ind i = 0; i < n; ++i) {
+			lrs::vector_mpq w = row_mat_mul(m.row(i), q);
+
+			for (ind j = 0; j < n; ++j) {
+				int rep;
+				mpq_class val = inner_prod(w, m.row(j));
+
+				mpq_map::iterator res = reps.find(val);
+				if ( res == reps.end() ) {
+					/* representative not found, make new */
+					rep = nextRep++;
+					reps.insert(std::make_pair(val, rep));
+				} else {
+					/* representative found, use */
+					rep = res->second;
+				}
+				g(i, j) = rep;
+			}
+		}
+
+		return g;
+	}
+
 } /* namespace basil */

@@ -570,7 +570,69 @@ namespace lrs {
 		return r;
 	}
 	
-	matrix_mpq matrix_mpq::inner_prod_mat () {
+	matrix_mpq& matrix_mpq::invert() {
+		/* Derived from Mike Dinolfo's LU-factorization matrix inversion code,
+		 * found at http://users.erols.com/mdinolfo/matrix.htm */
+
+		if (n != d) throw std::runtime_error(
+				"Cannot invert non-square matrix");
+
+		if ( n == 0 ) return *this;
+		if ( n == 1 ) {
+			/* elem(0, 0) = 1/elem(0, 0) */
+			mpq_inv(elem(0, 0).get_mpq_t(), elem(0, 0).get_mpq_t());
+		}
+
+		/* normalize row 0 */
+		for (ind j = 1; j < n; ++j) elem(0, j) /= elem(0, 0);
+
+		/* LU-factorize */
+		for (ind i = 1; i < n; ++i) {
+			/* do a column of L */
+			for (ind j = i; j < n; ++j) {
+				mpq_class sum(0);
+				for (ind k = 0; k < i; ++k) sum += elem(j, k) * elem(k, i);
+				elem(j, i) -= sum;
+			}
+
+			if ( i == n-1 ) continue;
+
+			/* do a row of U */
+			for (ind j = i+1; j < n; ++j) {
+				mpq_class sum(0);
+				for (ind k = 0; k < i; ++k) sum += elem(i, k) * elem(k, j);
+				elem(i, j) -= sum;
+				elem(i, j) /= elem(i, i);
+			}
+		}
+
+		/* invert L */
+		for (ind i = 0; i < n; ++i) for (ind j = i+1; j < n; ++j) {
+			mpq_class x(0);
+			for (ind k = i; k < j; ++k) x -= elem(j, k) * elem(k, i);
+			elem(j, i) = x / elem(j, j);
+		}
+
+		/* invert U */
+		for (ind i = 0; i < n; ++i) for (ind j = i+1; j < n; ++j) {
+			mpq_class sum = elem(i, j);
+			for (ind k = i+1; k < j; ++k) sum += elem(k, j) * elem(i, k);
+			elem(i, j) = -sum;
+		}
+
+		/* final inversion */
+		for (ind i = 0; i < n; ++i) for (ind j = 0; j < n; ++j) {
+			mpq_class sum(0);
+			for (ind k = (( i > j ) ? i : j); k < n; ++k) {
+				sum += (( j == k ) ? mpq_class(1) : elem(j, k)) * elem(k, i);
+			}
+			elem(j, i) = sum;
+		}
+
+		return *this;
+	}
+
+	matrix_mpq matrix_mpq::inner_prod_mat () const {
 		matrix_mpq p(n,n);
 		
 		mpq_class t;
@@ -589,6 +651,26 @@ namespace lrs {
 		return p;
 	}
 	
+	matrix_mpq matrix_mpq::q_mat() const {
+		matrix_mpq q(d, d);
+
+		/* calculate upper triangle */
+		for (ind i = 0; i < n; ++i) {
+			for (ind j = 0; j < d; ++j) {
+				for (ind k = j; k < d; ++k) {
+					q.elem(j, k) += elem(i, j) * elem(i, k);
+				}
+			}
+		}
+
+		/* copy into lower triangle */
+		for (ind j = 1; j < d; ++j) for (ind k = 0; k < j; ++k) {
+			q.elem(j, k) = q.elem(k, j);
+		}
+
+		return q;
+	}
+
 	matrix_mpq matrix_mpq::restriction(index_set s) {
 		matrix_mpq r(s.count(), s.count());
 		
@@ -608,6 +690,21 @@ namespace lrs {
 		return r;
 	}
 	
+	vector_mpq row_mat_mul(vector_mpq_base const& v, matrix_mpq const& m) {
+		ind n = m.size(), d = m.dim();
+
+		if ( v.size() != n ) throw std::runtime_error(
+				"Cannot multiply unequally sized vector and matrix");
+
+		vector_mpq r(d);
+
+		for (ind i = 0; i < n; ++i) for (ind j = 0; j < d; ++j) {
+			r[j] += v[i] * m.elem(i, j);
+		}
+
+		return r;
+	}
+
 	////////////////////////////////////////////////////////////////////////////
 	// Iterator implementation
 	////////////////////////////////////////////////////////////////////////////

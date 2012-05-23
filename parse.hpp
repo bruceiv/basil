@@ -25,10 +25,12 @@ namespace basil {
 		gram_omitted,
 		/** gram matrix explicitly provided */
 		gram_provided,
-		/** exact auto-generation requested */
-		gram_auto,
-		/** inexact auto-generation requested */
-		gram_inexact
+		/** exact Euclidean auto-generation requested */
+		gram_euclid,
+		/** inexact Euclidean auto-generation requested */
+		gram_inexact,
+		/** Q-matrix auto-generation requested */
+		gram_q
 	};
 	
 	/** state of given symmetry group */
@@ -97,6 +99,8 @@ namespace basil {
 	 *   {\<comma-delimeted cycles of whitespace delimeted elements\>}
 	 *   symmetry end]
 	 *  [gram auto
+	 *  |gram Q
+	 *  |gram Euclid
 	 *  |gram inexact
 	 *  |gram begin
 	 *   \< n * n whitespace-delimited integers \>
