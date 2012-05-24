@@ -740,11 +740,18 @@ namespace lrs {
 		
 		/** Computes the matrix where each entry is the absolute value of the 
 		 *  entries of the given matrix.
-		 *  @param m		the matrix to take the absolute value of
+		 *  @param m		The matrix to take the absolute value of
 		 *  @return a matrix R such that R[i][j] = abs(m[i][j])
 		 */
 		friend matrix_mpq abs(matrix_mpq const& m);
 		
+		/** Computes the inverse of this matrix. Uses LU decomposition, may not
+		 *  be safe for all invertable matrices.
+		 *  @param m		The matrix to invert
+		 *  @return the inverse of this matrix.
+		 */
+		friend matrix_mpq inv(matrix_mpq const& m);
+
 		/** Inverts the matrix in place.
 		 *  @return this matrix, inverted.
 		 *  @throws std::runtime_error on non-square matrix
@@ -792,6 +799,7 @@ namespace lrs {
 	
 	int compare(matrix_mpq const& a, matrix_mpq const& b);
 	matrix_mpq abs(matrix_mpq const& m);
+	matrix_mpq inv(matrix_mpq const& m);
 	
 	/** Left-multiplies a row vector by a matrix.
 	 *  @param v		A vector of n elements

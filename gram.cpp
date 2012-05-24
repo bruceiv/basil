@@ -553,31 +553,55 @@ namespace basil {
 		gram_matrix g(n, 1);
 
 		/* get Q-matrix inverse */
-		matrix q = m.q_mat().invert();
+//matrix qm = m.q_mat();
+//std::cout << "Q:\n";
+//for (ind i = 0; i < qm.size(); ++i) {
+//for (ind j = 0; j < qm.dim(); ++j) {
+//std::cout << " " << qm.elem(i,j);
+//}
+//std::cout << "\n";
+//}
+//std::cout << std::endl;
+		matrix q = inv(m.q_mat());
+//std::cout << "inv(Q):\n";
+//for (ind i = 0; i < q.size(); ++i) {
+//for (ind j = 0; j < q.dim(); ++j) {
+//std::cout << " " << q.elem(i,j);
+//}
+//std::cout << "\n";
+//}
+//std::cout << std::endl;
 
 		/* get unique representatives */
 		mpq_map reps;
-		int nextRep = 0;
+		mpq_class zero(0); reps.insert(std::make_pair(zero, 0));
+		int nextRep = 1;
 
+//std::cout << "G:\n";
 		for (ind i = 0; i < n; ++i) {
 			lrs::vector_mpq w = row_mat_mul(m.row(i), q);
 
 			for (ind j = 0; j < n; ++j) {
 				int rep;
 				mpq_class val = inner_prod(w, m.row(j));
+//std::cout << " " << val;
+				mpq_class key = abs(val);
 
-				mpq_map::iterator res = reps.find(val);
+				mpq_map::iterator res = reps.find(key);
 				if ( res == reps.end() ) {
 					/* representative not found, make new */
 					rep = nextRep++;
-					reps.insert(std::make_pair(val, rep));
+					reps.insert(std::make_pair(key, rep));
 				} else {
 					/* representative found, use */
 					rep = res->second;
 				}
+				rep *= sgn(val);
 				g(i, j) = rep;
 			}
+//std::cout << "\n";
 		}
+//std::cout << std::endl;
 
 		return g;
 	}

@@ -570,39 +570,93 @@ namespace lrs {
 		return r;
 	}
 	
+	matrix_mpq inv(matrix_mpq const& m) {
+
+		ind n = m.n, d = m.d;
+
+		if ( n != d ) throw std::runtime_error(
+				"Cannot invert non-square matrix");
+
+		/* LU-decomposition */
+		matrix_mpq q(n, n);
+
+		for (ind k = 0; k < n; ++k) {
+			/* Compute row of U */
+			for (ind j = k; j < n; ++j) {
+				mpq_class sum(0);
+				for (ind s = 0; s < k; ++s) {
+					sum += q.elem(k, s) * q.elem(s, j);
+				}
+				q.elem(k, j) = m.elem(k, j) - sum;
+			}
+			/* Compute column of L */
+			for (ind i = k+1; i < n; ++i) {
+				mpq_class sum(0);
+				for (ind s = 0; s < k; ++s) {
+					sum += q.elem(i, s) * q.elem(s, k);
+				}
+				q.elem(i, k) = (m.elem(i, k) - sum) / q.elem(k, k);
+			}
+		}
+
+		/* Inverse computation */
+		matrix_mpq r(n, n);
+
+		for (ind k = 0; k < n; ++k) {
+			/* Forward-solve Ly = e_k */
+			vector_mpq y(n);
+			for (ind i = 0; i < n; ++i) {
+				y[i] = mpq_class(i == k ? 1 : 0);
+				for (ind j = 0; j < i; ++j) {
+					y[i] -= q.elem(i, j) * y[j];
+				}
+			}
+			/* Backward solve Ur_k = y */
+			vector_mpq x(n);
+			for (ind i = n-1; i >= 0; --i) {
+				x[i] = y[i];
+				for (ind j = i+1; j < n; ++j) {
+					x[i] -= q.elem(i, j) * x[j];
+				}
+				x[i] /= q.elem(i, i);
+				r.elem(i, k) = x[i];
+			}
+		}
+
+		return r;
+	}
+
 	matrix_mpq& matrix_mpq::invert() {
 		/* Derived from Mike Dinolfo's LU-factorization matrix inversion code,
 		 * found at http://users.erols.com/mdinolfo/matrix.htm */
 
-		if (n != d) throw std::runtime_error(
+		if ( n != d ) throw std::runtime_error(
 				"Cannot invert non-square matrix");
 
 		if ( n == 0 ) return *this;
-		if ( n == 1 ) {
+		else if ( n == 1 ) {
 			/* elem(0, 0) = 1/elem(0, 0) */
 			mpq_inv(elem(0, 0).get_mpq_t(), elem(0, 0).get_mpq_t());
 		}
 
-		/* normalize row 0 */
-		for (ind j = 1; j < n; ++j) elem(0, j) /= elem(0, 0);
-
-		/* LU-factorize */
-		for (ind i = 1; i < n; ++i) {
-			/* do a column of L */
-			for (ind j = i; j < n; ++j) {
+		/* LU-decomposition */
+		for (ind k = 0; k < n; ++k) {
+			/* Compute row of U */
+			for (ind j = k; j < n; ++j) {
 				mpq_class sum(0);
-				for (ind k = 0; k < i; ++k) sum += elem(j, k) * elem(k, i);
-				elem(j, i) -= sum;
+				for (ind s = 0; s < k; ++s) {
+					sum += elem(k, s) * elem(s, j);
+				}
+				elem(k, j) -= sum;
 			}
-
-			if ( i == n-1 ) continue;
-
-			/* do a row of U */
-			for (ind j = i+1; j < n; ++j) {
+			/* Compute column of L */
+			for (ind i = k+1; i < n; ++i) {
 				mpq_class sum(0);
-				for (ind k = 0; k < i; ++k) sum += elem(i, k) * elem(k, j);
-				elem(i, j) -= sum;
-				elem(i, j) /= elem(i, i);
+				for (ind s = 0; s < k; ++s) {
+					sum += elem(i, s) * elem(s, k);
+				}
+				elem(i, k) -= sum;
+				elem(i, k) /= elem(k, k);
 			}
 		}
 
