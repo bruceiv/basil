@@ -1,0 +1,19 @@
+Split 2-simplex
+A-representation
+begin
+4 3 rational
+ 1 1 0
+ 1 0 1
+ 0 1 -1
+ 0 1 1
+end
+geometric
+gram begin
+ 1 2 2 2
+ 2 1 -2 2
+ 2 -2 1 0
+ 2 2 0 1
+gram end
+symmetry begin
+ 1 2
+symmetry end
