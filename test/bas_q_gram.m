@@ -1,3 +1,28 @@
+bas_in;
+
+function [Q] = q_mat( V )
+[n,d] = size(V);
+Q = zeros(d);
+for i = 1:n
+Q += V(i,:)'*V(i,:);
+endfor;
+endfunction;
+
+function [G] = q_gram(V, Q, ignoreSign)
+  if ( ~exist('ignoreSign', 'var') ) ignoreSign = 0; end;
+  [n,d] = size(V);
+  G = zeros(n);
+  Qi = cholinv(Q);
+  R = chol(Qi);
+  W = V*R;
+  for i = 1:n
+    for j = 1:n
+      G(i,j) = W(i,:)*W(j,:)';
+      if ( ignoreSign ) G(i,j) = abs( G(i,j) ); end;
+    end;
+  end;
+endfunction;
+
 function [R,H] = q_rep(G,ignoreSign)
   if ( ~exist('ignoreSign', 'var') ) ignoreSign = 0; end;
   [n,d] = size(G);
@@ -26,4 +51,11 @@ function [R,H] = q_rep(G,ignoreSign)
       R(i,j) = H.(s);
     end;
   end;
-return;
+endfunction;
+
+function [R] = q_gramrep(V, ignoreSign)
+  if ( ~exist('ignoreSign', 'var') ) ignoreSign = 0; end;
+  Q = q_mat(V);
+  G = q_gram(V,Q,ignoreSign);
+  R = q_rep(G);
+endfunction;
