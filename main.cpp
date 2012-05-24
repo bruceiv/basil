@@ -226,9 +226,11 @@ namespace basil {
 			bool aRep = dfsOpts_.aRepresentation;
 			if ( qGram ) {
 				p->gm = boost::make_shared<gram_matrix>(constructQGram(*p->m));
+				p->gs = gram_provided;
 			} else if ( euclideanGram ) {
 				p->gm = boost::make_shared<gram_matrix>(
-						constructEuclideanGram(*p->m, doNormalize));
+						constructEuclideanGram(*p->m, doNormalize));\
+				p->gs = gram_provided;
 			} else if ( ! ( dfsOpts_.gramVec || p->gs == gram_provided ) ) {
 				p->gm = boost::make_shared<gram_matrix>(0);
 			} else {
