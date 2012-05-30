@@ -463,20 +463,14 @@ namespace basil {
 		mpq_class t;
 		for (uind i = 0; i < n; ++i) {
 			
-// if ( i == 0 ) std::cout << "\nGRAM CONSTRUCTION\n";
-// std::cout << " (" << i << "," << i << ") " << t;
 			if ( normalize ) {
 				t = lrs::inner_prod(m[i], m[i]);
 				nums.push_back(t.get_num());
 				/* NOTE: this assumes here that m[i] is not a zero vector - bad 
 				 * things happen otherwise */
-// std::cout << " t:" << t.get_num() << "/" << t.get_den();
 				factor_list fn = factor( t.get_num() );
-// std::cout << " fn:" << factor(fn);
 				factor_list fd = factor( t.get_den() );
-// std::cout << " fd:" << factor(fd);
 				facs.push_back( mult(fn, fd) );
-// std::cout << " fi:" << factor(facs.back());
 			}
 			
 			/* normed inner product of a vector with itself is 1, represented 
@@ -485,17 +479,14 @@ namespace basil {
 		}
 		
 		/* calculate inner products */
+//std::cout << "G:\n";
 		for (uind i = 0; i < n; ++i) {
 			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
 			for (uind j = 0; j < i; ++j) {
 				
-// if ( j == 0 ) std::cout << std::endl;
-// std::cout << " (" << i << "," << j << ")";
-// std::cout << " " << m[i] << "." << m[j];
-				
 				t = lrs::inner_prod(m[i], m[j]);
 				
-				/* inner product, representing angle between m[i] and m[j], 
+				/* inner product, representing angle between m[i] and m[j],
 				 * normalized to account for rescaling of input vectors. Note 
 				 * that this view of it is normalized to be positive, while the 
 				 * sign is restored for the actual matrix, ensuring that the 
@@ -515,6 +506,7 @@ namespace basil {
 								 t.get_den());
 					}
 				}
+//std::cout << " " << ip;
 				
 				/* look for representative for this mpr, create new if not 
 				 * found */
@@ -531,13 +523,12 @@ namespace basil {
 				/* put proper sign on representative */
 				rep *= sgn( t );
 				
-// std::cout << " " << ip << " -> " << rep;
-				
 				/* place representative in gram matrix */
 				g(i,j) = rep; g(j,i) = rep;
 			}
+//std::cout << "\n";
 		}
-// std::cout << std::endl;
+//std::cout << std::endl;
 		
 		return g;
 	}
@@ -548,12 +539,26 @@ namespace basil {
 
 		/* size of the matrix */
 		ind n = m.size();
+		ind d = m.dim();
+
+/* restriction to eliminate constant terms DOESN'T WORK */
+//index_set rs(d+1);
+//rs.set().set(0, false).set(1, false);
+//matrix rm = m.colRestriction(rs);
+//std::cout << "R:\n";
+//for (ind i = 0; i < rm.size(); ++i) {
+//for (ind j = 0; j < rm.dim(); ++j) {
+//std::cout << " " << rm.elem(i, j);
+//}
+//std::cout << "\n";
+//}
+//std::cout << std::endl;
 
 		/* gram matrix being generated */
 		gram_matrix g(n, 1);
 
 		/* get Q-matrix inverse */
-//matrix qm = m.q_mat();
+//matrix qm = rm.q_mat();
 //std::cout << "Q:\n";
 //for (ind i = 0; i < qm.size(); ++i) {
 //for (ind j = 0; j < qm.dim(); ++j) {
@@ -562,7 +567,7 @@ namespace basil {
 //std::cout << "\n";
 //}
 //std::cout << std::endl;
-		matrix q = inv(m.q_mat());
+		matrix q = lu_inv(m.q_mat());
 //std::cout << "inv(Q):\n";
 //for (ind i = 0; i < q.size(); ++i) {
 //for (ind j = 0; j < q.dim(); ++j) {

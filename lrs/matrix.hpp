@@ -103,20 +103,70 @@ namespace lrs {
 		 */
 		friend int compare(vector_mpq_base const& a, vector_mpq_base const& b);
 		
+		/** Tests if a vector is the zero vector
+		 *  @param v		the vector to test
+		 *  @return true if v = [0 0 ... 0], false otherwise
+		 */
+		friend bool is_zero(vector_mpq_base const& v);
+
+		/** Adds b to a
+		 *  @param a		the vector to add to
+		 *  @param b		the vector to add
+		 *  @return a, having been summed with b
+		 *  @throws std::runtime_error on a.d != b.d
+		 */
+		friend vector_mpq_base& operator+= (vector_mpq_base& a,
+										   vector_mpq_base const& b);
+
+		/** Addition of a and b
+		 *  @param a		The first term
+		 *  @param b		The second term
+		 *  @return a + b
+		 *  @throws std::runtime_error on a.d != b.d
+		 */
+		friend vector_mpq_base operator+ (vector_mpq_base const& a,
+										  vector_mpq_base const& b);
+
+		/** Subtracts b from a
+		 *  @param a		the vector to subtract from
+		 *  @param b		the vector to subtract
+		 *  @return a, having b subtracted from it
+		 *  @throws std::runtime_error on a.d != b.d
+		 */
+		friend vector_mpq_base& operator-= (vector_mpq_base& a,
+										   vector_mpq_base const& b);
+
+		/** Difference of a and b
+		 *  @param a		The first term
+		 *  @param b		The second term
+		 *  @return a - b
+		 *  @throws std::runtime_error on a.d != b.d
+		 */
+		friend vector_mpq_base operator- (vector_mpq_base const& a,
+										  vector_mpq_base const& b);
+
+		/** Negation of v.
+		 *  @param v		The vector to negate
+		 *  @return -1 * v
+		 */
+		friend vector_mpq_base operator- (vector_mpq_base const& v);
+
 		/** Multiplies v by c
 		 *  @param v		the vector to multiply
 		 *  @param c		the scalar to multiply v by
 		 *  @return v, having been multiplied by c
 		 */
-		friend vector_mpq_base operator*= (vector_mpq_base& v, mpq_class c);
+		friend vector_mpq_base& operator*= (vector_mpq_base& v, mpq_class c);
 		
 		/** Scalar multiplication of c and v
 		 *  @param v		the vector to multiply
 		 *  @param c		the scalar to multiply v by
 		 *  @return the scalar multiplication of c and v.
 		 */
-		friend vector_mpq_base operator* (vector_mpq_base& v, mpq_class c);
-		friend vector_mpq_base operator* (mpq_class c, vector_mpq_base& v);
+		friend vector_mpq_base operator* (vector_mpq_base const& v,
+										  mpq_class c);
+		friend vector_mpq_base operator* (mpq_class c,
+										  vector_mpq_base const& v);
 		
 		/** Computes the inner product of two vectors.
 		 *  @param a		A vector of length d
@@ -147,11 +197,8 @@ namespace lrs {
 	};
 	
 	int compare(vector_mpq_base const& a, vector_mpq_base const& b);
+	bool is_zero(vector_mpq_base const& v);
 	mpq_class inner_prod (vector_mpq_base const& a, vector_mpq_base const& b);
-	matrix_mpq outer_prod (vector_mpq_base const& a, vector_mpq_base const& b);
-	matrix_mpq& add_outer_prod (vector_mpq_base const& a,
-								vector_mpq_base const& b,
-								matrix_mpq& m);
 	
 	class vector_mpz;
 	
@@ -383,8 +430,22 @@ namespace lrs {
 		std::size_t operator() (vector_mpz const& v) const ;
 	};
 	
+	/** Exception thrown for attempt to invert non-invertable matrix. */
+	class noninvertable_matrix_error : public std::runtime_error {
+	public:
+		/** Default constructor.
+		 *  @param row		The row matrix inversion failed on
+		 */
+		noninvertable_matrix_error(ind row)
+			: runtime_error("Non-invertable matrix"), badRow(row) {}
+
+		ind getBadRow() { return badRow; }
+	private:
+		ind badRow;
+	};
+
 	class matrix_mpq_hash;
-	
+
 	/** Wraps a multi-precision rational matrix. */
 	class matrix_mpq {
 	friend class matrix_mpq_hash;
@@ -710,6 +771,9 @@ namespace lrs {
 		/** Gets the (i,j)th element of this matrix */
 		mpq_class const& elem(size_type i, size_type j) const;
 		
+		/** Swaps the i and j'th rows of the matrix */
+		void swap_rows(size_type i, size_type j);
+
 		/** Prints the matrix with space-separated rows inside square brackets.
 		 *  @param o		The output stream to print on
 		 *  @param m		The matrix to print
@@ -738,6 +802,20 @@ namespace lrs {
 		 */
 		friend int compare(matrix_mpq const& a, matrix_mpq const& b);
 		
+		/** Multiplies two matrices.
+		 *  @param a		The first matrix
+		 *  @param b		The second matrix
+		 *  @return a*b
+		 *  @throws std::runtime_error on a.d != b.n
+		 */
+		friend matrix_mpq operator* (matrix_mpq const& a, matrix_mpq const& b);
+
+		/** Negation of m.
+		 *  @param m		The matrix to negate
+		 *  @return -1 * m
+		 */
+		friend matrix_mpq operator- (matrix_mpq const& m);
+
 		/** Computes the matrix where each entry is the absolute value of the 
 		 *  entries of the given matrix.
 		 *  @param m		The matrix to take the absolute value of
@@ -745,19 +823,32 @@ namespace lrs {
 		 */
 		friend matrix_mpq abs(matrix_mpq const& m);
 		
-		/** Computes the inverse of this matrix. Uses LU decomposition, may not
-		 *  be safe for all invertable matrices.
+		/** Computes the transpose of a matrix.
+		 *  @param m		The matrix to transpose
+		 *  @return the transpose of m
+		 */
+		friend matrix_mpq trans(matrix_mpq const& m);
+
+		/** Computes the inverse of this matrix.
 		 *  @param m		The matrix to invert
-		 *  @return the inverse of this matrix.
+		 *  @return the inverse of the matrix
+		 *  @throws std::runtime_error on non-square matrix
+		 *  @throws noninvertable_matrix_error if matrix cannot be inverted
 		 */
 		friend matrix_mpq inv(matrix_mpq const& m);
 
-		/** Inverts the matrix in place.
-		 *  @return this matrix, inverted.
+		/** Computes the inverse of this matrix using LU decomposition. May not
+		 *  be safe for all invertable matrices.
+		 *  @param m		The matrix to invert
+		 *  @return the inverse of this matrix.
 		 *  @throws std::runtime_error on non-square matrix
-		 *  @throws divide by zero error on non-invertable matrix
 		 */
-		matrix_mpq& invert();
+		friend matrix_mpq lu_inv(matrix_mpq const& m);
+
+		/** Gets the indices of the linearly independent rows of this matrix.
+		 *  @return the set of such rows
+		 */
+		index_set lin_indep_rows() const;
 
 		/** Computes the inner product matrix of this matrix.
 		 *  @return a matrix P such that P[i][j] = inner_prod(this[i], this[j])
@@ -770,6 +861,18 @@ namespace lrs {
 		 */
 		matrix_mpq q_mat() const;
 
+		/** Computes the orthogonal augmentation of this matrix. The
+		 *  augmentation matrix will have full rank, and all the added rows
+		 *  will be orthogonal to the row vectors already in the matrix
+		 *  @param augmentSigned	Should the added augment vectors be
+		 *   						considered to be signed. If so, they will
+		 *   						be paired with their negations (true for
+		 *   						polyhedra, false for hyperplane
+		 *   						arrangements)
+		 *  @return a matrix augmented as above
+		 */
+		matrix_mpq ortho_augment(bool augmentSigned) const;
+
 		/** Computes the restriction of the matrix to a given set of row and 
 		 *  column indices.
 		 *  @param s		The set of indices to restrict the matrix to. The 
@@ -777,7 +880,25 @@ namespace lrs {
 		 *  				the smaller of n and d.
 		 *  @return a matrix R such that R[i][j] = this[s[i],s[j]]
 		 */
-		matrix_mpq restriction(index_set s);
+		matrix_mpq restriction(index_set s) const;
+
+		/** Computes the restriction of the matrix to a given set of row
+		 *  indices.
+		 *  @param s		The set of row indices to restrict the matrix to.
+		 *  				The maximum index in s should be less than or equal
+		 *  				to n.
+		 *  @return a matrix R such that R[i][j] = this[s[i],j]
+		 */
+		matrix_mpq row_restriction(index_set s) const;
+
+		/** Computes the restriction of the matrix to a given set of column
+		 *  indices.
+		 *  @param s		The set of column indices to restrict the matrix
+		 *  				to. The maximum index in s should be less than or
+		 *  				equal to d.
+		 *  @return a matrix R such that R[i][j] = this[i,s[j]]
+		 */
+		matrix_mpq col_restriction(index_set s) const;
 	
 	private:
 		/** Matrix data storage */
@@ -799,7 +920,9 @@ namespace lrs {
 	
 	int compare(matrix_mpq const& a, matrix_mpq const& b);
 	matrix_mpq abs(matrix_mpq const& m);
+	matrix_mpq trans(matrix_mpq const& m);
 	matrix_mpq inv(matrix_mpq const& m);
+	matrix_mpq lu_inv(matrix_mpq const& m);
 	
 	/** Left-multiplies a row vector by a matrix.
 	 *  @param v		A vector of n elements
@@ -808,6 +931,12 @@ namespace lrs {
 	 *  @throws std::runtime_error on vector length != n
 	 */
 	vector_mpq row_mat_mul(vector_mpq_base const& v, matrix_mpq const& m);
+
+	/** Creates an n*n identity matrix.
+	 *  @param n		The size of the matrix
+	 *  @return a new n*n identity matrix
+	 */
+	matrix_mpq identity_mat(ind n);
 
 } /* namespace lrs */
 
