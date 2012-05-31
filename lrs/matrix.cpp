@@ -874,6 +874,10 @@ namespace lrs {
 		int rowAug = ( augmentSigned ) ? 2*a.d : a.d;
 		matrix_mpq r(n+rowAug, d);
 
+		for (ind i = 0; i < n; ++i) {
+			r.row(i) = row(i);
+		}
+
 		if ( augmentSigned ) {
 			for (ind j = 0; j < a.d; ++j) {
 				for (ind i = 0; i < a.n; ++i) {
