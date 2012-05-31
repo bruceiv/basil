@@ -870,22 +870,28 @@ namespace lrs {
 		matrix_mpq c = gr.col_restriction(badCols);
 
 		matrix_mpq a = inv(b) * -c;
-		for (ind j = 0; j < a.d; ++j) {
-			a.elem(j, j) += 1;
-		}
 
 		int rowAug = ( augmentSigned ) ? 2*a.d : a.d;
 		matrix_mpq r(n+rowAug, d);
 
 		if ( augmentSigned ) {
-			for (ind j = 0; j < a.d; ++j) for (ind i = 0; i < a.n; ++i) {
-				mpq_class x = a.elem(i, j);
-				r.elem(n+2*j, i) = x;
-				r.elem(n+2*j+1, i) = -x;
+			for (ind j = 0; j < a.d; ++j) {
+				for (ind i = 0; i < a.n; ++i) {
+					mpq_class x = a.elem(i, j);
+					r.elem(n+2*j, i) = x;
+					r.elem(n+2*j+1, i) = -x;
+				}
+				//incorporate identity matrix augmentation
+				r.elem(n+2*j, a.n+j) = 1;
+				r.elem(n+2*j+1, a.n+j) = -1;
 			}
 		} else {
-			for (ind j = 0; j < a.d; ++j) for (ind i = 0; i < a.n; ++i) {
-				r.elem(n+j, i) = a.elem(i, j);
+			for (ind j = 0; j < a.d; ++j) {
+				for (ind i = 0; i < a.n; ++i) {
+					r.elem(n+j, i) = a.elem(i, j);
+				}
+				//incorporate identity matrix augmentation
+				r.elem(n+j, a.n+j) = 1;
 			}
 		}
 
