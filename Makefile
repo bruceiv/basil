@@ -1,11 +1,12 @@
 CPPFLAGS = -DTIMES -DGMP -DLRS_QUIET -DLRS_THREADSAFE -DBAS_WALLTIME
-CXXFLAGS = -ggdb -O2 -Wall -Wno-unused -fopenmp -I .
+#CXXFLAGS = -ggdb -O2 -Wall -Wno-unused -fopenmp -I .
+CXXFLAGS = -ggdb -O0 -Wall -Wno-unused -fopenmp -I .
 LDFLAGS = -lboost_program_options-mt -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable
-OBJS = automorphism.o parse.o gram.o dfs.o
+OBJS = automorphism.o parse.o gram.o dfs.o metric.o
 # object files for parallel version of executable
-OBJSP = automorphism.o parse.o gram.o dfsp.o
+OBJSP = automorphism.o parse.o gram.o dfsp.o metric.o
 
 # rules for constructions of objects from sources
 .cpp.o:  

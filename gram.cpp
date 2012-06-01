@@ -21,6 +21,7 @@
 
 #include "basil.hpp"
 #include "gram.hpp"
+#include "metric.hpp"
 
 namespace basil {
 	
@@ -567,7 +568,7 @@ namespace basil {
 //std::cout << "\n";
 //}
 //std::cout << std::endl;
-		matrix q = lu_inv(m.q_mat());
+		matrix q = lu_inv(q_mat(m));
 //std::cout << "inv(Q):\n";
 //for (ind i = 0; i < q.size(); ++i) {
 //for (ind j = 0; j < q.dim(); ++j) {

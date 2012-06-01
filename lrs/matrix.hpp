@@ -109,32 +109,14 @@ namespace lrs {
 		 */
 		friend bool is_zero(vector_mpq_base const& v);
 
-		/** Adds b to a
-		 *  @param a		the vector to add to
-		 *  @param b		the vector to add
-		 *  @return a, having been summed with b
-		 *  @throws std::runtime_error on a.d != b.d
-		 */
-		friend vector_mpq_base& operator+= (vector_mpq_base& a,
-										   vector_mpq_base const& b);
-
 		/** Addition of a and b
 		 *  @param a		The first term
 		 *  @param b		The second term
 		 *  @return a + b
 		 *  @throws std::runtime_error on a.d != b.d
 		 */
-		friend vector_mpq_base operator+ (vector_mpq_base const& a,
-										  vector_mpq_base const& b);
-
-		/** Subtracts b from a
-		 *  @param a		the vector to subtract from
-		 *  @param b		the vector to subtract
-		 *  @return a, having b subtracted from it
-		 *  @throws std::runtime_error on a.d != b.d
-		 */
-		friend vector_mpq_base& operator-= (vector_mpq_base& a,
-										   vector_mpq_base const& b);
+		friend vector_mpq operator+ (vector_mpq_base const& a,
+									 vector_mpq_base const& b);
 
 		/** Difference of a and b
 		 *  @param a		The first term
@@ -142,53 +124,68 @@ namespace lrs {
 		 *  @return a - b
 		 *  @throws std::runtime_error on a.d != b.d
 		 */
-		friend vector_mpq_base operator- (vector_mpq_base const& a,
-										  vector_mpq_base const& b);
+		friend vector_mpq operator- (vector_mpq_base const& a,
+									 vector_mpq_base const& b);
 
 		/** Negation of v.
 		 *  @param v		The vector to negate
 		 *  @return -1 * v
 		 */
-		friend vector_mpq_base operator- (vector_mpq_base const& v);
+		friend vector_mpq operator- (vector_mpq_base const& v);
 
-		/** Multiplies v by c
-		 *  @param v		the vector to multiply
-		 *  @param c		the scalar to multiply v by
-		 *  @return v, having been multiplied by c
-		 */
-		friend vector_mpq_base& operator*= (vector_mpq_base& v, mpq_class c);
-		
 		/** Scalar multiplication of c and v
 		 *  @param v		the vector to multiply
 		 *  @param c		the scalar to multiply v by
 		 *  @return the scalar multiplication of c and v.
 		 */
-		friend vector_mpq_base operator* (vector_mpq_base const& v,
-										  mpq_class c);
-		friend vector_mpq_base operator* (mpq_class c,
-										  vector_mpq_base const& v);
-		
+		friend vector_mpq operator* (vector_mpq_base const& v, mpq_class c);
+		friend vector_mpq operator* (mpq_class c, vector_mpq_base const& v);
+
 		/** Computes the inner product of two vectors.
 		 *  @param a		A vector of length d
 		 *  @param b		A vector of length d
 		 *  @return \f$\sum_{i=0}^{d} a_i * b_i'\f$
 		 *  @throws std::runtime_error on a.d != b.d
 		 */
-		friend mpq_class inner_prod (vector_mpq_base const& a, 
+		friend mpq_class inner_prod (vector_mpq_base const& a,
 									 vector_mpq_base const& b);
-		
+
 		/** Gets the vector of numerators of this vector */
 		vector_mpz num();
 		/** Gets the vector of denominators of this vector */
 		vector_mpz den();
-		
+
 	protected:
-		
+
 		/** Protected constructor. Must be called from subclass.
 		 *  @param v		The data storage array
 		 *  @param d		The length of the data
 		 */
 		vector_mpq_base(mpq_class* v, size_type d);
+
+		/** Adds b to a
+		 *  @param a		the vector to add to
+		 *  @param b		the vector to add
+		 *  @param d		the length of the vectors
+		 *  @return a, having been summed with b
+		 */
+		static void add(mpq_class* a, mpq_class const* b, ind d);
+
+		/** Subtracts b from a
+		 *  @param a		the vector to subtract from
+		 *  @param b		the vector to subtract
+		 *  @param d		the length of the vectors
+		 *  @return a, having b subtracted from it
+		 */
+		static void sub(mpq_class* a, mpq_class const* b, ind d);
+
+		/** Multiplies v by c
+		 *  @param v		the vector to multiply
+		 *  @param c		the scalar to multiply v by
+		 *  @param d		the length of the vector
+		 *  @return v, having been multiplied by c
+		 */
+		static void mul(mpq_class* v, mpq_class c, ind d);
 		
 		/** Internal storage of vector data */
 		mpq_class* v;
@@ -266,6 +263,22 @@ namespace lrs {
 		 */
 		vector_mpq& operator= (vector_mpz const& that);
 		
+		/** Addition-assignment operator
+		 *  @param that		The vector to add to this one
+		 *  @throws std::runtime_error on d != that.d
+		 */
+		vector_mpq& operator+= (vector_mpq_base const& that);
+
+		/** Subtraction-assignment operator
+		 *  @param that		The vector to subtract from this one
+		 *  @throws std::runtime_error on d != that.d
+		 */
+		vector_mpq& operator-= (vector_mpq_base const& that);
+
+		/** Multiplication-assignment operator
+		 *  @param c		The scalar to multiply this vector by
+		 */
+		vector_mpq& operator*= (mpq_class c);
 	};
 	
 	/** Multi-precision rational vector that is a view of a matrix row */
@@ -302,6 +315,22 @@ namespace lrs {
 		 */
 		matrix_row_mpq& operator= (vector_mpz const& that);
 		
+		/** Addition-assignment operator
+		 *  @param that		The vector to add to this one. Undefined results if
+		 * 					that.d differs from this->d.
+		 */
+		matrix_row_mpq& operator+= (vector_mpq_base const& that);
+
+		/** Subtraction-assignment operator
+		 *  @param that		The vector to subtract from this one. Undefined
+		 * 					results if that.d differs from this->d.
+		 */
+		matrix_row_mpq& operator-= (vector_mpq_base const& that);
+
+		/** Multiplication-assignment operator
+		 *  @param c		The scalar to multiply this vector by
+		 */
+		matrix_row_mpq& operator*= (mpq_class c);
 	};
 	
 	/** Functional to hash a vector_mpq.  */
@@ -849,29 +878,6 @@ namespace lrs {
 		 *  @return the set of such rows
 		 */
 		index_set lin_indep_rows() const;
-
-		/** Computes the inner product matrix of this matrix.
-		 *  @return a matrix P such that P[i][j] = inner_prod(this[i], this[j])
-		 */
-		matrix_mpq inner_prod_mat() const;
-		
-		/** Computes the Q-matrix for this matrix.
-		 *  @return a matrix Q such that
-		 *  		Q = sum 1 to n of outer_prod(this[i], this[j])
-		 */
-		matrix_mpq q_mat() const;
-
-		/** Computes the orthogonal augmentation of this matrix. The
-		 *  augmentation matrix will have full rank, and all the added rows
-		 *  will be orthogonal to the row vectors already in the matrix
-		 *  @param augmentSigned	Should the added augment vectors be
-		 *   						considered to be signed. If so, they will
-		 *   						be paired with their negations (true for
-		 *   						polyhedra, false for hyperplane
-		 *   						arrangements)
-		 *  @return a matrix augmented as above
-		 */
-		matrix_mpq ortho_augment(bool augmentSigned) const;
 
 		/** Computes the restriction of the matrix to a given set of row and 
 		 *  column indices.

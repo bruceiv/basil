@@ -106,37 +106,25 @@ namespace lrs {
 	// Mathematical operators
 	////////////////////////////////////////////////////////////////////////////
 	
-	vector_mpq_base& operator+= ( vector_mpq_base& a,
-								  vector_mpq_base const& b ) {
-
+	vector_mpq operator+ (vector_mpq_base const& a, vector_mpq_base const& b) {
 		if (a.d != b.d) throw std::runtime_error(
 					"Cannot add vectors of unequal size");
 
-		for (ind i = 0; i < a.d; ++i) a.v[i] += b.v[i];
-
-		return a;
+		vector_mpq t(a);
+		vector_mpq_base::add(t.v, b.v, t.d);
+		return t;
 	}
 
-	vector_mpq_base operator+ ( vector_mpq_base const& a,
-								vector_mpq_base const& b )
-		{ vector_mpq t(a); t += b; return t; }
-
-	vector_mpq_base& operator-= ( vector_mpq_base& a,
-								  vector_mpq_base const& b ) {
-
+	vector_mpq operator- (vector_mpq_base const& a, vector_mpq_base const& b) {
 		if (a.d != b.d) throw std::runtime_error(
-					"Cannot add vectors of unequal size");
+					"Cannot subtract vectors of unequal size");
 
-		for (ind i = 0; i < a.d; ++i) a.v[i] -= b.v[i];
-
-		return a;
+		vector_mpq t(a);
+		vector_mpq_base::sub(t.v, b.v, t.d);
+		return t;
 	}
 
-	vector_mpq_base operator- ( vector_mpq_base const& a,
-								vector_mpq_base const& b )
-		{ vector_mpq t(a); t -= b; return t; }
-
-	vector_mpq_base operator- ( vector_mpq_base const& v ) {
+	vector_mpq operator- (vector_mpq_base const& v) {
 		vector_mpq t(v.d);
 		for (ind i = 0; i < v.d; ++i) {
 			//t[i] = -v[i]
@@ -144,20 +132,29 @@ namespace lrs {
 		}
 		return t;
 	}
-
-	vector_mpq_base& operator*= ( vector_mpq_base& v, mpq_class c ) {
-		for (ind i = 0; i < v.d; ++i) v.v[i] *= c;
-		
-		return v;
+	
+	vector_mpq operator* (vector_mpq_base const& v, mpq_class c) {
+		vector_mpq t(v);
+		vector_mpq_base::mul(t.v, c, t.d);
+		return t;
 	}
 	
-	vector_mpq_base operator* ( vector_mpq_base const& v, mpq_class c )
-		{ vector_mpq t(v); t *= c; return t; }
+	vector_mpq operator* (mpq_class c, vector_mpq_base const& v) {
+		vector_mpq t(v);
+		vector_mpq_base::mul(t.v, c, t.d);
+		return t;
+	}
 	
-	vector_mpq_base operator* ( mpq_class c, vector_mpq_base const& v )
-		{ vector_mpq t(v); t *= c; return t; }
-	
-	mpq_class inner_prod( vector_mpq_base const& a, vector_mpq_base const& b ) {
+	void vector_mpq_base::add(mpq_class* a, mpq_class const* b, ind d)
+		{ for (ind i = 0; i < d; ++i) a[i] += b[i]; }
+
+	void vector_mpq_base::sub(mpq_class* a, mpq_class const* b, ind d)
+		{ for (ind i = 0; i < d; ++i) a[i] -= b[i]; }
+
+	void vector_mpq_base::mul(mpq_class* v, mpq_class c, ind d)
+		{ for (ind i = 0; i < d; ++i) v[i] *= c; }
+
+	mpq_class inner_prod(vector_mpq_base const& a, vector_mpq_base const& b) {
 		
 		if (a.d != b.d) throw std::runtime_error(
 			"Cannot take inner product of vectors of unequal size");
@@ -307,6 +304,27 @@ namespace lrs {
 		return *this;
 	}
 	
+	vector_mpq& vector_mpq::operator+= (vector_mpq_base const& that) {
+		if (d != that.d) throw std::runtime_error(
+					"Cannot add vectors of unequal size");
+
+		vector_mpq_base::add(v, that.v, d);
+		return *this;
+	}
+
+	vector_mpq& vector_mpq::operator-= (vector_mpq_base const& that) {
+		if (d != that.d) throw std::runtime_error(
+					"Cannot subtract vectors of unequal size");
+
+		vector_mpq_base::sub(v, that.v, d);
+		return *this;
+	}
+
+	vector_mpq& vector_mpq::operator*= (mpq_class c) {
+		vector_mpq_base::mul(v, c, d);
+		return *this;
+	}
+
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
@@ -348,6 +366,20 @@ namespace lrs {
 		return *this;
 	}
 	
+	matrix_row_mpq& matrix_row_mpq::operator+= (vector_mpq_base const& that) {
+		vector_mpq_base::add(v, that.v, d);
+		return *this;
+	}
+
+	matrix_row_mpq& matrix_row_mpq::operator-= (vector_mpq_base const& that) {
+		vector_mpq_base::sub(v, that.v, d);
+		return *this;
+	}
+
+	matrix_row_mpq& matrix_row_mpq::operator*= (mpq_class c) {
+		vector_mpq_base::mul(v, c, d);
+		return *this;
+	}
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
@@ -650,11 +682,9 @@ namespace lrs {
 	
 	matrix_mpq trans(matrix_mpq const& m) {
 		matrix_mpq t(m.d, m.n);
-
 		for (ind i = 0; i < m.d; ++i) for (ind j = 0; j < m.n; ++j) {
 			t.elem(i, j) = m.elem(j, i);
 		}
-
 		return t;
 	}
 
@@ -673,15 +703,18 @@ namespace lrs {
 		/* reduce down */
 		for (ind i = 0; i < n; ++i) {
 			if ( a.elem(i,i) != 0 ) {
-				mpq_class div;
-				/* div = 1/a[i, i] */
-				mpq_inv(div.get_mpq_t(), a.elem(i, i).get_mpq_t());
-				b.row(i) = div * b.row(i);
-				a.row(i) = div * a.row(i);
+				if ( a.elem(i,i) != 1 ) {
+					mpq_class div;
+					/* div = 1/a[i, i] */
+					mpq_inv(div.get_mpq_t(), a.elem(i, i).get_mpq_t());
+					b.row(i) *= div;
+					a.row(i) *= div;
+				}
+
 				for (ind j = i+1; j < n; ++j) {
 					if ( a.elem(j, i) != 0 ) {
-						b.row(j) = b.row(j) - (a.elem(j, i) * b.row(i));
-						a.row(j) = a.row(j) - (a.elem(j, i) * a.row(i));
+						b.row(j) -= (a.elem(j, i) * b.row(i));
+						a.row(j) -= (a.elem(j, i) * a.row(i));
 						if ( is_zero(a.row(j)) ) {
 							throw noninvertable_matrix_error(j);
 						}
@@ -693,6 +726,7 @@ namespace lrs {
 					if ( a.elem(r, i) != 0 ) break;
 				}
 				if ( r == n ) throw noninvertable_matrix_error(r);
+
 				b.swap_rows(i, r);
 				a.swap_rows(i, r);
 				--i;
@@ -702,8 +736,8 @@ namespace lrs {
 		/* reduce up */
 		for (ind i = n-1; i >= 0; --i) for (ind j = i-1; j >= 0; --j) {
 			if ( a.elem(j, i) != 0 ) {
-				b.row(j) = b.row(j) - (a.elem(j, i) * b.row(i));
-				a.row(j) = b.row(j) - (a.elem(j, i) * a.row(i));
+				b.row(j) -= (a.elem(j, i) * b.row(i));
+				a.row(j) -= (a.elem(j, i) * a.row(i));
 				if ( is_zero(a.row(j)) ) throw noninvertable_matrix_error(j);
 			}
 		}
@@ -768,7 +802,6 @@ namespace lrs {
 	}
 
 	index_set matrix_mpq::lin_indep_rows () const {
-
 		matrix_mpq a(*this);
 		int cRow = 0;
 		int pivot = 0;
@@ -798,12 +831,11 @@ namespace lrs {
 				/* div = 1/a.elem(cRow, pivot) */
 				mpq_class div;
 				mpq_inv(div.get_mpq_t(), a.elem(cRow, pivot).get_mpq_t());
-				a.row(cRow) = div * a.row(cRow);
+				a.row(cRow) *= div;
 			}
 			for (ind row = cRow+1; row < n; ++row) {
 				if ( a.elem(row, pivot) != 0 ) {
-					a.row(row) =
-							a.row(row) - (a.elem(row, pivot) * a.row(cRow));
+					a.row(row) -= (a.elem(row, pivot) * a.row(cRow));
 				}
 			}
 
@@ -816,89 +848,9 @@ namespace lrs {
 					rowSwaps[swapCounter].second);
 		}
 
-		index_set r(n);
-		for (ind i = 0; i < n; ++i) { if ( ! is_zero(a.row(i)) ) r.set(i); }
-		return r;
-	}
-
-	matrix_mpq matrix_mpq::inner_prod_mat () const {
-		matrix_mpq p(n,n);
-		
-		mpq_class t;
-		for (ind i = 0; i < n; ++i) {
-			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
-			for (ind j = 0; j < i; ++j) {
-				t = inner_prod(row(i), row(j));
-				p.elem(i,j) = t; 
-				p.elem(j,i) = t;
-			}
-			/* Handle j = i case here */
-			t = inner_prod(row(i), row(i));
-			p.elem(i,i) = t;
-		}
-		
-		return p;
-	}
-	
-	matrix_mpq matrix_mpq::q_mat() const {
-		matrix_mpq q(d, d);
-
-		/* calculate upper triangle */
-		for (ind i = 0; i < n; ++i) {
-			for (ind j = 0; j < d; ++j) {
-				for (ind k = j; k < d; ++k) {
-					q.elem(j, k) += elem(i, j) * elem(i, k);
-				}
-			}
-		}
-
-		/* copy into lower triangle */
-		for (ind j = 1; j < d; ++j) for (ind k = 0; k < j; ++k) {
-			q.elem(j, k) = q.elem(k, j);
-		}
-
-		return q;
-	}
-
-	matrix_mpq matrix_mpq::ortho_augment(bool augmentSigned) const {
-		matrix_mpq gr = row_restriction(lin_indep_rows());
-
-		index_set goodCols = trans(gr).lin_indep_rows();
-		index_set badCols = ~goodCols;
-
-		matrix_mpq b = gr.col_restriction(goodCols);
-		matrix_mpq c = gr.col_restriction(badCols);
-
-		matrix_mpq a = inv(b) * -c;
-
-		int rowAug = ( augmentSigned ) ? 2*a.d : a.d;
-		matrix_mpq r(n+rowAug, d);
-
-		for (ind i = 0; i < n; ++i) {
-			r.row(i) = row(i);
-		}
-
-		if ( augmentSigned ) {
-			for (ind j = 0; j < a.d; ++j) {
-				for (ind i = 0; i < a.n; ++i) {
-					mpq_class x = a.elem(i, j);
-					r.elem(n+2*j, i) = x;
-					r.elem(n+2*j+1, i) = -x;
-				}
-				//incorporate identity matrix augmentation
-				r.elem(n+2*j, a.n+j) = 1;
-				r.elem(n+2*j+1, a.n+j) = -1;
-			}
-		} else {
-			for (ind j = 0; j < a.d; ++j) {
-				for (ind i = 0; i < a.n; ++i) {
-					r.elem(n+j, i) = a.elem(i, j);
-				}
-				//incorporate identity matrix augmentation
-				r.elem(n+j, a.n+j) = 1;
-			}
-		}
-
+		/** 1-indexed for conformity with LRS */
+		index_set r(n+1);
+		for (ind i = 0; i < n; ++i) { if ( ! is_zero(a.row(i)) ) r.set(i+1); }
 		return r;
 	}
 
@@ -928,6 +880,7 @@ namespace lrs {
 		for (index_set_iter iterI = lrs::begin(s);
 				iterI != lrs::end(s); ++iterI) {
 			r.row(i) = row((*iterI)-1);
+			++i;
 		}
 
 		return r;

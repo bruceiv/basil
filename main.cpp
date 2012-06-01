@@ -26,6 +26,7 @@
 
 #include "fmt.hpp"
 #include "gram.hpp"
+#include "metric.hpp"
 #include "parse.hpp"
 
 #include "permlib/permlib_api.h"
@@ -54,7 +55,7 @@ namespace basil {
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
 				groupOverride(false), p(), verbose(false), 
 				doNormalize(true), euclideanGram(true), qGram(false),
-				preprocessor(false), genSymmetry(false) {
+				orthoAugment(false), preprocessor(false), genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -86,6 +87,10 @@ namespace basil {
 				("q-gram",
 					bool_switch(&qGram),
 					"Use Q-matrix metric for Gram matrix generation")
+				("ortho-augment",
+					bool_switch(&orthoAugment),
+					"Use orthogonal augmentation to bring matrix to full rank "
+					"for Q-matrix generation")
 				("no-norm",
 					bool_switch(&doNormalize)
 						->default_value(true)->implicit_value(false),
@@ -224,8 +229,13 @@ namespace basil {
 			
 			/* get gram matrix */
 			bool aRep = dfsOpts_.aRepresentation;
+			matrix_ptr qIn = p->m;
+			if ( orthoAugment ) {
+				/* augment matrix for Q-matrix generation */
+				qIn = boost::make_shared<matrix>(ortho_augment(*p->m, !aRep));
+			}
 			if ( qGram ) {
-				p->gm = boost::make_shared<gram_matrix>(constructQGram(*p->m));
+				p->gm = boost::make_shared<gram_matrix>(constructQGram(*qIn));
 				p->gs = gram_provided;
 			} else if ( euclideanGram ) {
 				p->gm = boost::make_shared<gram_matrix>(
@@ -260,7 +270,7 @@ namespace basil {
 				case gram_q:
 					/* construct Q-matrix based Gram matrix */
 					p->gm = boost::make_shared<gram_matrix>(
-							constructQGram(*p->m));
+							constructQGram(*qIn));
 					break;
 				}
 				p->gs = gram_provided;
@@ -367,6 +377,7 @@ namespace basil {
 		
 		/** verbose output printing [false]. */
 		bool verbose;
+
 		/** normalization calculation used in gram matrix construction 
 		 *  [true] */
 		bool doNormalize;
@@ -374,6 +385,9 @@ namespace basil {
 		bool euclideanGram;
 		/** Use Q-matrix Gram matrix calculation [false] */
 		bool qGram;
+		/** Use orthagonal augmentation for Q-matrix Gram [false] */
+		bool orthoAugment;
+
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */
 		bool preprocessor;
