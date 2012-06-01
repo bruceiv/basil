@@ -1,3 +1,8 @@
+/** Implements Basil input file parsing from parse.hpp.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <istream>
 #include <ostream>
 #include <vector>

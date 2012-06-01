@@ -1,5 +1,4 @@
-/** Computes and manipulates "gram" (normed inner product representative) 
- *  matrices for the purpose of symmetry calculations.
+/** Implmentation of "Gram" matrix computations from gram.hpp.
  * 
  *  @author Aaron Moss
  */

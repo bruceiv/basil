@@ -1,6 +1,11 @@
 #ifndef _BASIL_HPP_
 #define _BASIL_HPP_
 
+/** Namespace and common imports for the Basil project.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <string>
 
 #include <boost/shared_ptr.hpp>

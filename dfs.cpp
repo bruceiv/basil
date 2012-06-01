@@ -1,3 +1,8 @@
+/** Implements main Basil DFS algorithm from dfs.hpp.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <algorithm>
 #include <ctime>
 #include <deque>

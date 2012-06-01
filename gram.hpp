@@ -1,6 +1,12 @@
 #ifndef _GRAM_HPP_
 #define _GRAM_HPP_
 
+/** Computation and manipulation of "Gram" (normed inner product
+ *  representative) matrices for the purpose of symmetry calculations.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <functional>
 #include <ostream>
 

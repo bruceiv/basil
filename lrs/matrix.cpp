@@ -1,4 +1,4 @@
-/** Implements lrs::matrix class from matrix.hpp C++ wrapper for LRS.
+/** Implements matrix and vector types from matrix.hpp.
  *
  *  @author Aaron Moss
  */

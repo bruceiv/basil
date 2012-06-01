@@ -1,6 +1,11 @@
 #ifndef _PERM_UTILS_HPP_
 #define _PERM_UTILS_HPP_
 
+/** Utility methods for dealing with PermLib's permutation types.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <set>
 #include <sstream>
 #include <vector>

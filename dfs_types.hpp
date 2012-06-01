@@ -1,6 +1,11 @@
 #ifndef DFS_TYPES_HPP_
 #define DFS_TYPES_HPP_
 
+/** Data types used by the Basil DFS algorithm.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <boost/unordered_map.hpp>
 
 #include <gmpxx.h>

@@ -1,6 +1,11 @@
 #ifndef _LRS_HPP_
 #define _LRS_HPP_
 
+/** C++ wrapper class for an LRS instance.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <iostream>
 #include <new>
 #include <stdexcept>

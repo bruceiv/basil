@@ -1,6 +1,11 @@
 #ifndef _COBASIS_H_
 #define _COBASIS_H_
 
+/** C++ data structures for an LRS cobasis.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <cstdlib>
 #include <functional>
 #include <iterator>

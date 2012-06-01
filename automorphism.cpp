@@ -1,3 +1,8 @@
+/** Implements matrix automorphism calculations from automorphism.hpp.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <algorithm>
 #include <list>
 #include <set>

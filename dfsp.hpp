@@ -1,7 +1,11 @@
 #ifndef _DFS_HPP_
 #define _DFS_HPP_
 
-/* NOTE: Will not include along with dfs.hpp */
+/** Parallel variant of main Basil depth-first-search algorithm.
+ *  NOTE: Will not include along with dfs.hpp
+ *
+ *  @author Aaron Moss
+ */
 
 #include <ctime>
 #include <deque>

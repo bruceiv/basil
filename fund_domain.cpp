@@ -1,3 +1,8 @@
+/** Implements fundamental domain calculations from fund_domain.hpp.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <vector>
 
 #include <gmpxx.h>

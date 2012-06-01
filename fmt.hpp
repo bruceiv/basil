@@ -1,6 +1,11 @@
 #ifndef _FMT_HPP_
 #define _FMT_HPP_
 
+/** Pretty-printing methods for a variety of Basil types.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <functional>
 #include <iterator>
 #include <sstream>

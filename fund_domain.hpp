@@ -1,6 +1,11 @@
 #ifndef _FUND_DOMAIN_HPP_
 #define _FUND_DOMAIN_HPP_
 
+/** Calculations on fundamental domains.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <vector>
 
 #include "basil.hpp"

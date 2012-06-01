@@ -1,3 +1,8 @@
+/** Main driver for Basil.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <cstdlib>
 #include <iostream>
 #include <istream>

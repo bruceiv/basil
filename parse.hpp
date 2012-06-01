@@ -1,6 +1,11 @@
 #ifndef _PARSE_HPP_
 #define _PARSE_HPP_
 
+/** Basil input file parsing library.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <istream>
 #include <vector>
 

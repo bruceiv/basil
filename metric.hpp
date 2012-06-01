@@ -1,6 +1,12 @@
 #ifndef _BASIL_METRIC_HPP_
 #define _BASIL_METRIC_HPP_
 
+/** Distance metrics for d-dimensional real space, useful for computing Gram
+ *  matrices.
+ *
+ *  @author Aaron Moss
+ */
+
 #include "basil.hpp"
 #include "lrs/matrix.hpp"
 
@@ -26,10 +32,11 @@ namespace basil {
 	 *  @param augSigned	Should the added augment vectors be considered to
 	 *   					be signed. If so, they will be paired with their
 	 *   					negations (should be true for polyhedra, false for
-	 *   					hyperplane arrangements)
+	 *   					hyperplane arrangements) [default false]
 	 *  @return a matrix augmented as above
 	 */
-	lrs::matrix_mpq ortho_augment(lrs::matrix_mpq const& M, bool augSigned);
+	lrs::matrix_mpq ortho_augment(lrs::matrix_mpq const& M,
+								  bool augSigned = false);
 
 } /* namespace basil */
 

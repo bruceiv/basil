@@ -1,6 +1,11 @@
 #ifndef _LRS_MATRIX_HPP_
 #define _LRS_MATRIX_HPP_
 
+/** Multi-precision matrix and vector types for linear algebraic computations.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <cstdlib>
 #include <functional>
 #include <istream>

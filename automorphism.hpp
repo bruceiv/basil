@@ -1,6 +1,12 @@
 #ifndef _AUTOMORPHISM_HPP_
 #define _AUTOMORPHISM_HPP_
 
+/** Matrix automorphism calculations, for use in determining the restricted
+ *  automorphism groups of polytopes and hyperplane arrangements.
+ *
+ *  @author Aaron Moss
+ */
+
 #include "basil.hpp"
 #include "gram.hpp"
 

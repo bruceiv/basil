@@ -1,6 +1,11 @@
 #ifndef _LRU_CACHE_HPP_
 #define _LRU_CACHE_HPP_
 
+/** Generic least-recently-used cache data structure.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <utility>
 
 #include <boost/multi_index_container.hpp>

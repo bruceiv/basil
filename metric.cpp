@@ -1,3 +1,8 @@
+/** Implements distance metric computations from metric.hpp.
+ *
+ *  @author Aaron Moss
+ */
+
 #include "basil.hpp"
 #include "metric.hpp"
 

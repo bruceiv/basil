@@ -1,6 +1,11 @@
 #ifndef _CLRS_HPP_
 #define _CLRS_HPP_
 
+/** C++ wrapper for LRS headers
+ *
+ *  @author Aaron Moss
+ */
+
 #include "lrslib.h"
 #include "lrsgmp.h"
 

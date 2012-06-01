@@ -1,3 +1,9 @@
+/** Implements parallel variant of main Basil DFS algorithm from dfsp.hpp in
+ *  OpenMP.
+ *
+ *  @author Aaron Moss
+ */
+
 #include <algorithm>
 #include <ctime>
 #include <deque>

@@ -1,6 +1,12 @@
 #ifndef _DFS_HPP_
 #define _DFS_HPP_
 
+/** Main Basil depth-first-search algorithm.
+ *  NOTE: Will not include along with dfsp.hpp
+ *
+ *  @author Aaron Moss
+ */
+
 #include <ctime>
 #include <deque>
 #include <functional>
