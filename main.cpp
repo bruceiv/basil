@@ -243,10 +243,10 @@ namespace basil {
 				/* construct a new Q-matrix-based Gram matrix, with orthogonal
 				 * augmentation */
 				p->gs = gram_augment;
-			} else if ( euclideanGram && doNormalize ) {
+			} else if ( euclideanGram && ! doNormalize ) {
 				/* construct a new Gram matrix based on the Euclidean metric,
 				 * with inner products normalized to the same length */
-				p->gs = gram_euclid;
+				p->gs = gram_inexact;
 			} else if ( qGram ) {
 				/* construct a new Q-matrix-based Gram matrix, without
 				 * orthogonal augmentation */
@@ -254,15 +254,15 @@ namespace basil {
 			} else if ( euclideanGram ) {
 				/* construct a new Gram matrix based on the Euclidean metric,
 				 * without inner product normalization */
-				p->gs = gram_inexact;
+				p->gs = gram_euclid;
 			} else if ( doOrthoAugment ) {
 				/* construct a new Q-matrix-based Gram matrix, with orthogonal
 				 * augmentation */
 				p->gs = gram_augment;
-			} else if ( doNormalize ) {
+			} else if ( ! doNormalize ) {
 				/* construct a new Gram matrix based on the Euclidean metric,
 				 * with inner products normalized to the same length */
-				p->gs = gram_euclid;
+				p->gs = gram_inexact;
 			}
 
 			matrix Qinv; matrix P; matrix_mpr N;

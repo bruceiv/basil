@@ -279,6 +279,9 @@ namespace basil {
 
 		/* calculate inner product matrix */
 		for (ind i = 0; i < n; ++i) {
+			/* p[i][i] = 1, by def'n normed inner product */
+			P.elem(i, i) = 1;
+
 			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
 			for (ind j = 0; j < i; ++j) {
 
@@ -294,6 +297,7 @@ namespace basil {
 				}
 
 				P.elem(i, j) = ip;
+				P.elem(j, i) = ip;
 			}
 		}
 
