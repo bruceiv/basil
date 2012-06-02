@@ -276,8 +276,9 @@ namespace basil {
 					|| !( p->ss == sym_provided 
 						|| dfsOpts_.assumesNoSymmetry ) ) {
 				if ( ! p->gs == gram_provided ) {
-					matrix_mpr N = normedInnerProdMat(*p->m);
-					p->gm = boost::make_shared<gram_matrix>(constructGram(N));
+					Qinv = invQMat(orthoAugment(*p->m, !aRep));
+					p->gm = boost::make_shared<gram_matrix>(constructGram(
+							transformedInnerProdMat(*p->m, Qinv)));
 				}
 				if ( aRep ) {
 					p->g = compute_arrangement_automorphisms(*p->gm);
