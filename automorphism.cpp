@@ -12,7 +12,7 @@
 #include "automorphism.hpp"
 #include "basil.hpp"
 #include "gram.hpp"
-#include "permUtils.hpp"
+#include "perm_utils.hpp"
 
 #include "permlib/common.h"
 #include "permlib/sorter/base_sorter.h"

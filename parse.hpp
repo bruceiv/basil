@@ -35,7 +35,9 @@ namespace basil {
 		/** inexact Euclidean auto-generation requested */
 		gram_inexact,
 		/** Q-matrix auto-generation requested */
-		gram_q
+		gram_q,
+		/** Augmented Q-matrix auto-generation requested */
+		gram_augment
 	};
 	
 	/** state of given symmetry group */
@@ -105,6 +107,7 @@ namespace basil {
 	 *   symmetry end]
 	 *  [gram auto
 	 *  |gram Q
+	 *  |gram augmented
 	 *  |gram Euclid
 	 *  |gram inexact
 	 *  |gram begin

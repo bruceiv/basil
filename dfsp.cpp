@@ -22,7 +22,7 @@
 #include "dfsp.hpp"
 #include "fmt.hpp"
 #include "gram.hpp"
-#include "permUtils.hpp"
+#include "perm_utils.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"

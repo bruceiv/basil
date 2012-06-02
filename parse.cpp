@@ -12,7 +12,7 @@
 #include "automorphism.hpp"
 #include "basil.hpp"
 #include "parse.hpp"
-#include "permUtils.hpp"
+#include "perm_utils.hpp"
 
 #include "lrs/cobasis.hpp"
 
@@ -75,6 +75,7 @@ namespace basil {
 		case gram_inexact: o << "gram inexact" << endl; break;
 		case gram_euclid: o << "gram Euclid" << endl; break;
 		case gram_q: o << "gram Q" << endl; break;
+		case gram_augment: o << "gram augment" << endl; break;
 		case gram_provided:
 			o << "gram begin" << endl;
 			for (uind i = 0; i < p.gm->dim(); ++i) {
@@ -204,6 +205,8 @@ namespace basil {
 					p->gs = gram_inexact;
 				} else if ( prefixMatch(s, "gram Q") ) {
 					p->gs = gram_q;
+				} else if ( prefixMatch(s, "gram augment") ) {
+					p->gs = gram_augment;
 				} else if ( prefixMatch(s, "gram begin") ) {
 					p->gs = gram_provided;
 					p->gm = parseGram(in, p->m->size());

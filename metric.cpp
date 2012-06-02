@@ -16,14 +16,74 @@ namespace basil {
 	// mpr and matrix_mpr classes
 	////////////////////////////////////////////////////////////////////////////
 
+	/** Factors all the squares out of rf, placing their sqare roots in nf
+	 *  @param nf				The numerator factors - will be set to the
+	 *  						square root of the radical factors (should be
+	 *  						at least as long as rf)
+	 *  @param rf				The radical factors - will be reduced so that
+	 *  						no perfect squares remain
+	 */
+	void sqrt(prime::factor_list& nf, prime::factor_list& rf) {
+		for (uind k = 0; k < rf.size(); ++k) {
+			if ( rf[k] & 0x1 /* rf[k] odd */ ) {
+				nf[k] = rf[k]/2;	rf[k] = 1;
+			} else /* rf[k] even */ {
+				nf[k] = rf[k]/2;	rf[k] = 0;
+			}
+		}
+	}
+
 	mpr::mpr() : n(0), r(1), d(1) {}
 
-	mpr::mpr(mpz_class n_, mpz_class r_, mpz_class d_) : n(n_), r(r_), d(d_) {
-		/* reduce the numerator and denominator to lowest terms */
+	mpr::mpr(mpz_class n_, mpz_class r_, mpz_class d_) : n(n_), r(r_), d(d_) {}
+
+	mpr mpr::makeNorm(mpz_class n_, prime::factor_list rf, mpz_class d_,
+					  prime::factorizer factor) {
+
+		/* factors to include in the numerator */
+		prime::factor_list nf = prime::factor_list(rf.size());
+
+		/* factor squares out of radical */
+		sqrt(nf, rf);
+
+		/* prepare return and normalize rational */
+		mpr x(mpz_class(n_ * factor(nf)), factor(rf), d_);
+		x.normRational();
+
+		return x;
+	}
+
+	mpr::mpr(int x) : n(x), r(1), d(1) {}
+
+	mpr& mpr::operator= (int x) { n = x; r = 1; d = 1; return *this; }
+
+	void mpr::normRational() {
+		/* get the GCD */
 		mpz_class g;
 		mpz_gcd(g.get_mpz_t(), n.get_mpz_t(), d.get_mpz_t());
-		mpz_divexact(n.get_mpz_t(), n.get_mpz_t(), g.get_mpz_t());
-		mpz_divexact(d.get_mpz_t(), d.get_mpz_t(), g.get_mpz_t());
+		/* correct the sign */
+		if ( sgn(d) < 0 ) mpz_neg(g.get_mpz_t(), g.get_mpz_t());
+		/* factor out the GCD */
+		if ( g != 1 ) {
+			mpz_divexact(n.get_mpz_t(), n.get_mpz_t(), g.get_mpz_t());
+			mpz_divexact(d.get_mpz_t(), d.get_mpz_t(), g.get_mpz_t());
+		}
+	}
+
+	void mpr::norm(prime::factorizer factor) {
+		/* factors of the radical */
+		prime::factor_list rf = factor(r);
+		/* factors to include in the numerator */
+		prime::factor_list nf = prime::factor_list(rf.size());
+
+		/* factor squares out of radical */
+		sqrt(nf, rf);
+
+		/* refactor numerator and radical */
+		n *= factor(nf);
+		r = factor(rf);
+		/* re-normalize numerator and denominator */
+		normRational();
 	}
 
 	bool operator== (mpr const& a, mpr const& b)
@@ -39,6 +99,10 @@ namespace basil {
 
 		return o;
 	}
+
+	mpr abs(mpr const& x) { return mpr(abs(x.n), x.r, x.d); }
+
+	int sgn(mpr const& x) { return sgn(x.n); }
 
 	matrix_mpr::matrix_mpr(ind n, ind d) : m(new mpr[n*d]), n(n), d(d) {}
 
@@ -58,7 +122,7 @@ namespace basil {
 				delete[] m;
 				n = that.n;
 				d = that.d;
-				m = new mpq_class[n*d];
+				m = new mpr[n*d];
 			}
 
 			for (ind i = 0; i < n*d; i++) m[i] = that.m[i];
@@ -188,43 +252,6 @@ namespace basil {
 		return P;
 	}
 
-	/** Calculates the inner product ip*sqrt(fi*fj)/(ni*nj), normalized
-	 *  according to the standard rules for an mpr (numerator and denominator
-	 *  share no factors, radical has no factors which are perfect squares).
-	 */
-	mpr norm(mpq_class ip, mpz_class ni, mpz_class nj, prime::factor_list fi,
-			prime::factor_list fj, prime::factorizer product) {
-
-		/* if ip == 0, return default (which initializes to 0, in canonical
-		 * form) */
-		if ( ip == 0 ) return mpr();
-
-		/* first, multiply fj by fi */
-		mult(fj, fi);
-
-		/* now factor all the squares out into fi. fj, at the end should only
-		 * have 0 or 1 of each prime, and fi should have half of what was
-		 * removed  */
-
-		uind k;
-		/* ensure fi is big enough */
-		for (k = fi.size(); k < fj.size(); ++k) fi.push_back(0);
-		/* perform square root */
-		for (k = 0; k < fj.size(); ++k) {
-			if ( fj[k] & 0x1 /* fj[k] odd */ ) {
-				fi[k] = (fj[k]-1)/2;  fj[k] = 1;
-			} else /* fj[k] even */ {
-				fi[k] = fj[k]/2;      fj[k] = 0;
-			}
-		}
-
-		/* having canonicalized the radical, now generate the return value in
-		 * canonical form */
-		return mpr( mpz_class( abs( ip.get_num() ) * product(fi) ),
-					product(fj),
-					mpz_class( ip.get_den() * ni * nj ) );
-	}
-
 	matrix_mpr normedInnerProdMat(lrs::matrix_mpq const& M) {
 
 		ind n = M.size();
@@ -238,28 +265,32 @@ namespace basil {
 
 		/* calculate norm information */
 		mpq_class t;
-		for (uind i = 0; i < n; ++i) {
+		for (ind i = 0; i < n; ++i) {
 			t = lrs::inner_prod(M.row(i), M.row(i));
 			nums.push_back(t.get_num());
 			/* NOTE: this assumes here that m[i] is not a zero vector - bad
 			 * things happen otherwise */
 			prime::factor_list fn = factor( t.get_num() );
 			prime::factor_list fd = factor( t.get_den() );
-			facs.push_back( mult(fn, fd) );
+			facs.push_back( prime::mult(fn, fd) );
 		}
 
 		matrix_mpr P(n, n);
 
 		/* calculate inner product matrix */
-		for (uind i = 0; i < n; ++i) {
+		for (ind i = 0; i < n; ++i) {
 			/* Optimized here: p[i][j] = p[j][i], by def'n inner product */
-			for (uind j = 0; j < i; ++j) {
+			for (ind j = 0; j < i; ++j) {
 
 				t = lrs::inner_prod(M.row(i), M.row(j));
 				mpr ip;
 
 				if ( sgn(t) != 0 ) {
-					ip = norm(t, nums[i], nums[j], facs[i], facs[j], factor);
+					mpz_class num = t.get_num();
+					prime::factor_list rad = facs[i]; prime::mult(rad, facs[j]);
+					mpz_class den = t.get_den() * nums[i] * nums[j];
+
+					ip = mpr::makeNorm(num, rad, den, factor);
 				}
 
 				P.elem(i, j) = ip;

@@ -234,51 +234,65 @@ namespace basil {
 			
 			/* get gram matrix */
 			bool aRep = dfsOpts_.aRepresentation;
-			matrix_ptr qIn = p->m;
-			if ( doOrthoAugment ) {
-				/* augment matrix for Q-matrix generation */
-				qIn = boost::make_shared<matrix>(orthoAugment(*p->m, !aRep));
-			}
-			if ( qGram ) {
-				p->gm = boost::make_shared<gram_matrix>(constructQGram(*qIn));
-				p->gs = gram_provided;
+
+
+			if ( ! dfsOpts_.gramVec ) {
+				/* do not use a Gram vector */
+				p->gs = gram_omitted;
+			} else if ( qGram && doOrthoAugment ) {
+				/* construct a new Q-matrix-based Gram matrix, with orthogonal
+				 * augmentation */
+				p->gs = gram_augment;
+			} else if ( euclideanGram && doNormalize ) {
+				/* construct a new Gram matrix based on the Euclidean metric,
+				 * with inner products normalized to the same length */
+				p->gs = gram_euclid;
+			} else if ( qGram ) {
+				/* construct a new Q-matrix-based Gram matrix, without
+				 * orthogonal augmentation */
+				p->gs = gram_q;
 			} else if ( euclideanGram ) {
-				p->gm = boost::make_shared<gram_matrix>(
-						constructEuclideanGram(*p->m, doNormalize));\
-				p->gs = gram_provided;
-			} else if ( ! ( dfsOpts_.gramVec || p->gs == gram_provided ) ) {
+				/* construct a new Gram matrix based on the Euclidean metric,
+				 * without inner product normalization */
+				p->gs = gram_inexact;
+			} else if ( doOrthoAugment ) {
+				/* construct a new Q-matrix-based Gram matrix, with orthogonal
+				 * augmentation */
+				p->gs = gram_augment;
+			} else if ( doNormalize ) {
+				/* construct a new Gram matrix based on the Euclidean metric,
+				 * with inner products normalized to the same length */
+				p->gs = gram_euclid;
+			}
+
+			matrix Qinv; matrix P; matrix_mpr N;
+			switch( p->gs ) {
+			case gram_omitted:
 				p->gm = boost::make_shared<gram_matrix>(0);
-			} else {
-				switch( p->gs ) {
-				case gram_provided:
-					if (dfsOpts_.aRepresentation &&  p->rep != arrangement) {
-						/* requested arrangment handling, but given Gram
-						 * matrix is presumably not set up for it, so 
-						 * reconstruct in a sign-insensitive manner  */
-						p->gm = boost::make_shared<gram_matrix>(
-								constructEuclideanGram(*p->m, doNormalize));
-					}
-					/* otherwise do nothing */
-					break;
-				case gram_inexact:
-					/* construct inexact Gram matrix (no normalization) */
-					p->gm = boost::make_shared<gram_matrix>(
-							constructEuclideanGram(*p->m, false));
-					break;
-				case gram_omitted: /* equivalent to "auto" */
-				case gram_euclid:
-					/* construct exact Gram matrix (unless overridden by
-					 * command line flag) */
-					p->gm = boost::make_shared<gram_matrix>(
-							constructEuclideanGram(*p->m, doNormalize));
-					break;
-				case gram_q:
-					/* construct Q-matrix based Gram matrix */
-					p->gm = boost::make_shared<gram_matrix>(
-							constructQGram(*qIn));
-					break;
-				}
+				break;
+			case gram_augment:
+				Qinv = invQMat(orthoAugment(*p->m, !aRep));
+				p->gm = boost::make_shared<gram_matrix>(constructGram(
+						transformedInnerProdMat(*p->m, Qinv)));
 				p->gs = gram_provided;
+				break;
+			case gram_q:
+				Qinv = invQMat(*p->m);
+				p->gm = boost::make_shared<gram_matrix>(constructGram(
+						transformedInnerProdMat(*p->m, Qinv)));
+				p->gs = gram_provided;
+				break;
+			case gram_euclid:
+				N = normedInnerProdMat(*p->m);
+				p->gm = boost::make_shared<gram_matrix>(constructGram(N));
+				p->gs = gram_provided;
+				break;
+			case gram_inexact:
+				P = innerProdMat(*p->m);
+				p->gm = boost::make_shared<gram_matrix>(constructGram(P));
+				p->gs = gram_provided;
+				break;
+			case gram_provided: /* do nothing */ break;
 			}
 			
 			/* get symmetry group */
@@ -293,9 +307,8 @@ namespace basil {
 					|| !( p->ss == sym_provided 
 						|| dfsOpts_.assumesNoSymmetry ) ) {
 				if ( ! p->gs == gram_provided ) {
-					p->gm = boost::make_shared<gram_matrix>(
-							constructEuclideanGram(*p->m, doNormalize)
-					);
+					matrix_mpr N = normedInnerProdMat(*p->m);
+					p->gm = boost::make_shared<gram_matrix>(constructGram(N));
 				}
 				if ( aRep ) {
 					p->g = compute_arrangement_automorphisms(*p->gm);

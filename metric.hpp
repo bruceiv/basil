@@ -18,7 +18,7 @@ namespace basil {
 	/** Represents a multiprecision radical fraction (a number of the form
 	 *  n*sqrt(r)/d). In normalized form, the radical r has no factors which
 	 *  are perfect squares, and the numerator and denominator n and d have no
-	 *  common factors.
+	 *  common factors, and d and r are both positive.
 	 */
 	struct mpr {
 
@@ -27,15 +27,48 @@ namespace basil {
 		mpr();
 
 		/** Constructor; initializes mpr to n_*sqrt(r_)/d_. Performs no
-		 *  normalization. */
+		 *  normalization.
+		 *  @param n		The numerator
+		 *  @param r		The radical (should be positive)
+		 *  @param d		The denominator (should be non-zero)
+		 */
 		mpr(mpz_class n_, mpz_class r_, mpz_class d_);
 
-		/** Normalizes the fraction n/d to lowest terms. Does not normalize the
-		 *  radical part r.
+		/** Creates a normalized mpr.
+		 *  @param n_		The numerator
+		 *  @param rf		The factors of the radical
+		 *  @param d_		The denominator (should be non-zero)
+		 *  @param factor	The prime factorizer to use to factor r [defaults
+		 *  				to a new instance - it is strongly recommended that
+		 *  				the prime factorization instance be saved if more
+		 *  				than one normalization is desired].
+		 *  @return an mpr reprsenting the parameters, but with no factors of r
+		 *  		which are perfect squares, and n/d in lowest terms with a
+		 *  		positive d.
+		 */
+		static mpr makeNorm(mpz_class n_, prime::factor_list rf, mpz_class d_,
+						  prime::factorizer factor = prime::factorizer());
+
+		/** Constructor; initializes mpr to x*sqrt(1)/1. */
+		mpr(int x);
+
+		/** Assignment operator; sets this to x*sqrt(1)/1 */
+		mpr& operator= (int x);
+
+		/** Normalizes the fraction n/d to lowest terms, with d positive. Does
+		 *  not normalize the radical part r.
 		 */
 		void normRational();
 
-
+		/** Normalizes the mpr. After this is called, r will have no factors
+		 *  which are perfect squares, and n/d will be in lowest terms with a
+		 *  positive d.
+		 *  @param factor	The prime factorizer to use to factor r [defaults
+		 *  				to a new instance - it is strongly recommended that
+		 *  				the prime factorization instance be saved if more
+		 *  				than one normalization is desired].
+		 */
+		void norm(prime::factorizer factor = prime::factorizer());
 
 		/** Numerator */
 		mpz_class n;
@@ -45,14 +78,36 @@ namespace basil {
 		mpz_class d;
 	}; /* struct mpr */
 
-	/** Equality operator for mpr type */
+	/** Equality operator for mpr type
+	 *  @param a				the first mpr to check (should be normalized)
+	 *  @param b				the second mpr to check (should be normalized)
+	 *  @return true for a == b, false otherwise
+	 */
 	bool operator== (mpr const& a, mpr const& b);
 
-	/** Inequality operator for mpr type */
+	/** Inequality operator for mpr type
+	 *  @param a				the first mpr to check (should be normalized)
+	 *  @param b				the second mpr to check (should be normalized)
+	 *  @return true for a != b, false otherwise
+	 */
 	bool operator!= (mpr const& a, mpr const& b);
 
 	/** Output operator for mpr type */
 	std::ostream& operator<< (std::ostream& o, mpr x);
+
+	/** Takes the absolute value of an mpr
+	 *  @param x				the mpr to take the absolute value of - should
+	 *  						be in normal form
+	 *  @return absolute value of x
+	 */
+	mpr abs(mpr const& x);
+
+	/** Takes the sign of an mpr
+	 *  @param x				the mpr to take the sign of - should be in
+	 *  						normal form
+	 *  @return -1 for x < 0, 0 for x == 0, 1 for x > 0
+	 */
+	int sgn(mpr const& x);
 
 	/** Matrix of mpr objects. Designed for minimal compatibility with
 	 *  lrs::matrix_mpq.
@@ -138,7 +193,9 @@ namespace basil {
 
 	/** Computes the inner product matrix of a matrix, normalized according to
 	 *  the Euclidean metric.
-	 *  @param M			The matrix to compute the inner products for
+	 *  @param M			The matrix to compute the inner products for.
+	 *  					Should not have any zero rows - inclusion of a zero
+	 *  					row will result in undefined results.
 	 *  @return a matrix P such that P[i][j] =
 	 *  		inner_prod(M[i],M[j])/( ||M[i]|| * ||M[j]|| )
 	 */

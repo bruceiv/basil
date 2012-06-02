@@ -157,7 +157,7 @@ namespace prime {
 	 *  @param op		The other factor
 	 *  @return The product of the two
 	 */
-	factor_list& mult(factor_list& rop, factor_list const& op) {
+	inline factor_list& mult(factor_list& rop, factor_list const& op) {
 		uind i;
 
 		/* ensure rop is large enough to take all of op's factors */
