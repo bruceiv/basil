@@ -184,48 +184,6 @@ namespace basil {
 		return seed;
 	}
 	
-	/** Stores a multiprecision radical fraction (that is, a number of the form 
-	 *  n*sqrt(r)/d), for use in gram matrix construction. */
-	struct mpr {
-		
-		/** Constructor; initializes the mpr to canonical form [0*sqrt(1)/1] */
-		mpr() : n(0), r(1), d(1) {}
-		
-		/** Constructor; initializes mpr to n_*sqrt(r_)/d_. The fraction n_/d_ 
-		 *  will be reduced to lowest terms, but the radical r_ will not have 
-		 *  its squares factored out. */
-		mpr(mpz_class n_, mpz_class r_, mpz_class d_) : n(n_), r(r_), d(d_) {
-			/* reduce the numerator and denominator to lowest terms */
-			mpz_class g;
-			mpz_gcd(g.get_mpz_t(), n.get_mpz_t(), d.get_mpz_t());
-			n /= g; d /= g;
-		}
-		
-		/** Numerator */
-		mpz_class n;
-		/** Radical */
-		mpz_class r;
-		/** Denominator */
-		mpz_class d;
-	}; /* struct mpr */
-	
-	/** Equality operator for mpr type */
-	bool operator== (mpr const& a, mpr const& b) 
-		{ return a.n == b.n && a.r == b.r && a.d == b.d; }
-	
-	/** Inequality operator for mpr type */
-	bool operator!= (mpr const& a, mpr const& b) 
-		{ return !(a == b); }
-	
-	/** Output operator for mpr type */
-	std::ostream& operator<< (std::ostream& o, mpr x) {
-		o << x.n;
-		if ( x.r != 1 ) o << "r" << x.r;
-		if ( x.d != 1 ) o << "/" << x.d;
-		
-		return o;
-	}
-	
 	/** Functional to hash an mpr. */
 	class mpr_hash : public std::unary_function<mpr, std::size_t> {
 	public:
@@ -567,7 +525,7 @@ namespace basil {
 //std::cout << "\n";
 //}
 //std::cout << std::endl;
-		matrix q = lu_inv(q_mat(m));
+		matrix q = invQMat(m);
 //std::cout << "inv(Q):\n";
 //for (ind i = 0; i < q.size(); ++i) {
 //for (ind j = 0; j < q.dim(); ++j) {
