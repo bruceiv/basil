@@ -21,9 +21,37 @@
 
 namespace basil {
 	
+	std::istream& operator>> (std::istream& in, gram_state& gs) {
+		string token;
+		in >> token;
+
+		if ( "none" == token ) gs = gram_omitted;
+		else if ( "begin" == token ) gs = gram_provided;
+		else if ( "auto" == token ) gs = gram_auto;
+		else if ( "Q" == token ) gs = gram_q;
+		else if ( "no-augment" == token ) gs = gram_no_augment;
+		else if ( "Euclidean" == token ) gs = gram_euclidean;
+		else if ( "no-norm" == token ) gs = gram_no_norm;
+		else gs = gram_auto;
+
+		return in;
+	}
+
+	std::ostream& operator<< (std::ostream& out, gram_state const& gs) {
+		switch ( gs ) {
+		case gram_omitted:		out << "none";			break;
+		case gram_provided:		out << "begin";			break;
+		case gram_auto:			out << "auto";			break;
+		case gram_q:			out << "Q";				break;
+		case gram_no_augment:	out << "no-augment";	break;
+		case gram_euclidean:	out << "Euclidean";		break;
+		case gram_no_norm:		out << "no-norm";		break;
+		}
+
+		return out;
+	}
+
 	std::ostream& operator<< (std::ostream& o, parse_results const& p) {
-		
-// 		permutation_group_ptr g;
 		
 		std::ostream& (*endl)(std::ostream&) = std::endl;
 		
@@ -70,22 +98,17 @@ namespace basil {
 		}
 		
 		/* print gram matrix */
-		switch ( p.gs ) {
-		case gram_omitted: /* do nothing */ break;
-		case gram_inexact: o << "gram inexact" << endl; break;
-		case gram_euclid: o << "gram Euclid" << endl; break;
-		case gram_q: o << "gram Q" << endl; break;
-		case gram_augment: o << "gram augment" << endl; break;
-		case gram_provided:
-			o << "gram begin" << endl;
-			for (uind i = 0; i < p.gm->dim(); ++i) {
-				for (uind j = 0; j < p.gm->dim(); ++j) {
-					o << " " << (*p.gm)(i, j);
+		if ( p.gs != gram_omitted ) {
+			o << "gram " << p.gs << endl;
+			if ( p.gs == gram_provided ) {
+				for (uind i = 0; i < p.gm->dim(); ++i) {
+					for (uind j = 0; j < p.gm->dim(); ++j) {
+						o << " " << (*p.gm)(i, j);
+					}
+					o << endl;
 				}
-				o << endl;
+				o << "gram end" << endl;
 			}
-			o << "gram end" << endl;
-			break;
 		}
 		
 		/* print symmetry group */
@@ -197,19 +220,21 @@ namespace basil {
 					p->g = parsePermutationGroup(in, p->m->size());
 				} else goto pushLine;
 			} else if ( prefixMatch(s, "gram") ) {
-				if ( prefixMatch(s, "gram auto") ) {
-					p->gs = gram_euclid;
-				} else if ( prefixMatch(s, "gram Euclid") ) {
-					p->gs = gram_euclid;
-				} else if ( prefixMatch(s, "gram inexact") ) {
-					p->gs = gram_inexact;
-				} else if ( prefixMatch(s, "gram Q") ) {
-					p->gs = gram_q;
-				} else if ( prefixMatch(s, "gram augment") ) {
-					p->gs = gram_augment;
+				if ( prefixMatch(s, "gram none") ) {
+					p->gs = gram_omitted;
 				} else if ( prefixMatch(s, "gram begin") ) {
 					p->gs = gram_provided;
 					p->gm = parseGram(in, p->m->size());
+				} else if ( prefixMatch(s, "gram auto") ) {
+					p->gs = gram_auto;
+				} else if ( prefixMatch(s, "gram Q") ) {
+					p->gs = gram_q;
+				} else if ( prefixMatch(s, "gram no-augment") ) {
+					p->gs = gram_no_augment;
+				} else if ( prefixMatch(s, "gram Euclidean") ) {
+					p->gs = gram_euclidean;
+				} else if ( prefixMatch(s, "gram no-norm") ) {
+					p->gs = gram_no_norm;
 				} else goto pushLine;
 			} else {
 				if ( in ) 

@@ -24,22 +24,27 @@ namespace basil {
 		arrangement
 	};
 	
-	/** gram matrix state */
+	/** Gram matrix state */
 	enum gram_state { 
 		/** not mentioned */
 		gram_omitted,
 		/** gram matrix explicitly provided */
 		gram_provided,
-		/** exact Euclidean auto-generation requested */
-		gram_euclid,
-		/** inexact Euclidean auto-generation requested */
-		gram_inexact,
-		/** Q-matrix auto-generation requested */
-		gram_q,
+		/** default Gram matrix generation requested */
+		gram_auto,
 		/** Augmented Q-matrix auto-generation requested */
-		gram_augment
+		gram_q,
+		/** Q-matrix auto-generation requested */
+		gram_no_augment,
+		/** exact Euclidean auto-generation requested */
+		gram_euclidean,
+		/** inexact Euclidean auto-generation requested */
+		gram_no_norm
 	};
 	
+	std::istream& operator>> (std::istream& in, gram_state& gs);
+	std::ostream& operator<< (std::ostream& out, gram_state& gs);
+
 	/** state of given symmetry group */
 	enum symmetry_state {
 		/** not mentioned */

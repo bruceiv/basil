@@ -58,9 +58,8 @@ namespace basil {
 		 */
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
-				groupOverride(false), p(), verbose(false), 
-				doNormalize(true), euclideanGram(true), qGram(false),
-				doOrthoAugment(false), preprocessor(false), genSymmetry(false) {
+				groupOverride(false), p(), verbose(false), gramType(gram_auto),
+				preprocessor(false), genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -81,28 +80,19 @@ namespace basil {
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
 					"Show all intermediate dictionaries in the search tree.")
-				("no-gram",
-					bool_switch(&dfsOpts_.gramVec)
-						->default_value(true)->implicit_value(false),
-					"Deactivate Gram matrix hashing (Gram matrix are a cheap "
-					"optimization, but their calculation may be expensive)")
-				("euclidean-gram",
-					bool_switch(&euclideanGram),
-					"Use Euclidean metric for Gram matrix generation")
-				("q-gram",
-					bool_switch(&qGram),
-					"Use Q-matrix metric for Gram matrix generation")
-				("ortho-augment",
-					bool_switch(&doOrthoAugment),
-					"Use orthogonal augmentation to bring matrix to full rank "
-					"for Q-matrix generation")
-				("no-norm",
-					bool_switch(&doNormalize)
-						->default_value(true)->implicit_value(false),
-					"If it is known that all symmetric vectors have the same "
-					"norm, this flag will save expensive normalization "
-					"calculations in gram matrix construction; use may result "
-					"in duplicate orbit representatives.")
+				("gram",
+					value<gram_state>(&gramType),
+					"Gram matrix generation to use: 'none' to deactivate Gram "
+					"hashing, 'begin' to use the gram matrix from the input "
+					"file, 'Q' to use the Q-matrix metric for Gram hashing "
+					"[default], 'no-augment' to use the Q-matrix metric "
+					"without row-augmenting the input first (only works for "
+					"input matrices of full rank), 'Euclidean' to use the "
+					"Euclidean metric for Gram matrix generation, or 'no-norm' "
+					"to use the Euclidean metric without normalizing the row "
+					"vectors of the matrix to the same norm (saves expensive "
+					"normalization calculations, at the possible expense of "
+					"not finding all symmetries)")
 				("debug-gram",
 					bool_switch(&dfsOpts_.debugGram),
 					"Print gram vectors for vertices/rays/cobases that are "
@@ -235,34 +225,12 @@ namespace basil {
 			/* get gram matrix */
 			bool aRep = dfsOpts_.aRepresentation;
 
-
-			if ( ! dfsOpts_.gramVec ) {
-				/* do not use a Gram vector */
+			/* check if Gram settings have been over-ridden */
+			if ( gramType == gram_omitted ) {
+				dfsOpts_.gramVec = false;
 				p->gs = gram_omitted;
-			} else if ( qGram && doOrthoAugment ) {
-				/* construct a new Q-matrix-based Gram matrix, with orthogonal
-				 * augmentation */
-				p->gs = gram_augment;
-			} else if ( euclideanGram && ! doNormalize ) {
-				/* construct a new Gram matrix based on the Euclidean metric,
-				 * with inner products normalized to the same length */
-				p->gs = gram_inexact;
-			} else if ( qGram ) {
-				/* construct a new Q-matrix-based Gram matrix, without
-				 * orthogonal augmentation */
-				p->gs = gram_q;
-			} else if ( euclideanGram ) {
-				/* construct a new Gram matrix based on the Euclidean metric,
-				 * without inner product normalization */
-				p->gs = gram_euclid;
-			} else if ( doOrthoAugment ) {
-				/* construct a new Q-matrix-based Gram matrix, with orthogonal
-				 * augmentation */
-				p->gs = gram_augment;
-			} else if ( ! doNormalize ) {
-				/* construct a new Gram matrix based on the Euclidean metric,
-				 * with inner products normalized to the same length */
-				p->gs = gram_inexact;
+			} else if ( gramType != gram_auto ) {
+				p->gs = gramType;
 			}
 
 			matrix Qinv; matrix P; matrix_mpr N;
@@ -270,24 +238,25 @@ namespace basil {
 			case gram_omitted:
 				p->gm = boost::make_shared<gram_matrix>(0);
 				break;
-			case gram_augment:
+			case gram_auto:		/* augmented Q-gram is default; fallthrough */
+			case gram_q:
 				Qinv = invQMat(orthoAugment(*p->m, !aRep));
 				p->gm = boost::make_shared<gram_matrix>(constructGram(
 						transformedInnerProdMat(*p->m, Qinv)));
 				p->gs = gram_provided;
 				break;
-			case gram_q:
+			case gram_no_augment:
 				Qinv = invQMat(*p->m);
 				p->gm = boost::make_shared<gram_matrix>(constructGram(
 						transformedInnerProdMat(*p->m, Qinv)));
 				p->gs = gram_provided;
 				break;
-			case gram_euclid:
+			case gram_euclidean:
 				N = normedInnerProdMat(*p->m);
 				p->gm = boost::make_shared<gram_matrix>(constructGram(N));
 				p->gs = gram_provided;
 				break;
-			case gram_inexact:
+			case gram_no_norm:
 				P = innerProdMat(*p->m);
 				p->gm = boost::make_shared<gram_matrix>(constructGram(P));
 				p->gs = gram_provided;
@@ -396,15 +365,9 @@ namespace basil {
 		/** verbose output printing [false]. */
 		bool verbose;
 
-		/** normalization calculation used in gram matrix construction 
-		 *  [true] */
-		bool doNormalize;
-		/** Use Euclidean Gram matrix calculation [true] */
-		bool euclideanGram;
-		/** Use Q-matrix Gram matrix calculation [false] */
-		bool qGram;
-		/** Use orthagonal augmentation for Q-matrix Gram [false] */
-		bool doOrthoAugment;
+		/** Type of Gram matrix to generate [defaults to gram_auto, for respect
+		 *  setting in input file] */
+		gram_state gramType;
 
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */
