@@ -162,6 +162,12 @@ namespace basil {
 			P.elem(i,i) = t;
 		}
 
+std::cout << "\tinnerProdMat():";
+for (ind i = 0; i < n; ++i) {
+std::cout << "\n\t";
+for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
+} std::cout << std::endl;
+
 		return P;
 	}
 
@@ -184,6 +190,12 @@ namespace basil {
 		for (ind j = 1; j < d; ++j) for (ind k = 0; k < j; ++k) {
 			Q.elem(j, k) = Q.elem(k, j);
 		}
+
+std::cout << "\tQMat():";
+for (ind i = 0; i < d; ++i) {
+std::cout << "\n\t";
+for (ind j = 0; j < d; ++j) std::cout << " " << Q.elem(i, j);
+} std::cout << std::endl;
 
 		return lu_inv(Q);
 	}
@@ -235,6 +247,12 @@ namespace basil {
 			}
 		}
 
+std::cout << "\torthoAugment():";
+for (ind i = 0; i < n+rowAug; ++i) {
+std::cout << "\n\t";
+for (ind j = 0; j < d; ++j) std::cout << " " << R.elem(i, j);
+} std::cout << std::endl;
+
 		return R;
 	}
 
@@ -248,6 +266,12 @@ namespace basil {
 			lrs::vector_mpq w = row_mat_mul(M.row(i), T);
 			for (ind j = 0; j < n; ++j) P.elem(i, j) = inner_prod(w, M.row(j));
 		}
+
+std::cout << "\ttransformedInnerProdMat():";
+for (ind i = 0; i < n; ++i) {
+std::cout << "\n\t";
+for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
+} std::cout << std::endl;
 
 		return P;
 	}
@@ -267,12 +291,12 @@ namespace basil {
 		mpq_class t;
 		for (ind i = 0; i < n; ++i) {
 			t = lrs::inner_prod(M.row(i), M.row(i));
-			nums.push_back(t.get_num());
+			nums[i] = t.get_num();
 			/* NOTE: this assumes here that m[i] is not a zero vector - bad
 			 * things happen otherwise */
 			prime::factor_list fn = factor( t.get_num() );
 			prime::factor_list fd = factor( t.get_den() );
-			facs.push_back( prime::mult(fn, fd) );
+			facs[i] =  prime::mult(fn, fd);
 		}
 
 		matrix_mpr P(n, n);
@@ -300,6 +324,12 @@ namespace basil {
 				P.elem(j, i) = ip;
 			}
 		}
+
+std::cout << "\tnormedInnerProdMat():";
+for (ind i = 0; i < n; ++i) {
+std::cout << "\n\t";
+for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
+} std::cout << std::endl;
 
 		return P;
 	}

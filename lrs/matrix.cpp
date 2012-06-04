@@ -798,6 +798,12 @@ namespace lrs {
 			}
 		}
 
+std::cout << "\tlu_inv():";
+for (ind i = 0; i < n; ++i) {
+std::cout << "\n\t";
+for (ind j = 0; j < n; ++j) std::cout << " " << r.elem(i, j);
+} std::cout << std::endl;
+
 		return r;
 	}
 
