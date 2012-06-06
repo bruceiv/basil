@@ -104,9 +104,11 @@ namespace basil {
 
 				/* cycle in the original space */
 				permutation_cycle c;
+				permlib::dom_int x = c_d[0] >> 1U;
+				c.push_back(x);
 
 				/* Ensure that all values in this cycle are signed the same */
-				for (uind i = 0; i < c_d.size(); ++i) {
+				for (uind i = 1; i < c_d.size(); ++i) {
 					if ( (c_d[i] & 0x1) == 0x0 ) {
 						valid = false;
 						break;
@@ -114,7 +116,7 @@ namespace basil {
 
 					/* removing the low order bit takes a row to it's original
 					 * representation in this sign-doubling scheme */
-					permlib::dom_int x = c_d[i] >> 1U;
+					x = c_d[i] >> 1U;
 					c.push_back(x);
 				}
 
@@ -136,4 +138,49 @@ namespace basil {
 		return permlib::construct(g.dim(), gens.begin(), gens.end());
 	}
 	
+	permutation_group_ptr shrink_group_to(permutation_group const& g, uind n) {
+		/* generators of the new permutation group */
+		std::vector<permutation_ptr> gens;
+
+		permutation_list gen_list = strong_gen_set(g);
+		for (permutation_list::iterator iter = gen_list.begin();
+				iter != gen_list.end(); ++iter) {
+
+			permutation_cycle_list p = cycle_list(**iter);
+			permutation_cycle_list pn;
+
+			/* valid permutations do not map i to j, j <= n < i. Since the
+			 * cycles are sorted by starting element, it suffices to check that
+			 * cycles starting with j <= n do not contain any elements i > n */
+			for (permutation_cycle_list::iterator cIter = p.begin();
+					cIter != p.end(); ++cIter) {
+
+				permutation_cycle c = *cIter;
+
+				/* Ignore identity cycle */
+				if ( c.size() == 0 ) continue;
+
+				/* stop when the cycles start to be > n (adjusted for 0-indexed
+				 * cycles of 1-indexed permutations ...) */
+				if ( c[0] >= n ) break;
+
+				/* Ensure that all values in this cycle are <= n */
+				bool valid = true;
+				for (uind i = 1; i < c.size(); ++i) {
+					if ( c[i] >= n ) {
+						valid = false;
+						break;
+					}
+				}
+				if ( valid ) { pn.push_back(c); }
+			}
+
+			if ( pn.size() > 0 ) {
+				gens.push_back(boost::make_shared<permutation>(perm(n, pn)));
+			}
+		}
+
+		return permlib::construct(n, gens.begin(), gens.end());
+	}
+
 } /* namespace basil */

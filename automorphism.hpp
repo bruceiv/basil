@@ -30,6 +30,14 @@ namespace basil {
 	permutation_group_ptr compute_arrangement_automorphisms(
 		gram_matrix const& g);
 	
+	/** Takes a group of degree m and makes a group of degree n from it.
+	 *  @param g			The group to shrink
+	 *  @param n			The degree of the shrunken group
+	 *  @return a group expressed as a subgroup of S_n, excluding any elements
+	 *  		of the original group that do not setwise fix S_n.
+	 */
+	permutation_group_ptr shrink_group_to(permutation_group const& g, uind n);
+
 } /* namespace basil */
 
 #endif /* _AUTOMORPHISM_HPP_ */

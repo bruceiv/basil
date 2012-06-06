@@ -59,7 +59,7 @@ namespace basil {
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
 				groupOverride(false), p(), verbose(false), gramType(gram_auto),
-				preprocessor(false), genSymmetry(false) {
+				doFixPlane(true), preprocessor(false), genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -80,6 +80,13 @@ namespace basil {
 				("show-all-dicts", 
 					bool_switch(&dfsOpts_.showsAllDicts), 
 					"Show all intermediate dictionaries in the search tree.")
+				("no-fixed-plane",
+					bool_switch(&doFixPlane)
+						->default_value(true)->implicit_value(false),
+					"Do not fix the x_0 = 1 plane for automorphism "
+					"calculations. This may result in spurious automorphisms "
+					"for certain instances (notably those which have rows where "
+					"x_0 = 0).")
 				("gram",
 					value<gram_state>(&gramType),
 					"Gram matrix generation to use: 'none' to deactivate Gram "
@@ -233,31 +240,36 @@ namespace basil {
 				p->gs = gramType;
 			}
 
-			matrix Qinv; matrix P; matrix_mpr N;
+			matrix Qinv; matrix P; matrix_mpr N; matrix M;
+
+			/* augment the input matrix if needed to fix the automorphism
+			 * plane */
+			if ( doFixPlane ) { M = fixPlane(*p->m); } else { M = *p->m; }
+
 			switch( p->gs ) {
 			case gram_omitted:
 				p->gm = boost::make_shared<gram_matrix>(0);
 				break;
 			case gram_auto:		/* augmented Q-gram is default; fallthrough */
 			case gram_q:
-				Qinv = invQMat(orthoAugment(*p->m, !aRep));
+				Qinv = invQMat(orthoAugment(M, !aRep));
 				p->gm = boost::make_shared<gram_matrix>(constructGram(
-						transformedInnerProdMat(*p->m, Qinv)));
+						transformedInnerProdMat(M, Qinv)));
 				p->gs = gram_provided;
 				break;
 			case gram_no_augment:
-				Qinv = invQMat(*p->m);
+				Qinv = invQMat(M);
 				p->gm = boost::make_shared<gram_matrix>(constructGram(
-						transformedInnerProdMat(*p->m, Qinv)));
+						transformedInnerProdMat(M, Qinv)));
 				p->gs = gram_provided;
 				break;
 			case gram_euclidean:
-				N = normedInnerProdMat(*p->m);
+				N = normedInnerProdMat(M);
 				p->gm = boost::make_shared<gram_matrix>(constructGram(N));
 				p->gs = gram_provided;
 				break;
 			case gram_no_norm:
-				P = innerProdMat(*p->m);
+				P = innerProdMat(M);
 				p->gm = boost::make_shared<gram_matrix>(constructGram(P));
 				p->gs = gram_provided;
 				break;
@@ -276,14 +288,19 @@ namespace basil {
 					|| !( p->ss == sym_provided 
 						|| dfsOpts_.assumesNoSymmetry ) ) {
 				if ( ! p->gs == gram_provided ) {
-					Qinv = invQMat(orthoAugment(*p->m, !aRep));
+					Qinv = invQMat(orthoAugment(M, !aRep));
 					p->gm = boost::make_shared<gram_matrix>(constructGram(
-							transformedInnerProdMat(*p->m, Qinv)));
+							transformedInnerProdMat(M, Qinv)));
 				}
 				if ( aRep ) {
 					p->g = compute_arrangement_automorphisms(*p->gm);
 				} else {
 					p->g = compute_restricted_automorphisms(*p->gm);
+				}
+				/* make sure that the fixed plane didn't sneak into the
+				 * automorphism group */
+				if ( doFixPlane ) {
+					p->g = shrink_group_to(*p->g, p->m->size());
 				}
 				p->ss = sym_provided;
 			}
@@ -369,6 +386,8 @@ namespace basil {
 		/** Type of Gram matrix to generate [defaults to gram_auto, for respect
 		 *  setting in input file] */
 		gram_state gramType;
+		/** fix the x_0 = 1 plane in the automorphism calculation? [true] */
+		bool doFixPlane;
 
 		/** only do pre-processing steps, rather than full calculation 
 		 *  [false] */

@@ -143,6 +143,21 @@ namespace basil {
 	// Metric matrices and helpers
 	////////////////////////////////////////////////////////////////////////////
 
+	lrs::matrix_mpq fixPlane(lrs::matrix_mpq const& M) {
+		ind n = M.size(), d = M.dim();
+
+		lrs::matrix_mpq F(n+1, d);
+
+		for (ind i = 0; i < n; ++i) {
+			F.row(i) = M.row(i);
+		}
+
+		lrs::vector_mpq v(d); v[0] = 1;
+		F.row(n) = v;
+
+		return F;
+	}
+
 	lrs::matrix_mpq innerProdMat(lrs::matrix_mpq const& M) {
 
 		ind n = M.size();

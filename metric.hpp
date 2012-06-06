@@ -156,6 +156,16 @@ namespace basil {
 		ind d;
 	}; /* class matrix_mpr */
 
+
+	/** Adds a [1 0 0 ... 0] row to a matrix. When interpreted as an LRS-style
+	 *  constraint, equivalent to 1 >= 0 (always true), when interpreted as a
+	 *  vector in d-space, ensures that any automorphisms will fix the x_0 = 1
+	 *  plane.
+	 *  @param M		The matrix to append to
+	 *  @return a copy of the matrix with an extra row [1 0 0 ... 0] added
+	 */
+	lrs::matrix_mpq fixPlane(lrs::matrix_mpq const& M);
+
 	/** Computes the inner product matrix of a matrix.
 	 *  @param M		The matrix to compute the inner product of
 	 *  @return a matrix P such that P[i][j] = inner_prod(M[i], M[j])
