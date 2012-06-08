@@ -177,11 +177,11 @@ namespace basil {
 			P.elem(i,i) = t;
 		}
 
-std::cout << "\tinnerProdMat():";
-for (ind i = 0; i < n; ++i) {
-std::cout << "\n\t";
-for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
-} std::cout << std::endl;
+//std::cout << "\tinnerProdMat():";
+//for (ind i = 0; i < n; ++i) {
+//std::cout << "\n\t";
+//for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
+//} std::cout << std::endl;
 
 		return P;
 	}
@@ -206,11 +206,11 @@ for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
 			Q.elem(j, k) = Q.elem(k, j);
 		}
 
-std::cout << "\tQMat():";
-for (ind i = 0; i < d; ++i) {
-std::cout << "\n\t";
-for (ind j = 0; j < d; ++j) std::cout << " " << Q.elem(i, j);
-} std::cout << std::endl;
+//std::cout << "\tQMat():";
+//for (ind i = 0; i < d; ++i) {
+//std::cout << "\n\t";
+//for (ind j = 0; j < d; ++j) std::cout << " " << Q.elem(i, j);
+//} std::cout << std::endl;
 
 		return lu_inv(Q);
 	}
@@ -262,11 +262,11 @@ for (ind j = 0; j < d; ++j) std::cout << " " << Q.elem(i, j);
 			}
 		}
 
-std::cout << "\torthoAugment():";
-for (ind i = 0; i < n+rowAug; ++i) {
-std::cout << "\n\t";
-for (ind j = 0; j < d; ++j) std::cout << " " << R.elem(i, j);
-} std::cout << std::endl;
+//std::cout << "\torthoAugment():";
+//for (ind i = 0; i < n+rowAug; ++i) {
+//std::cout << "\n\t";
+//for (ind j = 0; j < d; ++j) std::cout << " " << R.elem(i, j);
+//} std::cout << std::endl;
 
 		return R;
 	}
@@ -282,11 +282,11 @@ for (ind j = 0; j < d; ++j) std::cout << " " << R.elem(i, j);
 			for (ind j = 0; j < n; ++j) P.elem(i, j) = inner_prod(w, M.row(j));
 		}
 
-std::cout << "\ttransformedInnerProdMat():";
-for (ind i = 0; i < n; ++i) {
-std::cout << "\n\t";
-for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
-} std::cout << std::endl;
+//std::cout << "\ttransformedInnerProdMat():";
+//for (ind i = 0; i < n; ++i) {
+//std::cout << "\n\t";
+//for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
+//} std::cout << std::endl;
 
 		return P;
 	}
@@ -340,11 +340,11 @@ for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
 			}
 		}
 
-std::cout << "\tnormedInnerProdMat():";
-for (ind i = 0; i < n; ++i) {
-std::cout << "\n\t";
-for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
-} std::cout << std::endl;
+//std::cout << "\tnormedInnerProdMat():";
+//for (ind i = 0; i < n; ++i) {
+//std::cout << "\n\t";
+//for (ind j = 0; j < n; ++j) std::cout << " " << P.elem(i, j);
+//} std::cout << std::endl;
 
 		return P;
 	}
