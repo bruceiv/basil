@@ -58,8 +58,9 @@ namespace basil {
 		 */
 		opts(int argc, char** argv) 
 				: dfsOpts_(), matFile(), grpFile(), outFile(), 
-				groupOverride(false), p(), verbose(false), gramType(gram_auto),
-				doFixPlane(true), preprocessor(false), genSymmetry(false) {
+				groupOverride(false), p(), verbose(false),
+				gramType(gram_omitted), doFixPlane(true), preprocessor(false),
+				genSymmetry(false) {
 			
 			using namespace boost::program_options;
 			
@@ -89,17 +90,20 @@ namespace basil {
 					"x_0 = 0).")
 				("gram",
 					value<gram_state>(&gramType),
-					"Gram matrix generation to use: 'none' to deactivate Gram "
-					"hashing, 'begin' to use the gram matrix from the input "
-					"file, 'Q' to use the Q-matrix metric for Gram hashing "
-					"[default], 'no-augment' to use the Q-matrix metric "
-					"without row-augmenting the input first (only works for "
-					"input matrices of full rank), 'Euclidean' to use the "
-					"Euclidean metric for Gram matrix generation, or 'no-norm' "
-					"to use the Euclidean metric without normalizing the row "
-					"vectors of the matrix to the same norm (saves expensive "
-					"normalization calculations, at the possible expense of "
-					"not finding all symmetries)")
+					"Gram matrix generation to use: 'begin' to use the gram "
+					"matrix from the input file, 'Q' to use the Q-matrix "
+					"metric for Gram hashing [default], 'no-augment' to use "
+					"the Q-matrix metric without row-augmenting the input "
+					"first (only works for input matrices of full rank), "
+					"'Euclidean' to use the Euclidean metric for Gram matrix "
+					"generation, or 'no-norm' to use the Euclidean metric "
+					"without normalizing the row vectors of the matrix to the "
+					"same norm (saves expensive normalization calculations, at "
+					"the possible expense of not finding all symmetries)")
+				("no-gram",
+					bool_switch(&dfsOpts_.gramVec)
+						->default_value(true)->implicit_value(false),
+					"Deactivates Gram matrix hashing.")
 				("debug-gram",
 					bool_switch(&dfsOpts_.debugGram),
 					"Print gram vectors for vertices/rays/cobases that are "
@@ -233,11 +237,14 @@ namespace basil {
 			bool aRep = dfsOpts_.aRepresentation;
 
 			/* check if Gram settings have been over-ridden */
-			if ( gramType == gram_omitted ) {
-				dfsOpts_.gramVec = false;
+			if ( dfsOpts_.gramVec == false ) {
 				p->gs = gram_omitted;
-			} else if ( gramType != gram_auto ) {
-				p->gs = gramType;
+			} else {
+				if ( gramType == gram_omitted ) {
+					if ( p->gs == gram_omitted ) p->gs = gram_auto;
+				} else {
+					p->gs = gramType;
+				}
 			}
 
 			matrix Qinv; matrix P; matrix_mpr N; matrix M;
@@ -383,8 +390,8 @@ namespace basil {
 		/** verbose output printing [false]. */
 		bool verbose;
 
-		/** Type of Gram matrix to generate [defaults to gram_auto, for respect
-		 *  setting in input file] */
+		/** Type of Gram matrix to generate [defaults to respect the setting
+		 *  in the input file, gram_auto if none specified there] */
 		gram_state gramType;
 		/** fix the x_0 = 1 plane in the automorphism calculation? [true] */
 		bool doFixPlane;
