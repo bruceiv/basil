@@ -78,6 +78,8 @@ namespace basil {
 	
 	cobasis_map const& dfs::getBasisOrbits() const { return basisOrbits; }
 	
+	uind dfs::getTotalBasisDegree() const { return totalBasisDegree; }
+
 	ind dfs::getDimension() const { return dim - 1; }
 	
 	index_set dfs::getInitialCobasis() const { return initialCobasis; }
@@ -130,6 +132,7 @@ namespace basil {
 		basisOrbits = cobasis_map();
 		cobasisGramMap = cobasis_gram_map();
 		cobasisQueue = std::deque<index_set>();
+		totalBasisDegree = 0;
 		hitMaxBasis = false;
 		initialCobasis = index_set();
 		pathStack = std::deque<index_pair>();
@@ -270,6 +273,9 @@ namespace basil {
 							<< "\n";
 			}
 			
+			/* Count total cobasis orbit representative degree */
+			totalBasisDegree += entering.count();
+
 			/* for each valid entering index */
 			for (index_set_iter it2 = lrs::begin(entering); 
 					it2 != lrs::end(entering); ++it2) {

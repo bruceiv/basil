@@ -52,6 +52,7 @@ namespace basil {
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();
 		cobasisGramMap = cobasis_gram_map();
+		totalBasisDegree = 0;
 		pathStack = pivot_stack();
 		rayOrbits = coordinates_map();
 		vertexOrbits = coordinates_map();
@@ -410,8 +411,10 @@ namespace basil {
 		int nSuccess = 0;
 		/* Number of stalled threads */
 		int nWaiting = 0;
+		/* Coabsis orbit representative degree */
+		uind sumRepDegree = 0;
 		
-		#pragma omp parallel reduction(+:nSuccess)
+		#pragma omp parallel reduction(+:nSuccess,sumRepDegree)
 		{
 		#pragma omp master
 		{
@@ -475,11 +478,11 @@ namespace basil {
 
 		addVertex(dat);
 		getRays(ex);
+
+		/* start to DFS the edge graph */
+		pushNewEdges(ex, cob->cob);
 		} /* omp master */
 		
-		/* DFS the edge graph */
-		pushNewEdges(ex, cob->cob);
-
 		/* construct empty pivot */
 		pivot_stack ps;
 		bool waiting = false;
@@ -563,9 +566,12 @@ namespace basil {
 			pushNewEdges(ex, cob->cob);
 		}
 
+		sumRepDegree += ex.totalBasisDegree;
 		nSuccess += ( globalOpts.basisLimit >= ex.basisOrbits.size() );
 		} /* omp parallel */
 		
+		globalTotalBasisDegree = sumRepDegree;
+
 		/* set algorithm end time */
 		diff_time = std::clock() - start_time;
 #ifdef BAS_WALLTIME
@@ -584,6 +590,8 @@ namespace basil {
 				globalBasisOrbits.end());
 	}
 	
+	uind dfsp::getTotalBasisDegree() const { return globalTotalBasisDegree; }
+
 	ind dfsp::getDimension() const { return globalDim - 1; }
 	
 	index_set dfsp::getInitialCobasis() const { return initialCobasis; }
@@ -766,6 +774,7 @@ namespace basil {
 		
 		/* Default initialize remaining data members */
 		globalBasisOrbits = cobasis_list();
+		globalTotalBasisDegree = 0;
 		hitMaxBasis = false;
 		initialCobasis = index_set();
 		globalRayOrbits = coordinates_list();
@@ -968,6 +977,9 @@ namespace basil {
 							<< "\n";
 				} /* omp critical(print) */
 			}
+
+			/* Count basis orbit representatives' degrees */
+			ex.totalBasisDegree += entering.count();
 
 			/* for each valid entering index */
 			for (index_set_iter jt = lrs::begin(entering);

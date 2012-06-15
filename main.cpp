@@ -447,6 +447,7 @@ int main(int argc, char **argv) {
 				<< "\n\tinitial cobasis: " << fmt( d.getInitialCobasis() )
 				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup(), 1 )
 				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits(), 1 )
+				<< "\n\ttotal basis degree: " << d.getTotalBasisDegree()
 				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits(), 1 )
 				<< "\n\tray orbits: " << fmt( d.getRayOrbits(), 1 )
 				<< "\n}";

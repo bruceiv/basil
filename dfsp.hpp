@@ -420,6 +420,9 @@ namespace basil {
 			lru::cache<index_set, index_set_hash> cobasisCache;
 			/** Lookup cobases by gram vector */
 			cobasis_gram_map cobasisGramMap;
+			/** Sum of the degrees of the basis orbit representatives seen by
+			 *  this explorer */
+			uind totalBasisDegree;
 			/** Backtracking stack. */
 			pivot_stack pathStack;
 			/** representatives of each orbit (of rays) */
@@ -466,6 +469,9 @@ namespace basil {
 		 *  cobases */
 		cobasis_map getBasisOrbits() const;
 		
+		/** @return the sum of the degrees of the basis orbit representatives */
+		uind getTotalBasisDegree() const;
+
 		/** @return the dimension of the polytope */
 		ind getDimension() const;
 		
@@ -608,6 +614,8 @@ namespace basil {
 		
 		/** Global map of seen cobases, up to symmetry */
 		cobasis_list globalBasisOrbits;
+		/** Sum of the degrees of the cobasis orbit representatives */
+		uind globalTotalBasisDegree;
 		/** Temporary to store time diffs into. Will hold total running 
 		 *  time on algorithm completion. */
 		std::clock_t diff_time;

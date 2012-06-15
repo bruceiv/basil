@@ -248,6 +248,9 @@ namespace basil {
 		/** @return representatives of each of the orbits of the cobases */
 		cobasis_map const& getBasisOrbits() const;
 		
+		/** @return the sum of the degrees of the basis orbit representatives */
+		uind getTotalBasisDegree() const;
+
 		/** @return the dimension of the polytope */
 		ind getDimension() const;
 		
@@ -498,6 +501,8 @@ namespace basil {
 		cobasis_map basisOrbits;
 		/** Search queue for cobases */
 		std::deque<index_set> cobasisQueue;
+		/** Sum of the degrees of the cobasis orbit representatives */
+		uind totalBasisDegree;
 		/** Temporary to store time diffs into. Will hold total running time on 
 		 *  algorithm completion. */
 		std::clock_t diff_time;

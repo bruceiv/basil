@@ -175,6 +175,6 @@ end;
 # number of vectors to act on (larger is more symmetric, I think)
 
 for i in [1..100] do
-    makeConstraints(Concatenation("6-6-3-",String(i),".txt") ,6,6,3);
+    makeConstraints(Concatenation("7-6-3-",String(i),".txt") ,7,6,3);
 od
 
