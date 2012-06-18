@@ -23,6 +23,11 @@ namespace basil {
 		/** Matrix type */
 		typedef lrs::matrix_mpq matrix_mpq;
 
+		/** Empty constructor.
+		 *  Creates a fundamental domain with an empty Q-matrixs
+		 */
+		fund_domain();
+
 		/** Default constructor.
 		 *  @param qInv		The Q-matrix inverse (used to compute norms)
 		 */
@@ -44,10 +49,13 @@ namespace basil {
 		 */
 		bool contains(vector_mpq const& x) const;
 
+		/** @return the constraints stored in this fundamental domain */
+		std::vector<vector_mpq> const& constraints() const;
+
 		/** Gets the dimension of the fundamental domain's underlying space */
-		ind dim() const;
+		uind dim() const;
 		/** Gets the size (number of halfspaces) of the fundamental domain */
-		ind size() const;
+		uind size() const;
 
 	private:
 		/** The polytope underlying the fundamental domain */
@@ -55,16 +63,6 @@ namespace basil {
 		/** The Q-matrix inverse (used to compute norms) */
 		matrix_mpq qInv;
 	}; /* class fund_domain */
-
-	/** Gets a halfspace to include a but not b in a fundamental domain.
-	 *  @param a		The point to include
-	 *  @param b		The point to exclude
-	 *  @return the halfspace including a but not b, such that the bounding
-	 *  		hyperplane is the normal bisector of the line segment between
-	 *  		a and b
-	 */
-	fund_domain::vector_mpq splitting_halfspace(
-			fund_domain::vector_mpq const& a, fund_domain::vector_mpq const& b);
 
 } /* namespace basil */
 

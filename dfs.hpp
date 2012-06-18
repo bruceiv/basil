@@ -32,6 +32,7 @@
 
 #include "basil.hpp"
 #include "dfs_types.hpp"
+#include "fund_domain.hpp"
 #include "gram.hpp"
 
 #include "lrs/cobasis.hpp"
@@ -63,9 +64,10 @@ namespace basil {
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<unsigned long>::max()), 
 				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
-				gramVec(true), debugGram(false), lexOnly(false), lrs_o(), 
-				out(&std::cout), printBasis(0), printNew(false), printRay(0), 
-				printVertex(0), showsAllDicts(false), stabSearch(false) {}
+				fundDomainLimit(0), gramVec(true), debugGram(false),
+				lexOnly(false), lrs_o(), out(&std::cout), printBasis(0),
+				printNew(false), printRay(0), printVertex(0),
+				showsAllDicts(false), stabSearch(false) {}
 		
 		/** Sets (or unsets) the aRepresentation option */
 		dfs_opts& inARepresentation(bool opt = true)
@@ -91,6 +93,9 @@ namespace basil {
 		dfs_opts& withFirstCobasis(shared_ptr<lrs::index_set>& ptr) 
 			{ firstCobasis = ptr; return *this; }
 		
+		dfs_opts& withFundDomainLimit(unsigned long lim)
+			{ fundDomainLimit = lim; return *this; }
+
 		/** Deactivates (or activates) the gramVec option */
 		dfs_opts& noGramVec(bool opt = true) 
 			{ gramVec = !opt; return *this; }
@@ -155,8 +160,8 @@ namespace basil {
 		/** assumes the given polytope is asymmetric [false]. This is primarily 
 		 *  a debugging option */
 		bool assumesNoSymmetry;
-		/** maximum number of bases to consider [numeric_limits\<long\>::max()] 
-		 */
+		/** maximum number of bases to consider
+		 *  [numeric_limits\<unsigned long\>::max()] */
 		unsigned long basisLimit;
 		/** size of the seen cobasis lookup cache [1000] */
 		long cacheSize;
@@ -165,6 +170,9 @@ namespace basil {
 		/** cobasis to start the search from [null]. If this is not set, the 
 		 *  DFS algorithm will find the first cobasis itself */
 		shared_ptr<lrs::index_set> firstCobasis;
+		/** maximum number of constraints to add to the fundamental domain [0]
+		 */
+		unsigned long fundDomainLimit;
 		/** Use gram vector hashing to shrink the symmetry search space [true] 
 		 */
 		bool gramVec;
@@ -261,6 +269,9 @@ namespace basil {
 		 *  	bases (false) */
 		bool isFinished() const;
 		
+		/** @return the generated fundamental domain */
+		fund_domain const& getFundamentalDomain() const;
+
 		/** @return representatives of each of the orbits of the extreme rays */
 		coordinates_map const& getRayOrbits() const;
 		
@@ -399,7 +410,7 @@ namespace basil {
 		void getRays();
 		
 		/** Initializes algorithm globals */
-		void initGlobals();
+		void initGlobals(matrix& m);
 		
 		/** Checks if a cobasis has been seen before.
 		 *  @param cob		The cobasis to check
@@ -515,6 +526,8 @@ namespace basil {
 		bool hitMaxBasis;
 		/** The first cobasis found */
 		index_set initialCobasis;
+		/** The fundamental domain of the problem, iteratively constructed */
+		fund_domain fundDomain;
 		/** Backtracking stack. */
 		std::deque<index_pair> pathStack;
 		/** representatives of each orbit (of rays) */

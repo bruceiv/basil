@@ -18,7 +18,9 @@
 
 #include "dfs.hpp"
 #include "fmt.hpp"
+#include "fund_domain.hpp"
 #include "gram.hpp"
+#include "metric.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
@@ -42,7 +44,7 @@ namespace basil {
 			opts(o), dim(m.dim()), rows(m.size()), gramMat(gram) { 
 		
 		/* set up algorithm globals */
-		initGlobals();
+		initGlobals(m);
 	}
 	
 	bool dfs::doDfs() {
@@ -86,6 +88,8 @@ namespace basil {
 	
 	bool dfs::isFinished() const { return !hitMaxBasis; }
 	
+	fund_domain const& dfs::getFundamentalDomain() const { return fundDomain; }
+
 	coordinates_map const& dfs::getRayOrbits() const { return rayOrbits; }
 	
 	std::clock_t dfs::getRunningTime() const 
@@ -121,12 +125,19 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////////////
 	
-	void dfs::initGlobals() {
+	void dfs::initGlobals(matrix& m) {
 		/* represents the set [1..rows] */
 		allIndices = index_set(rows+1).set().set(0, false);
 		/* resize the cobasis cache to its proper size */
 		cobasisCache.resize(opts.cacheSize);
 		if ( opts.aRepresentation ) gramMat = gramMat.abs();
+		/* Set up the fundamental domain */
+		if ( opts.fundDomainLimit > 0 ) {
+			matrix qInv = invQMat(orthoAugment(m, !opts.aRepresentation));
+			fundDomain = fund_domain(qInv);
+		} else {
+			fundDomain = fund_domain();
+		}
 		
 		/* Default initialize remaining data members */
 		basisOrbits = cobasis_map();
@@ -249,22 +260,13 @@ namespace basil {
 			if ( opts.aRepresentation ) {
 				/* use arrangement pivot selection */
 				entering = l.arrangementRatio(leave);
-				if ( opts.printTrace ) {
-					opts.output() << "#I arrangement ratio test\n";
-				}
 			} else if ( opts.lexOnly ) {
 				/* calculate entering index lexicographically (BAD) */
 				enter = l.lexRatio(leave);
-				if ( opts.printTrace ) {
-					opts.output() << "#I lexicograpic ratio test\n";
-				}
 				if (enter >= 0) entering.set(enter); else continue;
 			} else {
 				/* calculate set of valid entering indices */
 				entering = l.allRatio(leave);
-				if ( opts.printTrace ) {
-					opts.output() << "#I all ratio test\n";
-				}
 			}
 			
 			if ( opts.printTrace ) {
@@ -306,54 +308,93 @@ namespace basil {
 					
 					/* calculate invariants of new cobasis */
 					vertex_data_ptr newVertex(vertexData(cob, sol));
-					vertex_data_ptr oldVertex(knownVertex(newVertex));
-					
-					if ( ! oldVertex ) {
-						
-						/* this vertex has yet to be seen, add it */
-						addVertex(newVertex);
-						/* add this vertex to the search stack */
-						workStack.push_back(pivot(oldCob, leave, enter));
-						
-						if ( opts.printTrace ) {
-							opts.output() << "#I pushing new vertex: " 
-										<< fmt( cob->cob ) << " " << *sol 
-										<< "\n";
-						}
-						
-					} else if (oldVertex->coords == newVertex->coords 
-								|| ! opts.dualFacetTrick ) {
-						
-						/* if this is a new cobasis for a previously seen 
-						 * vertex, and we are not employing the dual facet 
-						 * trick to prune the search tree, add the cobasis to 
-						 * the search stack if it is unique */
-						if ( isNewCobasis(cob->cob, newVertex) ) {
-							addCobasis(cob->cob, oldVertex);
+
+					/* check that the new vertex is inside the fundamental
+					 * domain */
+					if ( fundDomain.contains(newVertex->coords) ) {
+
+						/* check that this vertex is not symmetric to a known
+						 * vertex */
+						vertex_data_ptr oldVertex(knownVertex(newVertex));
+
+						if ( ! oldVertex ) {
+
+							/* this vertex has yet to be seen, add it */
+							addVertex(newVertex);
+							/* add this vertex to the search stack */
 							workStack.push_back(pivot(oldCob, leave, enter));
 							
 							if ( opts.printTrace ) {
-								opts.output() << "#I pushing new cobasis: " 
+								opts.output() << "#I pushing new vertex: "
 											<< fmt( cob->cob ) << " " << *sol 
 											<< "\n";
 							}
-						} else if ( opts.printTrace ) {
-							opts.output() << "#I ignoring cobasis " 
-										<< fmt( cob->cob ) << " by symmetry\n";
+
+						} else {
+
+							if ( oldVertex->coords == newVertex->coords
+									|| ! opts.dualFacetTrick ) {
+								/* if this is a new cobasis for a previously
+								 * seen vertex, and we are not employing the
+								 * dual facet trick to prune the search tree,
+								 * add the cobasis to the search stack if it is
+								 * unique */
+								if ( isNewCobasis(cob->cob, newVertex) ) {
+									addCobasis(cob->cob, oldVertex);
+									workStack.push_back(
+											pivot(oldCob, leave, enter));
+
+									if ( opts.printTrace ) {
+										opts.output() << "#I pushing new "
+												"cobasis: " << fmt( cob->cob )
+												<< " " << *sol << "\n";
+									}
+								} else if ( opts.printTrace ) {
+									opts.output() << "#I ignoring cobasis "
+											<< fmt( cob->cob ) << " by "
+											"symmetry\n";
+								}
+							} else {
+								/* new vertex symmetric to old vertex - add to
+								 * fundamental domain to exclude such in the
+								 * future */
+								if ( fundDomain.size()
+										< opts.fundDomainLimit ) {
+									fundDomain.add_constraint(
+											oldVertex->coords,
+											newVertex->coords);
+
+									if ( opts.printTrace ) {
+										opts.output() << "#I added fundamental "
+												"domain constraint "
+												<< fundDomain.constraints()[
+												   fundDomain.size()-1]
+												<< " between "
+												<< oldVertex->coords << " and "
+												<< newVertex->coords << "\n";
+									}
+								}
+
+								/* we assume that if the new cobasis is
+								 * defining a different vertex, but that vertex
+								 * is symmetric, then its neighbours will be
+								 * symmetric to those of the known vertex.
+								 * Prune via the dual facet trick. */
+								if ( opts.printTrace ) {
+									opts.output() << "#I ignoring cobasis "
+											<< fmt( cob->cob ) << " by dual "
+											"facet trick\n";
+								}
+							}
 						}
-						
 					} else {
-						
-						/* we assume that if the new cobasis is defining a 
-						 * different vertex, but that vertex is symmetric, then 
-						 * its neighbours will be symmetric to those of the 
-						 * known vertex. Prune via the dual facet trick. */
 						if ( opts.printTrace ) {
-							opts.output() << "#I ignoring cobasis " 
-										<< fmt( cob->cob ) << " by dual facet "
-										"trick\n";
+							opts.output() << "#I ignoring cobasis "
+									<< fmt( cob->cob ) << " by fundamental "
+									"domain\n";
 						}
 					}
+
 				} else if ( opts.printTrace ) {
 					opts.output() << "#I seen cobasis " << fmt( cob->cob ) 
 								<< " before\n";

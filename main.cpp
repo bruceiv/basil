@@ -88,6 +88,10 @@ namespace basil {
 					"calculations. This may result in spurious automorphisms "
 					"for certain instances (notably those which have rows where "
 					"x_0 = 0).")
+				("fund-domain-lim",
+					value<unsigned long>(&dfsOpts_.fundDomainLimit),
+					"Maximum number of constraints to include in the "
+					"fundamental domain [default 0]")
 				("gram",
 					value<gram_state>(&gramType),
 					"Gram matrix generation to use: 'begin' to use the gram "
@@ -445,8 +449,11 @@ int main(int argc, char **argv) {
 				<< "\n{"
 				<< "\n\tdimension: " << d.getDimension()
 				<< "\n\tinitial cobasis: " << fmt( d.getInitialCobasis() )
-				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup(), 1 )
-				<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits(), 1 )
+				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup(), 1 );
+		if ( o.dfsOpts().fundDomainLimit > 0 ) {
+			out	<< "\n\tfundamental domain: " << fmt( d.getFundamentalDomain(), 1 );
+		}
+		out		<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits(), 1 )
 				<< "\n\ttotal basis degree: " << d.getTotalBasisDegree()
 				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits(), 1 )
 				<< "\n\tray orbits: " << fmt( d.getRayOrbits(), 1 )

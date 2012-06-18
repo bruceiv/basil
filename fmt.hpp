@@ -13,6 +13,7 @@
 #include <boost/functional.hpp>
 
 #include "dfs_types.hpp"
+#include "fund_domain.hpp"
 
 #include "lrs/cobasis.hpp"
 
@@ -182,6 +183,33 @@ namespace basil {
 		return o.str();
 	}
 	
+	/** prints a fundamental domain */
+	static string fmt(fund_domain const& f, int tabs = single_line) {
+		std::ostringstream o;
+		string row_space = (tabs < 0) ? " " : (lineSpace(tabs) + "  ");
+		o << "(" << f.size() << "," << f.dim() << ")" << lineSpace(tabs);
+
+		typedef std::vector<fund_domain::vector_mpq> fd_matrix;
+
+		bool isFirst = true;
+		fd_matrix const& m = f.constraints();
+		fd_matrix::const_iterator iter = m.begin(), end = m.end();
+		o << "[";
+		while ( iter != end ) {
+			if (isFirst) {
+				isFirst = false;
+				o << " ";
+			} else {
+				o << row_space;
+			}
+			o << *iter;
+			++iter;
+		}
+		o << " ]";
+
+		return o.str();
+	}
+
 	template <typename Arg>
 	boost::binder2nd<string (*)(Arg const&, int)> fmt(int tabs) {
 		return boost::bind2nd(
