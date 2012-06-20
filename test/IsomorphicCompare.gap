@@ -33,29 +33,29 @@ for NewCob in NewCobs do
 	od;
 	if ( act = fail ) then 
 		AddSet(UnmatchedNew, BasCob);
- 		Print("UNMATCHED:",NewCob,"\n");
+ 		#Print("UNMATCHED:",NewCob,"\n");
 	else
 		if ( MappedCob in MatchedOld ) then 
 			AddSet(DuplicateNew, NewCob);
-			Print("DUPLICATE:",NewCob," => ",MappedCob,"\n");
+			#Print("DUPLICATE:",NewCob," => ",MappedCob,"\n");
 		else
 			AddSet(MatchedOld, MappedCob);
-	 		Print("ISOMORPHIC:",NewCob," => ",MappedCob,"\n");
+	 		#Print("ISOMORPHIC:",NewCob," => ",MappedCob,"\n");
 		fi;
 	fi;
 od;
-#if ( Size(UnmatchedNew) > 0 ) then
-#	Print("new:\n");
-#	for Cob in UnmatchedNew do Print(" ",Cob,"\n"); od;
-#fi;
-#if ( Size(DuplicateNew) > 0 ) then
-#	Print("dup:\n");
-#	for Cob in DuplicateNew do Print(" ",Cob,"\n"); od;
-#fi;
-#if ( Size(OldCobs) > Size(MatchedOld) ) then
-#	Print("lost:\n");
-#	for Cob in OldCobs do if ( not Cob in MatchedOld ) then 
-#		Print(" ",Cob,"\n"); 
-#	fi; od;
-#fi;
+if ( Size(UnmatchedNew) > 0 ) then
+	Print("new:\n");
+	for Cob in UnmatchedNew do Print(" ",Cob,"\n"); od;
+fi;
+if ( Size(DuplicateNew) > 0 ) then
+	Print("dup:\n");
+	for Cob in DuplicateNew do Print(" ",Cob,"\n"); od;
+fi;
+if ( Size(OldCobs) > Size(MatchedOld) ) then
+	Print("lost:\n");
+	for Cob in OldCobs do if ( not Cob in MatchedOld ) then 
+		Print(" ",Cob,"\n"); 
+	fi; od;
+fi;
 

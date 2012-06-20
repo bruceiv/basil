@@ -22,6 +22,8 @@ namespace basil {
 		typedef lrs::vector_mpq vector_mpq;
 		/** Matrix type */
 		typedef lrs::matrix_mpq matrix_mpq;
+		/** Iterator type */
+		typedef std::vector<vector_mpq>::const_iterator const_iterator;
 
 		/** Empty constructor.
 		 *  Creates a fundamental domain with an empty Q-matrixs
@@ -33,15 +35,22 @@ namespace basil {
 		 */
 		fund_domain(matrix_mpq qInv);
 
-		/** Adds a new constraint to the fundamental domain. Adds a halfspace h
-		 *  whose bounding hyperplane is the normal bisector of the line
-		 *  segment ab, such that a is included in the halfspace, but b is not.
+		/** Creates a new constraint to the fundamental domain.
 		 *  @param a		The point to include (should be length d+1, with
 		 *  				the leading coefficient 1 and all others defining
 		 *  				the point in d-space in the normal order)
 		 *  @param b		The point to exclude (same constraints as a)
+		 *  @param c		A halfspace whose bounding hyperplane is the normal
+		 *  				bisector of the line segment ab, such that a is
+		 *  				included in the halfspace, but b is not.
 		 */
-		void add_constraint(vector_mpq const& a, vector_mpq const& b);
+		vector_mpq get_constraint(vector_mpq const& a,
+				vector_mpq const& b) const;
+
+		/** Adds a new constraint to the fundamental domain.
+		 *  @param c		The constraint to add
+		 */
+		void push_back(vector_mpq const& c);
 
 		/** Checks if this fundamental domain contains a given point.
 		 *  @param x		The point to check, should have length d
@@ -51,6 +60,14 @@ namespace basil {
 
 		/** @return the constraints stored in this fundamental domain */
 		std::vector<vector_mpq> const& constraints() const;
+
+		/** @return an iterator pointing to the first element in the
+		 *  fundamental domain */
+		const_iterator begin() const;
+
+		/** @return an iterator pointing beyond the last element in the
+		 *  fundamental domain */
+		const_iterator end() const;
 
 		/** Gets the dimension of the fundamental domain's underlying space */
 		uind dim() const;

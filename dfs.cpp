@@ -360,15 +360,27 @@ namespace basil {
 								 * future */
 								if ( fundDomain.size()
 										< opts.fundDomainLimit ) {
-									fundDomain.add_constraint(
-											oldVertex->coords,
-											newVertex->coords);
+									coordinates cons =
+											fundDomain.get_constraint(
+													oldVertex->coords,
+													newVertex->coords);
+//CHECK EXISTING VERTICES FOR ELIMINATION BY CONSTRAINT
+for (coordinates_map::iterator ii = vertexOrbits.begin();
+		ii != vertexOrbits.end(); ++ii) {
+	coordinates const& ikey = ii->first;
+	mpq_class ia = 0;
+	for (ind jj = 0; jj < cons.size(); ++jj) {
+		ia += cons[jj] * ikey[jj];
+	}
+	if ( sgn(ia) < 0 ) opts.output() << "WARNING constraint " << cons
+			<< " excludes vertex " << ikey << "\n";
+}
+//DONE CHECKING
+									fundDomain.push_back(cons);
 
 									if ( opts.printTrace ) {
 										opts.output() << "#I added fundamental "
-												"domain constraint "
-												<< fundDomain.constraints()[
-												   fundDomain.size()-1]
+												"domain constraint " << cons
 												<< " between "
 												<< oldVertex->coords << " and "
 												<< newVertex->coords << "\n";
@@ -393,6 +405,12 @@ namespace basil {
 									<< fmt( cob->cob ) << " by fundamental "
 									"domain\n";
 						}
+//CHECK TO SEE IF THIS WOULD HAVE BEEN TAKEN WITHOUT FUNDAMENTAL DOMAIN
+if ( ! knownVertex(newVertex) ) {
+	opts.output() << "WARNING vertex " << newVertex->coords << " ignored by "
+			"fundamental domain\n";
+}
+//DONE CHECKING
 					}
 
 				} else if ( opts.printTrace ) {
