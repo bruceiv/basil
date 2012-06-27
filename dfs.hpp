@@ -409,9 +409,6 @@ namespace basil {
 		/** Finds the rays in the current dictionary. */
 		void getRays();
 		
-		/** Initializes algorithm globals */
-		void initGlobals(matrix& m);
-		
 		/** Checks if a cobasis has been seen before.
 		 *  @param cob		The cobasis to check
 		 *  @param dat		The invariant data for this cobasis
@@ -488,6 +485,8 @@ namespace basil {
 		lrs::lrs l;
 		/** Permutation group used for this DFS */
 		permutation_group& g;
+		/** Original constraint matrix */
+		matrix& m;
 		/** Options for controlling the DFS algorithm */
 		dfs_opts opts;
 		/** Dimension of the problem */

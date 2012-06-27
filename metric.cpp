@@ -10,6 +10,8 @@
 #include "lrs/matrix.hpp"
 #include "prime/factors.hpp"
 
+#include "fmt.hpp"
+
 namespace basil {
 
 	////////////////////////////////////////////////////////////////////////////
@@ -271,8 +273,42 @@ namespace basil {
 		return R;
 	}
 
+	lrs::matrix_mpq colRankAugment(lrs::matrix_mpq const& M,
+								   lrs::index_set const& rows) {
+
+		/* restrict matrix to selected rows */
+		lrs::matrix_mpq B = M.row_restriction(rows);
+
+		/* Find linearly independent columns of B */
+		index_set colBasis = trans(B).lin_indep_rows();
+		index_set missingCols = ~colBasis;
+		missingCols.set(0, false);
+
+		/* Augment the missing columns */
+		lrs::matrix_mpq R(B.size() + missingCols.count(), B.dim());
+
+		ind i = 0;
+		for (; i < B.size(); ++i) {
+			R.row(i) = B.row(i);
+		}
+		for (lrs::index_set_iter iter = lrs::begin(missingCols);
+				iter != lrs::end(missingCols); ++iter) {
+			R.elem(i, (*iter)-1) = 1;
+
+			++i;
+		}
+
+//std::cout << "\t\tcolRankAugment():";
+//for (ind i = 0; i < R.size(); ++i) {
+//std::cout << "\n\t\t";
+//for (ind j = 0; j < R.dim(); ++j) std::cout << " " << R.elem(i, j);
+//} std::cout << std::endl;
+
+		return R;
+	}
+
 	lrs::matrix_mpq transformedInnerProdMat(lrs::matrix_mpq const& M,
-									   lrs::matrix_mpq const& T) {
+											lrs::matrix_mpq const& T) {
 		ind n = M.size();
 
 		lrs::matrix_mpq P(n,n);

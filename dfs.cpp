@@ -21,6 +21,7 @@
 #include "fund_domain.hpp"
 #include "gram.hpp"
 #include "metric.hpp"
+#include "perm_utils.hpp"
 
 #include "lrs/cobasis.hpp"
 #include "lrs/lrs.hpp"
@@ -40,11 +41,37 @@ namespace basil {
 	////////////////////////////////////////////////////////////////////////////
 	
 	dfs::dfs(matrix& m, index_set& lin, permutation_group& g, 
-			gram_matrix& gram, dfs_opts o) : l(m, lin, o.lrs_o), g(g), 
+			gram_matrix& gram, dfs_opts o) : l(m, lin, o.lrs_o), g(g), m(m),
 			opts(o), dim(m.dim()), rows(m.size()), gramMat(gram) { 
 		
 		/* set up algorithm globals */
-		initGlobals(m);
+
+		/* represents the set [1..rows] */
+		allIndices = index_set(rows+1).set().set(0, false);
+		/* resize the cobasis cache to its proper size */
+		cobasisCache.resize(opts.cacheSize);
+		if ( opts.aRepresentation ) gramMat = gramMat.abs();
+		/* Set up the fundamental domain */
+		if ( opts.fundDomainLimit > 0 ) {
+			matrix qInv = invQMat(orthoAugment(m));
+			fundDomain = fund_domain(qInv);
+		} else {
+			fundDomain = fund_domain();
+		}
+
+		/* Default initialize remaining data members */
+		basisOrbits = cobasis_map();
+		cobasisGramMap = cobasis_gram_map();
+		cobasisQueue = std::deque<index_set>();
+		totalBasisDegree = 0;
+		hitMaxBasis = false;
+		initialCobasis = index_set();
+		pathStack = std::deque<index_pair>();
+		rayOrbits = coordinates_map();
+		realDim = 0;
+		vertexOrbits = coordinates_map();
+		vertexGramMap = vertex_gram_map();
+		workStack = std::deque<pivot>();
 	}
 	
 	bool dfs::doDfs() {
@@ -125,35 +152,6 @@ namespace basil {
 	//
 	////////////////////////////////////////////////////////////////////////////
 	
-	void dfs::initGlobals(matrix& m) {
-		/* represents the set [1..rows] */
-		allIndices = index_set(rows+1).set().set(0, false);
-		/* resize the cobasis cache to its proper size */
-		cobasisCache.resize(opts.cacheSize);
-		if ( opts.aRepresentation ) gramMat = gramMat.abs();
-		/* Set up the fundamental domain */
-		if ( opts.fundDomainLimit > 0 ) {
-			matrix qInv = invQMat(orthoAugment(m, !opts.aRepresentation));
-			fundDomain = fund_domain(qInv);
-		} else {
-			fundDomain = fund_domain();
-		}
-		
-		/* Default initialize remaining data members */
-		basisOrbits = cobasis_map();
-		cobasisGramMap = cobasis_gram_map();
-		cobasisQueue = std::deque<index_set>();
-		totalBasisDegree = 0;
-		hitMaxBasis = false;
-		initialCobasis = index_set();
-		pathStack = std::deque<index_pair>();
-		rayOrbits = coordinates_map();
-		realDim = 0;
-		vertexOrbits = coordinates_map();
-		vertexGramMap = vertex_gram_map();
-		workStack = std::deque<pivot>();
-	}
-	
 	index_set dfs::dfsFirstBasis() {
 		
 		/* get initial solution from LRS */
@@ -175,9 +173,14 @@ namespace basil {
 		
 		if ( opts.printTrace ) {
 			opts.output() << "#I initial basis: " << fmt( cob->cob ) << " " 
-						<< *sol << "\n";
+						<< dat->coords << "\n";
 		}
 		
+		if ( opts.fundDomainLimit > 0 ) {
+			permutation_list perms = small_gen_set(g);
+			fundDomain.build_from_seed(dat->coords, cob->cob, m, perms);
+		}
+
 		initialCobasis = cob->cob;
 		addVertex(dat);
 		getRays();
@@ -326,8 +329,8 @@ namespace basil {
 							
 							if ( opts.printTrace ) {
 								opts.output() << "#I pushing new vertex: "
-											<< fmt( cob->cob ) << " " << *sol 
-											<< "\n";
+											<< fmt( cob->cob ) << " "
+											<< newVertex->coords << "\n";
 							}
 
 						} else {
@@ -335,7 +338,7 @@ namespace basil {
 							if ( oldVertex->coords == newVertex->coords
 									|| ! opts.dualFacetTrick ) {
 								/* if this is a new cobasis for a previously
-								 * seen vertex, and we are not employing the
+								 * seen vertex, or we are not employing the
 								 * dual facet trick to prune the search tree,
 								 * add the cobasis to the search stack if it is
 								 * unique */
@@ -347,7 +350,8 @@ namespace basil {
 									if ( opts.printTrace ) {
 										opts.output() << "#I pushing new "
 												"cobasis: " << fmt( cob->cob )
-												<< " " << *sol << "\n";
+												<< " " << newVertex->coords
+												<< "\n";
 									}
 								} else if ( opts.printTrace ) {
 									opts.output() << "#I ignoring cobasis "
@@ -358,34 +362,34 @@ namespace basil {
 								/* new vertex symmetric to old vertex - add to
 								 * fundamental domain to exclude such in the
 								 * future */
-								if ( fundDomain.size()
-										< opts.fundDomainLimit ) {
-									coordinates cons =
-											fundDomain.get_constraint(
-													oldVertex->coords,
-													newVertex->coords);
+//								if ( fundDomain.size()
+//										< opts.fundDomainLimit ) {
+//									coordinates cons =
+//											fundDomain.get_constraint(
+//													oldVertex->coords,
+//													newVertex->coords);
 //CHECK EXISTING VERTICES FOR ELIMINATION BY CONSTRAINT
-for (coordinates_map::iterator ii = vertexOrbits.begin();
-		ii != vertexOrbits.end(); ++ii) {
-	coordinates const& ikey = ii->first;
-	mpq_class ia = 0;
-	for (ind jj = 0; jj < cons.size(); ++jj) {
-		ia += cons[jj] * ikey[jj];
-	}
-	if ( sgn(ia) < 0 ) opts.output() << "WARNING constraint " << cons
-			<< " excludes vertex " << ikey << "\n";
-}
+//for (coordinates_map::iterator ii = vertexOrbits.begin();
+//		ii != vertexOrbits.end(); ++ii) {
+//	coordinates const& ikey = ii->first;
+//	mpq_class ia = 0;
+//	for (ind jj = 0; jj < cons.size(); ++jj) {
+//		ia += cons[jj] * ikey[jj];
+//	}
+//	if ( sgn(ia) < 0 ) opts.output() << "WARNING constraint " << cons
+//			<< " excludes vertex " << ikey << "\n";
+//}
 //DONE CHECKING
-									fundDomain.push_back(cons);
-
-									if ( opts.printTrace ) {
-										opts.output() << "#I added fundamental "
-												"domain constraint " << cons
-												<< " between "
-												<< oldVertex->coords << " and "
-												<< newVertex->coords << "\n";
-									}
-								}
+//									fundDomain.push_back(cons);
+//
+//									if ( opts.printTrace ) {
+//										opts.output() << "#I added fundamental "
+//												"domain constraint " << cons
+//												<< " between "
+//												<< oldVertex->coords << " and "
+//												<< newVertex->coords << "\n";
+//									}
+//								}
 
 								/* we assume that if the new cobasis is
 								 * defining a different vertex, but that vertex
@@ -409,6 +413,10 @@ for (coordinates_map::iterator ii = vertexOrbits.begin();
 if ( ! knownVertex(newVertex) ) {
 	opts.output() << "WARNING vertex " << newVertex->coords << " ignored by "
 			"fundamental domain\n";
+//	/* this vertex has yet to be seen, add it */
+//	addVertex(newVertex);
+//	/* add this vertex to the search stack */
+//	workStack.push_back(pivot(oldCob, leave, enter));
 }
 //DONE CHECKING
 					}

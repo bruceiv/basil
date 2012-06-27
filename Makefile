@@ -1,6 +1,6 @@
 CPPFLAGS = -DTIMES -DGMP -DLRS_QUIET -DLRS_THREADSAFE -DBAS_WALLTIME
-#CXXFLAGS = -O2 -Wall -Wno-unused -fopenmp -I .
-CXXFLAGS = -ggdb -O0 -Wall -Wno-unused -fopenmp -I .
+CXXFLAGS = -O2 -Wall -Wno-unused -fopenmp -I .
+#CXXFLAGS = -ggdb -O0 -Wall -Wno-unused -fopenmp -I .
 LDFLAGS = -lboost_program_options-mt -Llrs -llrs -lgmpxx -lgmp
 
 # object files to include in this executable

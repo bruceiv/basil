@@ -186,11 +186,19 @@ namespace basil {
 	 *  @param augSigned	Should the added augment vectors be considered to
 	 *   					be signed. If so, they will be paired with their
 	 *   					negations (should be true for polyhedra, false for
-	 *   					hyperplane arrangements) [default false]
+	 *   					hyperplane arrangements) [default true]
 	 *  @return a matrix augmented as above
 	 */
 	lrs::matrix_mpq orthoAugment(lrs::matrix_mpq const& M,
-								 bool augSigned = false);
+								 bool augSigned = true);
+
+	/** Computes the column rank augmentation of a matrix.
+	 *  @param M			The matrix to augment
+	 *  @param rows			The rows to keep and augment
+	 *  @return a matrix augmented as above
+	 */
+	lrs::matrix_mpq colRankAugment(lrs::matrix_mpq const& M,
+								   lrs::index_set const& rows);
 
 	/** Computes the inner product matrix of M*T with M.
 	 *  @param M			The matrix to compute the inner products for

@@ -35,6 +35,17 @@ namespace basil {
 		 */
 		fund_domain(matrix_mpq qInv);
 
+		/** Builds the fundamental domain from a seed vertex and the group.
+		 *  Adds the constraints generated from the seed vertex and its images
+		 *  under some list of permutations to the fundamental domain.
+		 *  @param s		The seed vertex
+		 *  @param sBasis	The set of basis rows for the seed
+		 *  @param A		The constraint matrix the seed is in the context of
+		 *  @param l		The list of permutations to apply to the seed
+		 */
+		void build_from_seed(vector_mpq const& s, index_set const& sBasis,
+				matrix_mpq const& A, permutation_list const& l);
+
 		/** Creates a new constraint to the fundamental domain.
 		 *  @param a		The point to include (should be length d+1, with
 		 *  				the leading coefficient 1 and all others defining

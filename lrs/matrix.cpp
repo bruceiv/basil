@@ -167,7 +167,7 @@ namespace lrs {
 		
 		return r;		
 	}
-	
+
 	vector_mpz vector_mpq_base::num() {
 		vector_mpz r(d);
 		for (ind i = 0; i < d; ++i) {
@@ -919,6 +919,21 @@ namespace lrs {
 
 		for (ind i = 0; i < n; ++i) for (ind j = 0; j < d; ++j) {
 			r[j] += v[i] * m.elem(i, j);
+		}
+
+		return r;
+	}
+
+	vector_mpq mat_col_mul(matrix_mpq const& m, vector_mpq_base const& v) {
+		ind n = m.size(), d = m.dim();
+
+		if ( v.size() != d ) throw std::runtime_error(
+				"Cannot multiply unequally sized vector and matrix");
+
+		vector_mpq r(n);
+
+		for (ind i = 0; i < n; ++i) for (ind j = 0; j < d; ++j) {
+			r[i] += m.elem(i, j) * v[j];
 		}
 
 		return r;

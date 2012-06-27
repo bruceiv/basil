@@ -12,6 +12,8 @@
 
 #include "basil.hpp"
 
+#include "lrs/cobasis.hpp"
+
 #include "permlib/permlib_api.h"
 
 namespace basil {
@@ -213,6 +215,25 @@ namespace basil {
 
 		/* Group from new generators */
 		return *permlib::construct(g.n, gens.begin(), gens.end());
+	}
+
+	/** Applies a permutation setwise to a bitset.
+	 *  @param p		The permutation to apply
+	 *  @param s		The set to permute
+	 *  @return a bitset corresponding elementwise to the elements of s acted
+	 *  		on by p
+	 */
+	static index_set apply(permutation const& p, index_set const& s) {
+		index_set r(s.size());
+
+		/* For each index in the set */
+		for (lrs::index_set_iter iter = lrs::begin(s);
+				iter != lrs::end(s); ++iter) {
+			/* set the permutation image of that index into the return */
+			r.set((p / ((*iter)-1)) + 1);
+		}
+
+		return r;
 	}
 
 } /* namespace basil */

@@ -943,6 +943,14 @@ namespace lrs {
 	 */
 	vector_mpq row_mat_mul(vector_mpq_base const& v, matrix_mpq const& m);
 
+	/** Right-multiplies a matrix by a column vector.
+	 *  @param m		An n*d matrix
+	 *  @param v		A vector of d elements
+	 *  @return a n-element result vector r = m*v
+	 *  @throws std::runtime_error on vector length != d
+	 */
+	vector_mpq mat_col_mul(matrix_mpq const& m, vector_mpq_base const& v);
+
 	/** Creates an n*n identity matrix.
 	 *  @param n		The size of the matrix
 	 *  @return a new n*n identity matrix
