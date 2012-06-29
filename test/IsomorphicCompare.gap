@@ -14,13 +14,6 @@ ReadFile("isomorphTest-grp.gap");
 UnmatchedNew:=Set([]);;
 DuplicateNew:=Set([]);;
 MatchedOld:=Set([]);;
-# remove exact matches from both sets
-for Cob in Cobs do
-	if ( Cob in OldCobs ) then
-		RemoveSet(NewCobs, Cob); AddSet(MatchedOld, Cob);
-		Print("ISOMORPHIC:",Cob," => ",Cob,"\n");
-	fi;
-od;
 # remove symmetric matches
 for NewCob in NewCobs do
 	act:=fail;;
@@ -38,7 +31,7 @@ for NewCob in NewCobs do
 			Print("DUPLICATE:",NewCob," => ",MappedCob,"\n");
 		else
 			AddSet(MatchedOld, MappedCob);
-	 		Print("ISOMORPHIC:",NewCob," => ",MappedCob,"\n");
+	 		#Print("ISOMORPHIC:",NewCob," => ",MappedCob,"\n");
 		fi;
 	fi;
 od;

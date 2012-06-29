@@ -217,11 +217,42 @@ namespace basil {
 		return *permlib::construct(g.n, gens.begin(), gens.end());
 	}
 
-	/** Applies a permutation setwise to a bitset.
+	/** Converts an index set into an index list.
+	 *  @param s		The set to convert
+	 *  @return an index list containing the elements of s in increasing order
+	 */
+	static index_list as_list(index_set const& s) {
+		index_list r(s.count());
+
+		ind i = 0;
+		for (lrs::index_set_iter iter = lrs::begin(s);
+				iter != lrs::end(s); ++iter) {
+			r[i++] = *iter;
+		}
+
+		return r;
+	}
+
+	/** Converts an index list into an index set.
+	 *  @param l		The list to convert
+	 *  @param n		The upper bound (inclusive) for the range of values
+	 *  				represented by l
+	 *  @return an index set containing all the elements of l
+	 */
+	static index_set as_set(index_list const& l, ind n) {
+		index_set r(n+1);
+		for (index_list::const_iterator iter = l.begin();
+				iter != l.end(); ++iter) {
+			r.set(*iter);
+		}
+		return r;
+	}
+
+	/** Applies a permutation element-wise to an index set.
 	 *  @param p		The permutation to apply
 	 *  @param s		The set to permute
-	 *  @return a bitset corresponding elementwise to the elements of s acted
-	 *  		on by p
+	 *  @return an index set corresponding element-wise to the elements of s
+	 *  		acted on by p
 	 */
 	static index_set apply(permutation const& p, index_set const& s) {
 		index_set r(s.size());
@@ -231,6 +262,26 @@ namespace basil {
 				iter != lrs::end(s); ++iter) {
 			/* set the permutation image of that index into the return */
 			r.set((p / ((*iter)-1)) + 1);
+		}
+
+		return r;
+	}
+
+	/** Applies a permutation element-wise to an index list.
+	 *  @param p		The permutation to apply
+	 *  @param l		The list to permute
+	 *  @return an index list corresponding element-wise to the elements of l
+	 *  		acted on by p
+	 */
+	static index_list apply(permutation const& p, index_list const& l) {
+		index_list r(l.size());
+
+		/* For each index in the list */
+		ind i = 0;
+		for (index_list::const_iterator iter = l.begin();
+				iter != l.end(); ++iter) {
+			/* set the permutation image of that index into the return */
+			r[i++] = (p / ((*iter)-1)) + 1;
 		}
 
 		return r;

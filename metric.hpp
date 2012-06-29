@@ -219,6 +219,16 @@ namespace basil {
 	 */
 	matrix_mpr normedInnerProdMat(lrs::matrix_mpq const& M);
 
+	/** Selects the submatrix of a matrix determined by the given list of
+	 *  indices.
+	 *  @param M		The matrix to select from
+	 *  @param l		The set of row indices to select from the matrix.
+	 *  				The maximum index in l should be less than or equal
+	 *  				to M.n.
+	 *  @return a matrix R such that R[i][j] = M[l[i],j]
+	 */
+	lrs::matrix_mpq select_rows(lrs::matrix_mpq const& M, index_list const& l);
+
 } /* namespace basil */
 
 #endif /* BASIL_METRIC_HPP */

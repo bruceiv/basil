@@ -385,4 +385,16 @@ namespace basil {
 		return P;
 	}
 
+	lrs::matrix_mpq select_rows(lrs::matrix_mpq const& M, index_list const& l) {
+		ind n = l.size(), d = M.dim();
+
+		lrs::matrix_mpq R(n, d);
+
+		for (ind i = 0; i < n; ++i) {
+			R.row(i) = M.row(l[i]-1);
+		}
+
+		return R;
+	}
+
 } /* namespace basil */

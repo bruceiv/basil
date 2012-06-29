@@ -879,6 +879,16 @@ namespace lrs {
 		 */
 		friend matrix_mpq lu_inv(matrix_mpq const& m);
 
+		/** Finds the unique solution x to m' * x = 0 (where m' is m with an
+		 *  additional row [1 0 0 ... 0] added).
+		 *  @param m		The matrix to solve from
+		 *  @return the unique solution for the given matrix
+		 *  @throws std::runtime_error on n != d-1
+		 *  @throws noninvertable_matrix_error if unique solution cannot be
+		 *  		found
+		 */
+		friend vector_mpq solve(matrix_mpq m);
+
 		/** Gets the indices of the linearly independent rows of this matrix.
 		 *  @return the set of such rows
 		 */

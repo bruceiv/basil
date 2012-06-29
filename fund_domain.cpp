@@ -27,9 +27,18 @@ namespace basil {
 			index_set const& sBasis,
 			fund_domain::matrix_mpq const& A, permutation_list const& l) {
 
-		/* pre-processing for transformation matrices for permutations */
-		//lrs::index_set rowBasis = A.lin_indep_rows();
-		matrix_mpq B = inv(colRankAugment(A, sBasis));
+		ind n = A.size(), d = A.dim() - 1;
+
+		/* augment input basis and matrix with x_0 = 1 plane (considered in
+		 * homogenized coordinates). */
+		index_list seedBasis = as_list(sBasis);
+		index_list rowBasis(seedBasis);
+		rowBasis.push_back(n+1);
+		matrix_mpq Aa = fixPlane(A);
+
+		/* Get first part of basis change matrix to transform out existing
+		 * basis */
+		matrix_mpq B = inv(select_rows(Aa, rowBasis));
 
 		/* Find the images of the seed vertex under each permutation */
 		std::set<vector_mpq> images;
@@ -38,9 +47,11 @@ namespace basil {
 
 			permutation& p = **iter;
 
-			/* get transformation matrix for permutation */
-			lrs::index_set permBasis = apply(p, sBasis);
-			matrix_mpq T = B * colRankAugment(A, permBasis);
+			/* calculate other part of basis change transformation matrix for
+			 * permutation */
+			index_list pBasis = apply(p, seedBasis);
+			pBasis.push_back(n+1);
+			matrix_mpq T = B * select_rows(Aa, pBasis);
 
 			/** Get transformed vertex, ignoring permutations that fix the seed
 			 *  vertex and vertices that have been seen before */
@@ -56,18 +67,6 @@ std::cout << "Constraint " << c << " for image " << v << " of permutation " << p
 			}
 		}
 
-		/* Add the constraint for each image */
-//		for (std::set<vector_mpq>::iterator jter = images.begin();
-//				jter != images.end(); ++jter) {
-//			push_back(get_constraint(s, *jter));
-//			vector_mpq c = get_constraint(s, *jter);
-//			mpq_class a = 0;
-//			for (ind j = 0; j < c.size(); ++j) {
-//				a += c[j] * s[j];
-//			}
-//			if ( sgn(a) < 0 ) { std::cout << "WARNING: constraint " << c << " excludes seed " << s << std::endl; c = -c; }
-//			push_back(c);
-//		}
 	}
 
 	fund_domain::vector_mpq leading_unit(fund_domain::vector_mpq const& v) {

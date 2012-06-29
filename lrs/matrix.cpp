@@ -807,6 +807,64 @@ namespace lrs {
 		return r;
 	}
 
+	vector_mpq solve(matrix_mpq m) {
+
+		/* solves using Gauss-Jordan elimination */
+
+		ind n = m.n, d = m.d;
+
+		if ( n != d-1 ) throw std::runtime_error(
+				"Cannot solve matrix of improper size");
+
+		/* negate first column to fix it as the augmented row for the constant
+		 * terms */
+		for (ind i = 0; i < n; ++i) m.elem(i, 0) = -m.elem(i, 0);
+
+		/* reduce down */
+		for (ind i = 0; i < n; ++i) {
+			if ( m.elem(i,i+1) != 0 ) {
+				if ( m.elem(i,i+1) != 1 ) {
+					mpq_class div;
+					/* div = 1/a[i, i+1] */
+					mpq_inv(div.get_mpq_t(), m.elem(i, i+1).get_mpq_t());
+					m.row(i) *= div;
+				}
+
+				for (ind j = i+1; j < n; ++j) {
+					if ( m.elem(j, i+1) != 0 ) {
+						m.row(j) -= (m.elem(j, i+1) * m.row(i));
+						if ( is_zero(m.row(j)) ) {
+							throw noninvertable_matrix_error(j);
+						}
+					}
+				}
+			} else {
+				ind r;
+				for (r = i+1; r < n; ++r) {
+					if ( m.elem(r, i+1) != 0 ) break;
+				}
+				if ( r == n ) throw noninvertable_matrix_error(r);
+
+				m.swap_rows(i, r);
+				--i;
+			}
+		}
+
+		/* reduce up */
+		for (ind i = n-1; i >= 0; --i) for (ind j = i-1; j >= 0; --j) {
+			if ( m.elem(j, i+1) != 0 ) {
+				m.row(j) -= (m.elem(j, i+1) * m.row(i));
+				if ( is_zero(m.row(j)) ) throw noninvertable_matrix_error(j);
+			}
+		}
+
+		vector_mpq r(n+1);
+		r[0] = 1;
+		for (ind i = 0; i < n; ++i) r[i+1] = m.elem(i, 0);
+
+		return r;
+	}
+
 	index_set matrix_mpq::lin_indep_rows () const {
 		matrix_mpq a(*this);
 		int cRow = 0;

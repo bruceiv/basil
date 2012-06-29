@@ -58,6 +58,9 @@ namespace basil {
 		shared_ptr<index_set> 
 		index_set_ptr;
 	
+	/** ordered list of matrix indices */
+	typedef std::vector<permlib::dom_int> index_list;
+
 	/** permutation type */
 	typedef 
 		permlib::Permutation 
