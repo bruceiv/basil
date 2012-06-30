@@ -63,7 +63,7 @@ namespace basil {
 		dfs_opts() 
 				: assumesNoSymmetry(false), 
 				basisLimit(std::numeric_limits<unsigned long>::max()), 
-				cacheSize(1000), dualFacetTrick(true), firstCobasis(), 
+				cacheSize(1000), dualFacetTrick(true), firstCobasis(),
 				fundDomainLimit(0), gramVec(true), debugGram(false),
 				lexOnly(false), lrs_o(), out(&std::cout), printBasis(0),
 				printNew(false), printRay(0), printVertex(0),
