@@ -88,10 +88,12 @@ namespace basil {
 					"calculations. This may result in spurious automorphisms "
 					"for certain instances (notably those which have rows where "
 					"x_0 = 0).")
+#ifndef BAS_MT
 				("fund-domain-lim",
 					value<unsigned long>(&dfsOpts_.fundDomainLimit),
 					"Maximum number of constraints to include in the "
 					"fundamental domain [default 0]")
+#endif /* ! BAS_MT */
 				("gram",
 					value<gram_state>(&gramType),
 					"Gram matrix generation to use: 'begin' to use the gram "
@@ -122,7 +124,7 @@ namespace basil {
 						->default_value(true)->implicit_value(false),
 					"Deactivate thread-local work stacks; This reduces memory "
 					"usage at the cost of increased execution time.")
-#endif
+#endif /* BAS_MT */
 				("print-basis",
 					value<long>(&dfsOpts_.printBasis),
 					"Print the number of cobases found and running time every "
@@ -450,9 +452,11 @@ int main(int argc, char **argv) {
 				<< "\n\tdimension: " << d.getDimension()
 				<< "\n\tinitial cobasis: " << fmt( d.getInitialCobasis() )
 				<< "\n\tsymmetry generators: " << fmt( d.getSymmetryGroup(), 1 );
+#ifndef BAS_MT
 		if ( o.dfsOpts().fundDomainLimit > 0 ) {
 			out	<< "\n\tfundamental domain: " << fmt( d.getFundamentalDomain(), 1 );
 		}
+#endif /* ! BAS_MT */
 		out		<< "\n\tbasis orbits: " << fmt( d.getBasisOrbits(), 1 )
 				<< "\n\ttotal basis degree: " << d.getTotalBasisDegree()
 				<< "\n\tvertex orbits: " << fmt( d.getVertexOrbits(), 1 )
