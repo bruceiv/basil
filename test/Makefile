@@ -16,3 +16,6 @@ test:  clean test.out ../gram.hpp ../gram.cpp
 
 clean:  
 	rm test.out
+
+randgen:  randgen.cpp
+	$(CXX) $(CPPFLAGS) -O1 -ggdb -Wall -Wno-unused -fopenmp -I.. -o randgen randgen.cpp ../automorphism.o ../parse.o ../gram.o ../metric.o -L../lrs -llrs -lgmpxx -lgmp
