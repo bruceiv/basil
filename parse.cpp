@@ -72,7 +72,7 @@ namespace basil {
 		}
 		
 		/* print linearities */
-		if ( p.l->any() ) {
+		if ( p.l && p.l->any() ) {
 			o << "linearity " << p.l->count();
 			for (lrs::index_set_iter iter = lrs::begin(*p.l); 
 					iter != lrs::end(*p.l); ++iter) {

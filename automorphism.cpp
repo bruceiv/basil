@@ -130,7 +130,7 @@ namespace basil {
 			/* Skip invalid sign-doubled permutations */
 			if ( ! valid ) continue;
 
-std::cout << **iter << "\n=> " << perm(g.dim(), p) << std::endl;
+//std::cout << **iter << "\n=> " << perm(g.dim(), p) << std::endl;
 
 			/* add permutation to generator list */
 			gens.push_back(boost::make_shared<permutation>(perm(g.dim(), p)));
