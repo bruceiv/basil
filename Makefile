@@ -64,3 +64,7 @@ clean_doc:
 # generate documentation (requires doxygen)
 doc:  
 	doxygen Doxyfile
+
+# package code
+tarball:
+	cd .. && tar -zcvf basil.tar.gz --exclude basil/.git basil/
