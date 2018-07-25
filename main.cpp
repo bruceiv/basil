@@ -317,7 +317,7 @@ namespace basil {
 			if ( genSymmetry 
 					|| !( p->ss == sym_provided 
 						|| dfsOpts_.assumesNoSymmetry ) ) {
-				if ( ! p->gs == gram_provided ) {
+				if ( ! (p->gs == gram_provided) ) {
 					Qinv = invQMat(orthoAugment(M, !aRep));
 					p->gm = boost::make_shared<gram_matrix>(constructGram(
 							transformedInnerProdMat(M, Qinv)));
